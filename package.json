@@ -1,0 +1,18 @@
+{
+  "name": "hbvs",
+  "version": "1.0.0",
+  "description": "Holy Bible Vector Space — 24-year Bible course app",
+  "private": true,
+  "scripts": {
+    "import-db": "node scripts/import-db.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "sqlite3": "^6.0.1"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
