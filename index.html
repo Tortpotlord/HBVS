@@ -40,34 +40,28 @@ main { padding: 16px; }
 .cards-vertical { display: flex; flex-direction: column; }
 .verse-text { user-select: text; line-height: 1.9; font-size: 16px; }
 .copy-btn { position: absolute; top: 12px; right: 12px; font-size: 11px; padding: 3px 8px; border:1px solid var(--border); background:#faf8f5; border-radius:4px; cursor:pointer; }
-.reader-table { width: 100%; border-collapse: collapse; }
-.reader-table td { padding: 2px 0; vertical-align: top; }
-.reader-table.ref { width: 65px; font-weight: bold; color: var(--accent); font-size: 13px; }
-.math-superscript sup { font-size: 0.65em; vertical-align: super; color: var(--muted); }
-.math-mathp.sym { color: #0047AB; }
-.math-maths.sym { color: #B22222; }
-.math-matht.sym { color: #228B22; }
-.math-preface { color: #0047AB; font-style: italic; }
 #bottombar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: var(--muted); }
 #bottombar div { text-align: center; cursor: pointer; }
 #bottombar div.active { color: var(--accent); font-weight: bold; }
 .modal { position: fixed; inset:0; background: rgba(0,0,0,0.5); z-index:200; display:flex; justify-content:center; align-items:center; }
 .modal-content { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
-.modal-content h3 { margin-top:0; color: var(--accent); }
 .modal-row { display: flex; gap: 8px; margin: 12px 0; }
-.modal-row select { flex:1; padding: 8px; border:1px solid var(--border); border-radius:6px; font-family:serif; }
-.modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
-.modal-buttons button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-family: serif; }
-.btn-cancel { background: #eee; }
-.btn-compare { background: var(--accent); color: white; }
-.bible-browser { display: flex; height: calc(100vh - 200px); gap: 8px; }
-.bible-col { flex:1; border:1px solid var(--border); border-radius:8px; background:var(--card); overflow-y: auto; padding:8px; }
-.bible-col h4 { margin:0 0 8px 0; text-align:center; color:var(--accent); font-size:14px; position:sticky; top:0; background:var(--card); padding:4px 0;}
-.book-item,.chap-item,.verse-item { padding:8px; border-radius:4px; cursor:pointer; font-size:14px; }
-.book-item:hover,.chap-item:hover,.verse-item:hover { background:#faf8f5; }
-.book-item.active,.chap-item.active,.verse-item.active { background:var(--accent); color:white; }
-.chapter-grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:6px; }
-@media (max-width: 700px){.bible-browser { flex-direction: column; height: auto; } }
+.modal-row label { flex: 0 0 70px; font-size: 13px; color: var(--muted); padding-top: 6px; }
+.modal-row select { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-family: serif; }
+.modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.modal-buttons button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; }
+#btn-go { background: var(--accent); color: white; border-color: var(--accent); }
+.bible-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.grid-btn { padding: 8px 12px; background: var(--card); border: 1px solid var(--border); cursor: pointer; border-radius: 6px; font-size: 13px; }
+.grid-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.section-label { font-size: 12px; color: var(--muted); margin-top: 10px; font-weight: bold; text-transform: uppercase; }
+#bookFilter { padding: 8px; width: 100%; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-family: serif; }
+.reader-view { border-top: 2px solid var(--border); margin-top: 20px; padding-top: 15px; }
+.reader-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.reader-title { font-weight: bold; font-size: 18px; color: var(--accent); }
+.reader-tools span { margin-left: 12px; cursor: pointer; font-size: 18px; color: var(--accent); }
+.verse-block { margin: 10px 0; padding: 12px; border-left: 3px solid var(--border); background: var(--card); border-radius: 6px; }
+.verse-block.highlight { border-left: 3px solid var(--accent); background: #faf8f5; }
 </style>
 </head>
 <body>
@@ -85,17 +79,25 @@ main { padding: 16px; }
   <p>Settings</p>
 </div>
 
+<!-- MODAL FIX: Added IDs + Labels + btn-go -->
 <div id="verse-modal" class="modal hidden">
   <div class="modal-content">
     <h3>Change Verse</h3>
     <div class="modal-row">
+      <label>Book:</label>
       <select id="modal-book"></select>
+    </div>
+    <div class="modal-row">
+      <label>Chapter:</label>
       <select id="modal-chap"></select>
+    </div>
+    <div class="modal-row">
+      <label>Verse:</label>
       <select id="modal-verse"></select>
     </div>
     <div class="modal-buttons">
       <button class="btn-cancel" id="btn-cancel">Cancel</button>
-      <button class="btn-compare" id="btn-compare">Compare</button>
+      <button class="btn-compare" id="btn-go">Go</button> <!-- CHANGED: btn-compare -> btn-go -->
     </div>
   </div>
 </div>
@@ -130,311 +132,40 @@ main { padding: 16px; }
     </section>
 
     <section id="tab-bible" class="tab-panel hidden">
-      <div class="bible-browser">
-        <div class="bible-col" id="book-list"><h4>Books</h4></div>
-        <div class="bible-col" id="chapter-grid"><h4>Chapters</h4></div>
-        <div class="bible-col" id="verse-list"><h4>Verses</h4></div>
+      <input type="text" id="bookFilter" placeholder="Filter Book: Gen, Exo, Psa, Jde... 68 total" />
+      <div class="section-label">BOOK - HEIGHT</div><div id="bookGrid" class="bible-grid"></div>
+      <div class="section-label">CHAPTER - DEPTH</div><div id="chapterGrid" class="bible-grid"></div>
+      <div class="section-label">VERSE - LENGTH</div><div id="verseGrid" class="bible-grid"></div>
+
+      <div id="readerView" class="reader-view hidden">
+        <div class="reader-header">
+          <div class="reader-title" id="readerTitle"></div>
+          <div class="reader-tools">
+            <span id="btn-prev-chap" title="PREVIOUS CHAPTER"><</span>
+            <span id="btn-next-chap" title="NEXT CHAPTER">></span>
+ 			      <span id="btn-share-reader" title="Share">📤</span> <!-- NEW -->
+  			  <span id="btn-audio-reader" title="Audio">🔊</span> <!-- NEW -->
+            <span id="btn-copy-reader" title="Copy">📋</span>
+            <span title="Print" onclick="window.print()">🖨️</span>
+          </div>
+        </div>
+        <div id="readerContent"></div>
       </div>
     </section>
   </main>
 
   <nav id="bottombar">
-    <div class="active">🏠<br>Home</div>
-    <div>📖<br>Bible</div>
-    <div>🔍<br>StudyHub</div>
-    <div>⚙️<br>Settings</div>
+    <div class="active" data-tab="tab-home">🏠<br>Home</div>
+    <div data-tab="tab-bible">📖<br>Bible</div>
+    <div data-tab="tab-studyhub">🔍<br>StudyHub</div>
+    <div data-tab="tab-settings">⚙️<br>Settings</div>
   </nav>
 </div>
 
-<script src="libs/sql-wasm.js"></script>
-<script>
-const BIBLES = [
-  {id:"akjv", name:"AKJV 1611 PCE circa 1900"},
-  {id:"asv", name:"American Standard Version"},
-  {id:"dra", name:"Douay-Rheims"},
-  {id:"gnv", name:"Geneva Bible"},
-  {id:"lxx", name:"Septuagint Brenton 2012"},
-  {id:"web", name:"World English Bible"}
-];
+<!-- LOAD ORDER MATTERS -->
+<script src="/js/sql/sql.js-1.14.1/dist/sql-wasm.js"></script>
+<script src="/js/db.js"></script>
+<script src="/app.js"></script>
 
-const MATHS = [
-  {name: "AKJV1611 PCE circa 1900", class: "akjv"},
-  {name: "Superscript KJV", class: "superscript"},
-  {name: "MathKJVP", class: "mathp"},
-  {name: "MathKJVS", class: "maths"},
-  {name: "MathKJVT", class: "matht"}
-];
-
-// YOUR EXACT BOOK CODES: 1-chap books use Chapter 0. Jud=Judges+Jude. Phi=Philippians+Philemon
-const bookMap = {
-  "Pre":["Preface",0],"Epi":["EPILOGUE",67],
-  "Gen":["Genesis",1],"Exo":["Exodus",2],"Lev":["Leviticus",3],"Num":["Numbers",4],"Deu":["Deuteronomy",5],
-  "Jos":["Joshua",6],"Jud":["Judges",7],"Rut":["Ruth",8],
-  "1Sa":["1Samuel",9],"2Sa":["2Samuel",10],"1Ki":["1Kings",11],"2Ki":["2Kings",12],
-  "1Ch":["1Chronicles",13],"2Ch":["2Chronicles",14],"Ezr":["Ezra",15],"Neh":["Nehemiah",16],
-  "Est":["Esther",17],"Job":["Job",18],"Psa":["Psalms",19],"Pro":["Proverbs",20],"Ecc":["Ecclesiastes",21],
-  "Son":["Song of Solomon",22],"Isa":["Isaiah",23],"Jer":["Jeremiah",24],"Lam":["Lamentations",25],
-  "Eze":["Ezekiel",26],"Dan":["Daniel",27],"Hos":["Hosea",28],"Joe":["Joel",29],"Amo":["Amos",30],
-  "Oba":["Obadiah",31],"Jon":["Jonah",32],"Mic":["Micah",33],"Nah":["Nahum",34],"Hab":["Habakkuk",35],
-  "Zep":["Zephaniah",36],"Hag":["Haggai",37],"Zec":["Zechariah",38],"Mal":["Malachi",39],
-  "Mat":["Matthew",40],"Mar":["Mark",41],"Luk":["Luke",42],"Joh":["John",43],"Act":["Acts",44],
-  "Rom":["Romans",45],"1Co":["1Corinthians",46],"2Co":["2Corinthians",47],"Gal":["Galatians",48],
-  "Eph":["Ephesians",49],"Phi":["Philippians",50],"Col":["Colossians",51],
-  "1Th":["1Thessalonians",52],"2Th":["2Thessalonians",53],"1Ti":["1Timothy",54],"2Ti":["2Timothy",55],
-  "Tit":["Titus",56],"Phi":["Philemon",57],"Heb":["Hebrews",58],"Jam":["James",59],
-  "1Pe":["1Peter",60],"2Pe":["2Peter",61],"1Jo":["1John",62],"2Jo":["2John",63],"3Jo":["3John",64],
-  "Jud":["Jude",65],"Rev":["Revelation",66]
-};
-
-const ONE_CHAP_BKORDERS = [31,57,63,64,65]; // Oba,Phi,2Jo,3Jo,Jud
-
-let SQL, db;
-let currentRef = {book: "Genesis", bkorder:1, chap: 1, verse: 4};
-let selectedBible = "akjv";
-let selectedMath = "akjv";
-
-function getCode(bookName){
-  return Object.keys(bookMap).find(k=>bookMap[k][0]==bookName);
-}
-
-function getRandomVerse(){
-  let books = Object.keys(bookMap).filter(k=>k!="Pre" && k!="Epi");
-  let randCode = books[Math.floor(Math.random() * books.length)];
-  let [book, bkorder] = bookMap[randCode];
-
-  let chap = ONE_CHAP_BKORDERS.includes(bkorder)? 0 : Math.floor(Math.random() * 50) + 1;
-  let verse = Math.floor(Math.random() * 31) + 1; // 1-31
-
-  return {book, bkorder, chap, verse};
-}
-
-function autoSuperscript(text){
-  return text.split(' ').map((w,i)=>`${w}<sup>${i+1}</sup>`).join(' ');
-}
-
-function formatMath(text) {
-  return text.replace(/\b(is|are|was|were|be)\b/g, '<span class="sym">=</span>')
- .replace(/\b(shall|will|may|can|do)\b/g, '<span class="sym">↦</span>')
- .replace(/ of ([^,.:;]+)/g, '(<span class="sym">$1</span>)');
-}
-
-function renderVerse(text, mathClass, bkorder) {
-  if(!text) return "[Verse not found]";
-  let raw = text.replace(/¶/g, '<div class="para"></div>');
-  if(bkorder == 0 || bkorder == 67) return `<div class="math-preface">${raw}</div>`;
-  if(mathClass === "superscript") return autoSuperscript(raw);
-  if(mathClass.startsWith("math")) return formatMath(raw);
-  return raw;
-}
-
-function renderCards(row) {
-  const cardsDiv = document.getElementById('home-cards');
-  let code = getCode(currentRef.book);
-  document.getElementById('current-ref').innerText = `${code}${currentRef.chap}:${currentRef.verse}`;
-
-  let bibleName = BIBLES.find(b=>b.id===selectedBible).name;
-  let mathName = MATHS.find(m=>m.class===selectedMath).name;
-  document.getElementById('sub1').innerText = `Bible: ${bibleName}`;
-  document.getElementById('sub2').innerText = `Reader: ${mathName}`;
-
-  cardsDiv.innerHTML = MATHS.map((m, i) => {
-    const verseHTML = renderVerse(row.text, m.class, currentRef.bkorder);
-    return `
-      <div class="card ${i===0?'highlight':''} math-${m.class}">
-        <button class="copy-btn" onclick="copyPhrase()">Copy</button>
-        <h3 class="card-header">${m.name}</h3>
-        <p class="card-question">how readest thou?</p>
-        <table class="reader-table">
-          <tr>
-            <td class="ref">${code}${currentRef.chap}:${currentRef.verse}</td>
-            <td class="verse-text">${verseHTML}</td>
-          </tr>
-        </table>
-      </div>
-    `;
-  }).join('');
-}
-
-function copyPhrase() {
-  const sel = window.getSelection().toString().trim();
-  if(sel) {
-    let code = getCode(currentRef.book);
-    navigator.clipboard.writeText(`${code}${currentRef.chap}:${currentRef.verse} -> ${sel}`);
-  }
-}
-
-// DB HELPERS
-async function getMaxChapter(book){
-  let stmt = db.prepare("SELECT MAX(CHAPTER) as max FROM Verses WHERE BOOKS=?");
-  stmt.bind([book]);
-  stmt.step();
-  let res = stmt.getAsObject().max;
-  stmt.free();
-  return res || 1;
-}
-
-async function getMaxVerse(book, chap){
-  let stmt = db.prepare("SELECT MAX(VERSE) as max FROM Verses WHERE BOOKS=? AND CHAPTER=?");
-  stmt.bind([book, chap]);
-  stmt.step();
-  let res = stmt.getAsObject().max;
-  stmt.free();
-  return res || 1;
-}
-
-// MENU + ICONS
-document.getElementById('btn-menu').onclick = () => {
-  document.getElementById('sidemenu').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-}
-document.getElementById('overlay').onclick = () => {
-  document.getElementById('sidemenu').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-  document.getElementById('verse-modal').classList.add('hidden');
-}
-document.getElementById('btn-refresh').onclick = () => { loadVerse(); }
-document.getElementById('btn-search').onclick = () => { alert("Search coming soon"); }
-
-// CHANGE VERSE MODAL
-function openModal(){
-  document.getElementById('verse-modal').classList.remove('hidden');
-  document.getElementById('overlay').classList.add('show');
-  populateBookSelect();
-}
-function closeModal(){
-  document.getElementById('verse-modal').classList.add('hidden');
-  document.getElementById('overlay').classList.remove('show');
-}
-
-function populateBookSelect(){
-  let books = Object.keys(bookMap).filter(k=>k!="Pre" && k!="Epi").map(k=>`<option value="${k}">${bookMap[k][0]}</option>`);
-  document.getElementById('modal-book').innerHTML = books;
-  document.getElementById('modal-book').value = getCode(currentRef.book);
-  populateChapSelect();
-}
-async function populateChapSelect(){
-  let bookCode = document.getElementById('modal-book').value;
-  let book = bookMap[bookCode][0];
-  let bkorder = bookMap[bookCode][1];
-  let maxChap = await getMaxChapter(book);
-
-  let chapters = ONE_CHAP_BKORDERS.includes(bkorder)? [0] : Array.from({length:maxChap}, (_,i)=>i+1);
-  document.getElementById('modal-chap').innerHTML = chapters.map(c=>`<option value="${c}">${c}</option>`).join('');
-  document.getElementById('modal-chap').value = Math.min(currentRef.chap, chapters[chapters.length-1]);
-  await populateVerseSelect();
-}
-async function populateVerseSelect(){
-  let bookCode = document.getElementById('modal-book').value;
-  let book = bookMap[bookCode][0];
-  let chap = +document.getElementById('modal-chap').value;
-  let maxVerse = await getMaxVerse(book, chap);
-  let verses = Array.from({length:maxVerse}, (_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
-  document.getElementById('modal-verse').innerHTML = verses;
-  document.getElementById('modal-verse').value = Math.min(currentRef.verse, maxVerse);
-}
-
-document.getElementById('btn-change-verse').onclick = openModal;
-document.getElementById('btn-cancel').onclick = closeModal;
-document.getElementById('modal-book').onchange = populateChapSelect;
-document.getElementById('modal-chap').onchange = populateVerseSelect;
-document.getElementById('btn-compare').onclick = () => {
-  let bookCode = document.getElementById('modal-book').value;
-  let [book, bkorder] = bookMap[bookCode];
-  currentRef = {book, bkorder, chap: +document.getElementById('modal-chap').value, verse: +document.getElementById('modal-verse').value};
-  closeModal();
-  loadVerse();
-}
-
-// TAB SWITCHING
-document.querySelectorAll('#bottombar div').forEach((btn, i)=>{
-  btn.onclick = () => {
-    document.querySelectorAll('#bottombar div').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
-    if(i==0) document.getElementById('tab-home').classList.remove('hidden');
-    if(i==1) { document.getElementById('tab-bible').classList.remove('hidden'); loadBibleTab(); }
-  }
-})
-
-let bibleTabState = {book: "Genesis"};
-async function loadBibleTab(){
-  loadBookList();
-  await loadChapterGrid(bibleTabState.book);
-}
-
-function loadBookList(){
-  let books = Object.keys(bookMap).filter(k=>k!="Pre" && k!="Epi");
-  document.getElementById('book-list').innerHTML =
-    `<h4>Books</h4>` + books.map(k=>`
-      <div class="book-item ${bookMap[k][0]==bibleTabState.book?'active':''}"
-           onclick='selectBook(\`${bookMap[k][0]}\`)'>${bookMap[k][0]}</div>
-    `).join('');
-}
-
-async function selectBook(book){
-  bibleTabState.book = book;
-  loadBookList();
-  await loadChapterGrid(book);
-}
-
-async function loadChapterGrid(book){
-  let code = getCode(book);
-  let bkorder = bookMap[code][1];
-  let maxChap = await getMaxChapter(book);
-
-  let chapters = ONE_CHAP_BKORDERS.includes(bkorder)? [0] : Array.from({length:maxChap}, (_,i)=>i+1);
-
-  document.getElementById('chapter-grid').innerHTML =
-    `<h4>Chapters</h4><div class="chapter-grid">` +
-    chapters.map(c=>`
-      <div class="chap-item" onclick="selectChapter('${book}', ${c})">${c}</div>
-    `).join('') + `</div>`;
-  document.getElementById('verse-list').innerHTML = `<h4>Verses</h4><p style="text-align:center;color:var(--muted)">Select Chapter</p>`;
-}
-
-async function selectChapter(book, chap){
-  let maxVerse = await getMaxVerse(book, chap);
-  document.getElementById('verse-list').innerHTML =
-    `<h4>${getCode(book)}${chap}</h4>` +
-    Array.from({length:maxVerse}, (_,i)=>`
-      <div class="verse-item" onclick="goToVerse('${book}', ${chap}, ${i+1})">${i+1}</div>
-    `).join('');
-}
-
-function goToVerse(book, chap, verse){
-  let code = getCode(book);
-  let bkorder = bookMap[code][1];
-  currentRef = {book, bkorder, chap, verse};
-  document.querySelectorAll('#bottombar div')[0].click();
-  loadVerse();
-}
-
-async function loadDB() {
-  SQL = await window.initSqlJs({locateFile: f=>`libs/${f}`});
-  const buf = await (await fetch('hbvs_data.db')).arrayBuffer();
-  db = new SQL.Database(new Uint8Array(buf));
-
-  document.getElementById('bible-select').innerHTML = BIBLES.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
-  document.getElementById('math-select').innerHTML = MATHS.map(m=>`<option value="${m.class}">${m.name}</option>`).join('');
-
-  document.getElementById('bible-select').onchange = (e)=>{ selectedBible = e.target.value; loadVerse(); }
-  document.getElementById('math-select').onchange = (e)=>{ selectedMath = e.target.value; loadVerse(); }
-
-  window.loadVerse = function(){
-    let stmt = db.prepare("SELECT text FROM Verses WHERE BOOKS=? AND CHAPTER=? AND VERSE=?");
-    stmt.bind([currentRef.book, currentRef.chap, currentRef.verse]);
-    let row = stmt.step()? stmt.getAsObject() : {text:"[Verse not found]"};
-    stmt.free();
-    renderCards(row);
-  }
-
-  currentRef = getRandomVerse(); // RANDOM VERSE ON EVERY LOAD
-
-  document.getElementById('splash').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  loadVerse();
-}
-loadDB();
-</script>
 </body>
 </html>

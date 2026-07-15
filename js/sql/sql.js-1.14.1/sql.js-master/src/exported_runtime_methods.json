@@ -1,0 +1,11 @@
+[
+"cwrap",
+"stackAlloc",
+"stackSave",
+"stackRestore",
+"UTF8ToString",
+"stringToNewUTF8",
+"writeArrayToMemory",
+"removeFunction",
+"addFunction"
+]

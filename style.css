@@ -67,3 +67,45 @@ main { padding: 16px; }
 }
 #bottombar div { text-align: center; cursor: pointer; }
 #bottombar div.active { color: var(--accent); font-weight: bold; }
+/* C:\HBVS\style.css - ADD AT BOTTOM */
+
+/* Math Translation Styles */
+.math-mathp.sym {
+  font-family: 'Cambria Math', 'Latin Modern Math', serif;
+  color: #0066cc;
+  font-weight: 600;
+}
+.math-maths.sym {
+  font-family: 'Segoe UI Symbol', 'Symbola', serif;
+  color: #cc0000;
+  font-style: italic;
+}
+.math-matht.sym {
+  font-family: 'Times New Roman', serif;
+  color: #009900;
+  text-decoration: underline;
+}
+sup {
+  font-size: 0.7em;
+  vertical-align: super;
+  color: #555;
+}
+
+/* Highlight the selected math card */
+.card.highlight {
+  border: 2px solid #ff6600;
+  background: #fff8f0;
+}
+.card-header {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4px;
+}
+.card-question {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: #777;
+  margin-bottom: 8px;
+}
+.verse-text { font-size: 1.1rem; line-height: 1.6; }
