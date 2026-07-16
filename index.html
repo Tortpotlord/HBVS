@@ -9,7 +9,6 @@
 * { box-sizing: border-box; }
 body { margin: 0; font-family: "Georgia", serif; background: var(--bg); color: var(--text); }
 .hidden { display: none!important; }
-.tab-panel.hidden { display: none; }
 #splash {position: fixed;inset:0;background:#1a1a1a;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999; gap:16px;}
 #splash img {width:120px; height:120px;}
 #app { padding-top: 120px; padding-bottom: 70px; max-width: 720px; margin: 0 auto; }
@@ -51,17 +50,33 @@ main { padding: 16px; }
 .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 .modal-buttons button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; }
 #btn-go { background: var(--accent); color: white; border-color: var(--accent); }
-.bible-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.grid-btn { padding: 8px 12px; background: var(--card); border: 1px solid var(--border); cursor: pointer; border-radius: 6px; font-size: 13px; }
-.grid-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-.section-label { font-size: 12px; color: var(--muted); margin-top: 10px; font-weight: bold; text-transform: uppercase; }
-#bookFilter { padding: 8px; width: 100%; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-family: serif; }
-.reader-view { border-top: 2px solid var(--border); margin-top: 20px; padding-top: 15px; }
-.reader-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.reader-title { font-weight: bold; font-size: 18px; color: var(--accent); }
-.reader-tools span { margin-left: 12px; cursor: pointer; font-size: 18px; color: var(--accent); }
-.verse-block { margin: 10px 0; padding: 12px; border-left: 3px solid var(--border); background: var(--card); border-radius: 6px; }
-.verse-block.highlight { border-left: 3px solid var(--accent); background: #faf8f5; }
+.verse-block { 
+  margin: 16px 0; 
+  padding: 16px; 
+  border-left: 4px solid var(--accent); /* thicker accent bar */
+  background: var(--card); 
+  border-radius: 10px; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); /* card shadow */
+  border: 1px solid var(--border); /* full border */
+}
+.verse-block.highlight { 
+  border-left: 4px solid var(--accent); 
+  background: #faf8f5; 
+  box-shadow: 0 4px 12px rgba(139,90,43,0.15); /* stronger shadow for selected */
+}
+.card-header { 
+  font-size: 12px; 
+  font-weight: bold; 
+  color: var(--accent); 
+  letter-spacing: 1px; 
+  margin-bottom: 6px;
+}
+.card-question { 
+  font-size: 11px; 
+  color: var(--muted); 
+  font-style: italic; 
+  margin-bottom: 10px;
+}
 </style>
 </head>
 <body>
@@ -73,31 +88,21 @@ main { padding: 16px; }
 <div id="overlay"></div>
 <div id="sidemenu">
   <h4>Menu</h4>
-  <p>Home</p>
-  <p>Bible</p>
+  <p><a href="index.html">Home</a></p>
+  <p><a href="bible.html">Bible</a></p>
   <p>StudyHub</p>
   <p>Settings</p>
 </div>
 
-<!-- MODAL FIX: Added IDs + Labels + btn-go -->
 <div id="verse-modal" class="modal hidden">
   <div class="modal-content">
     <h3>Change Verse</h3>
-    <div class="modal-row">
-      <label>Book:</label>
-      <select id="modal-book"></select>
-    </div>
-    <div class="modal-row">
-      <label>Chapter:</label>
-      <select id="modal-chap"></select>
-    </div>
-    <div class="modal-row">
-      <label>Verse:</label>
-      <select id="modal-verse"></select>
-    </div>
+    <div class="modal-row"><label>Book:</label><select id="modal-book"></select></div>
+    <div class="modal-row"><label>Chapter:</label><select id="modal-chap"></select></div>
+    <div class="modal-row"><label>Verse:</label><select id="modal-verse"></select></div>
     <div class="modal-buttons">
-      <button class="btn-cancel" id="btn-cancel">Cancel</button>
-      <button class="btn-compare" id="btn-go">Go</button> <!-- CHANGED: btn-compare -> btn-go -->
+      <button id="btn-cancel">Cancel</button>
+      <button id="btn-go">Go</button>
     </div>
   </div>
 </div>
@@ -111,7 +116,7 @@ main { padding: 16px; }
         <div class="app-title">Holy Bible Vector Space</div>
       </div>
       <div class="topbar-icons">
-        <button id="btn-search">🔍</button>
+	<button id="btn-search" title="Random Verse">🎲</button>
         <button id="btn-refresh">↻</button>
       </div>
     </div>
@@ -124,48 +129,25 @@ main { padding: 16px; }
   </header>
 
   <main>
-    <section id="tab-home" class="tab-panel">
+    <section id="tab-home">
       <p class="daily-bread">Daily Bread</p>
       <h2 class="current-ref" id="current-ref">Gen1:4</h2>
       <p class="change-verse" id="btn-change-verse">Change Verse</p>
       <div id="home-cards" class="cards-vertical"></div>
     </section>
-
-    <section id="tab-bible" class="tab-panel hidden">
-      <input type="text" id="bookFilter" placeholder="Filter Book: Gen, Exo, Psa, Jde... 68 total" />
-      <div class="section-label">BOOK - HEIGHT</div><div id="bookGrid" class="bible-grid"></div>
-      <div class="section-label">CHAPTER - DEPTH</div><div id="chapterGrid" class="bible-grid"></div>
-      <div class="section-label">VERSE - LENGTH</div><div id="verseGrid" class="bible-grid"></div>
-
-      <div id="readerView" class="reader-view hidden">
-        <div class="reader-header">
-          <div class="reader-title" id="readerTitle"></div>
-          <div class="reader-tools">
-            <span id="btn-prev-chap" title="PREVIOUS CHAPTER"><</span>
-            <span id="btn-next-chap" title="NEXT CHAPTER">></span>
- 			      <span id="btn-share-reader" title="Share">📤</span> <!-- NEW -->
-  			  <span id="btn-audio-reader" title="Audio">🔊</span> <!-- NEW -->
-            <span id="btn-copy-reader" title="Copy">📋</span>
-            <span title="Print" onclick="window.print()">🖨️</span>
-          </div>
-        </div>
-        <div id="readerContent"></div>
-      </div>
-    </section>
   </main>
 
   <nav id="bottombar">
-    <div class="active" data-tab="tab-home">🏠<br>Home</div>
-    <div data-tab="tab-bible">📖<br>Bible</div>
-    <div data-tab="tab-studyhub">🔍<br>StudyHub</div>
-    <div data-tab="tab-settings">⚙️<br>Settings</div>
+    <div class="active">🏠<br>Home</div>
+    <div onclick="location.href='bible.html'">📖<br>Bible</div>
+    <div>🔍<br>StudyHub</div>
+    <div>⚙️<br>Settings</div>
   </nav>
 </div>
 
-<!-- LOAD ORDER MATTERS -->
-<script src="/js/sql/sql.js-1.14.1/dist/sql-wasm.js"></script>
-<script src="/js/db.js"></script>
-<script src="/app.js"></script>
+<!-- FIXED PATHS: relative to index.html -->
+<script src="js/sql.js-1.14.1/dist/sql-wasm.js"></script>
+<script src="js/app.js"></script>
 
 </body>
 </html>

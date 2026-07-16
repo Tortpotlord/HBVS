@@ -1,111 +1,133 @@
 :root{
-  --bg:#fdfcf9; --card:#ffffff; --border:#e5e1d8; --accent:#8B5A2B; --text:#2b2b2b; --muted:#6b6b6b;
+  --bg:#FDF6E3; /* Parchment */
+  --card:#FFFDF7; /* Warm white */
+  --border:#E0D5C0; /* Sepia border */
+  --accent:#8B5A2B; /* Saddle Brown */
+  --text:#3E2F1C; /* Dark Sepia Text */
+  --muted:#7A6A5A; /* Muted Sepia */
 }
-body { margin: 0; font-family: "Georgia", serif; background: var(--bg); color: var(--text); }
+* { box-sizing: border-box; }
+body { 
+  margin: 0; font-family: "Georgia", serif; 
+  background: var(--bg) url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlMGQ1YzAiIHN0cm9rZS13aWR0aD0iMC4xIi8+PC9zdmc+'); 
+  color: var(--text); 
+}
 .hidden { display: none!important; }
 
-#splash {position: fixed;inset:0;background:#1a1a1a;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999; gap:12px;}
-#splash img {width:80px; border-radius:12px;}
+#splash {position: fixed;inset:0;background:#2a1e14;color:#FDF6E3;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999; gap:16px;}
+#splash img {width:120px; height:120px;}
 
-#app { padding-top: 110px; padding-bottom: 70px; max-width: 720px; margin: 0 auto; }
+#app { padding-top: 120px; padding-bottom: 70px; max-width: 720px; margin: 0 auto; }
 
 #topbar { 
   position: fixed; top: 0; left: 0; right: 0; background: var(--card); 
   border-bottom: 1px solid var(--border); z-index: 50; 
-  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  box-shadow: 0 2px 4px rgba(139,90,43,0.08);
 }
-.topbar-row1 { padding: 12px 16px; text-align: center; }
-.app-title { font-size: 18px; font-weight: bold; color: var(--accent); letter-spacing: 0.5px; }
-.subtitle { font-size: 11px; color: var(--muted); }
+.topbar-row1 { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+.hamburger { font-size: 24px; background: none; border: none; cursor: pointer; color: var(--accent); }
+.topbar-icons { display: flex; gap: 16px; }
+.topbar-icons button { font-size: 20px; background: none; border: none; cursor: pointer; color: var(--accent); }
+.logo-title { display: flex; align-items: center; gap: 8px; }
+.logo-title img { width: 32px; height: 32px; border-radius: 6px; }
+.app-title { font-size: 16px; font-weight: bold; color: var(--accent); }
+.subtitle { font-size: 11px; color: var(--muted); text-align: center; }
 .topbar-row2 { 
   display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); 
-  background: #faf8f5;
+  background: #F9F3E6; /* warmer */
 }
 #topbar select { 
   flex:1; padding: 6px 8px; font-size: 13px; border:1px solid var(--border); 
-  border-radius: 6px; background: white; font-family: serif;
+  border-radius: 6px; background: white; font-family: serif; color: var(--text);
 }
 
+#sidemenu { position: fixed; top:0; left:-260px; width:260px; height:100%; background:var(--card); z-index:100; transition:0.3s; box-shadow: 2px 0 8px rgba(0,0,0,0.1); padding:20px; }
+#sidemenu.open { left:0; }
+#overlay { position: fixed; inset:0; background:rgba(0,0,0,0.3); z-index:99; display:none; }
+#overlay.show { display:block; }
+
 main { padding: 16px; }
-.current-ref { text-align: center; font-size: 22px; font-weight: bold; margin: 0 0 16px 0; color: var(--accent); }
+.daily-bread { text-align: center; font-size: 13px; color: var(--muted); margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px; }
+.current-ref { text-align: center; font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: var(--accent); }
+.change-verse { text-align: center; font-size: 12px; color: var(--accent); margin: 0 0 16px 0; cursor: pointer; text-decoration: underline; }
 
 .card { 
   border: 1px solid var(--border); background: var(--card); padding: 16px; 
   margin: 0 0 14px 0; border-radius: 10px; position: relative; 
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px rgba(139,90,43,0.06);
 }
-.card.highlight { border: 1.5px solid var(--accent); }
-.card h3 { 
-  margin: 0 0 10px 0; font-size: 12px; font-weight: 600; 
-  color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
-}
+.card.highlight { border: 2px solid var(--accent); background: #F9F3E6; }
+.card-header { margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.card-question { margin: 0 0 10px 0; font-size: 13px; font-style: italic; color: var(--accent); }
 .cards-vertical { display: flex; flex-direction: column; }
 
 .verse-text { user-select: text; line-height: 1.9; font-size: 16px; }
 .copy-btn { 
   position: absolute; top: 12px; right: 12px; font-size: 11px; padding: 3px 8px; 
-  border:1px solid var(--border); background:#faf8f5; border-radius:4px; cursor:pointer;
+  border:1px solid var(--border); background:#F9F3E6; border-radius:4px; cursor:pointer; color: var(--accent);
 }
-.copy-btn:active { background: #eee; }
+.copy-btn:active { background: #EFE5D3; }
 
-/* 2 COLUMN READER VIEW */
-.reader-table { width: 100%; border-collapse: collapse; }
-.reader-table td { padding: 2px 0; vertical-align: top; }
-.reader-table .ref { width: 65px; font-weight: bold; color: var(--accent); font-size: 13px; }
-
-/* === MATH STYLES === */
-.math-superscript sup { font-size: 0.65em; vertical-align: super; color: var(--muted); }
-.math-mathp .sym { color: #0047AB; }
-.math-maths .sym { color: #B22222; }
-.math-matht .sym { color: #228B22; }
-.math-preface { color: #0047AB; font-style: italic; }
+.modal { position: fixed; inset:0; background: rgba(0,0,0,0.5); z-index:200; display:flex; justify-content:center; align-items:center; }
+.modal-content { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
+.modal-row { display: flex; gap: 8px; margin: 12px 0; }
+.modal-row label { flex: 0 0 70px; font-size: 13px; color: var(--muted); padding-top: 6px; }
+.modal-row select { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-family: serif; background: white; color: var(--text); }
+.modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.modal-buttons button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; color: var(--text); }
+#btn-go { background: var(--accent); color: white; border-color: var(--accent); }
 
 #bottombar { 
   position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--card); 
   border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; 
-  font-size: 11px; color: var(--muted);
+  font-size: 11px;
 }
-#bottombar div { text-align: center; cursor: pointer; }
-#bottombar div.active { color: var(--accent); font-weight: bold; }
-/* C:\HBVS\style.css - ADD AT BOTTOM */
+#bottombar a { text-align: center; cursor: pointer; text-decoration: none; color: var(--muted); }
+#bottombar a.active { color: var(--accent); font-weight: bold; }
 
-/* Math Translation Styles */
-.math-mathp.sym {
-  font-family: 'Cambria Math', 'Latin Modern Math', serif;
-  color: #0066cc;
-  font-weight: 600;
-}
-.math-maths.sym {
-  font-family: 'Segoe UI Symbol', 'Symbola', serif;
-  color: #cc0000;
-  font-style: italic;
-}
-.math-matht.sym {
-  font-family: 'Times New Roman', serif;
-  color: #009900;
-  text-decoration: underline;
-}
-sup {
-  font-size: 0.7em;
-  vertical-align: super;
-  color: #555;
-}
+/* BIBLE TAB GRIDS */
+.bible-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.grid-btn { padding: 8px 12px; background: var(--card); border: 1px solid var(--border); cursor: pointer; border-radius: 6px; font-size: 13px; color: var(--text); }
+.grid-btn:hover { background: #F9F3E6; }
+.grid-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.section-label { font-size: 12px; color: var(--muted); margin-top: 10px; font-weight: bold; text-transform: uppercase; }
+#bookFilter { padding: 8px; width: 100%; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-family: serif; }
+.reader-view { border-top: 2px solid var(--border); margin-top: 20px; padding-top: 15px; }
+.reader-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.reader-title { font-weight: bold; font-size: 18px; color: var(--accent); }
+.reader-tools span { margin-left: 12px; cursor: pointer; font-size: 18px; color: var(--accent); }
+.reader-table { width: 100%; border-collapse: collapse; }
+.reader-table .ref { width: 80px; font-weight: bold; color: var(--accent); font-size: 13px; vertical-align: top; padding-right: 10px; }
 
-/* Highlight the selected math card */
-.card.highlight {
-  border: 2px solid #ff6600;
-  background: #fff8f0;
-}
-.card-header {
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 4px;
-}
-.card-question {
-  font-size: 0.75rem;
-  font-style: italic;
-  color: #777;
-  margin-bottom: 8px;
-}
-.verse-text { font-size: 1.1rem; line-height: 1.6; }
+/* === 5 MATH TRANSLATION STYLES === */
+.verse-block { margin: 10px 0; padding: 12px; border-left: 4px solid var(--border); background: var(--card); border-radius: 6px; }
+.verse-block.highlight { background: #F9F3E6; }
+
+/* 1. AKJV */
+.math-akjv { border-left-color: var(--accent); }
+
+/* 2. SUPERSCRIPT */
+.math-superscript { border-left-color: #6b6b6b; }
+.math-superscript.word-count { font-size: 0.6em; vertical-align: super; color: var(--muted); }
+
+/* 3. MATHP PRIMARY - Burgundy */
+.math-mathp { border-left-color: #800000; }
+.math-mathp.sym,.math-mathp.paren { color: #800000; font-weight: 600; }
+
+/* 4. MATHS SECONDARY - Tomato */
+.math-maths { border-left-color: #FF6347; }
+.math-maths.sym,.math-maths.paren { color: #FF6347; font-weight: 600; }
+
+/* 5. MATHT TERTIARY - Gold */
+.math-matht { border-left-color: #DAA520; }
+.math-matht.sym,.math-matht.paren { color: #DAA520; font-weight: 600; }
+
+/* PREFACE */
+.math-preface { color: #0047AB; font-style: italic; line-height: 1.7; }
+.math-preface.para { display: block; margin: 8px 0; }
+/* HOME TAB should not show 5 cards anymore */
+#tab-home.cards-vertical { display: none; }
+
+/* READER VIEW follows selected Math */
+.verse-block { border-left-width: 4px; }
+.verse-block.selected { background: #F9F3E6; border-left-width: 6px; }
