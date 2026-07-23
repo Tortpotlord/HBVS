@@ -3,14 +3,23 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space</title>
+<title>Holy Bible Vector Space v5.2.764</title>
+<!-- Cache bust -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <style>
 :root{ --bg:#fdfcf9; --card:#ffffff; --border:#e5e1d8; --accent:#8B5A2B; --text:#2b2b2b; --muted:#6b6b6b; }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: "Georgia", serif; background: var(--bg); color: var(--text); }
 .hidden { display: none!important; }
-#splash {position: fixed;inset:0;background:#1a1a1a;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999; gap:16px;}
-#splash img {width:120px; height:120px;}
+
+/* SPLASH */
+#splash {position: fixed;inset:0;background:#1a1a1a;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999; gap:16px; transition: opacity 0.5s ease-out;}
+#splash img {width:160px; height:auto; filter: drop-shadow(0 0 15px rgba(139,90,43,0.6));}
+#splash-text { font-size:13px; color:#ccc; letter-spacing:1px; text-align:center; padding:0 20px; }
+#splash-sub { font-size:11px; color:#8B5A2B; }
+
 #app { padding-top: 120px; padding-bottom: 70px; max-width: 720px; margin: 0 auto; }
 #topbar { position: fixed; top: 0; left: 0; right: 0; background: var(--card); border-bottom: 1px solid var(--border); z-index: 50; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
 .topbar-row1 { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
@@ -26,22 +35,50 @@ body { margin: 0; font-family: "Georgia", serif; background: var(--bg); color: v
 #sidemenu { position: fixed; top:0; left:-260px; width:260px; height:100%; background:var(--card); z-index:100; transition:0.3s; box-shadow: 2px 0 8px rgba(0,0,0,0.1); padding:20px; }
 #sidemenu.open { left:0; }
 #sidemenu h4 { color: var(--accent); margin-top:0; }
+#sidemenu a { color: var(--text); text-decoration: none; }
 #overlay { position: fixed; inset:0; background:rgba(0,0,0,0.3); z-index:99; display:none; }
 #overlay.show { display:block; }
 main { padding: 16px; }
 .daily-bread { text-align: center; font-size: 13px; color: var(--muted); margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px; }
 .current-ref { text-align: center; font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: var(--accent); }
 .change-verse { text-align: center; font-size: 12px; color: var(--accent); margin: 0 0 16px 0; cursor: pointer; text-decoration: underline; }
-.card { border: 1px solid var(--border); background: var(--card); padding: 16px; margin: 0 0 14px 0; border-radius: 10px; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-.card.highlight { border: 1.5px solid var(--accent); }
-.card-header { margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.card-question { margin: 0 0 10px 0; font-size: 13px; font-style: italic; color: var(--accent); }
-.cards-vertical { display: flex; flex-direction: column; }
+
+/* VERSE CARDS */
+.verse-block { 
+  margin: 16px 0; 
+  padding: 16px; 
+  border-left: 4px solid var(--accent);
+  background: var(--card); 
+  border-radius: 10px; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid var(--border);
+}
+.verse-block.highlight { 
+  background: #faf8f5; 
+  box-shadow: 0 4px 12px rgba(139,90,43,0.15);
+}
+.card-header { 
+  font-size: 12px; 
+  font-weight: bold; 
+  color: var(--accent); 
+  letter-spacing: 1px; 
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.card-question { 
+  font-size: 13px; 
+  color: var(--accent); 
+  font-style: italic; 
+  margin-bottom: 10px;
+}
 .verse-text { user-select: text; line-height: 1.9; font-size: 16px; }
-.copy-btn { position: absolute; top: 12px; right: 12px; font-size: 11px; padding: 3px 8px; border:1px solid var(--border); background:#faf8f5; border-radius:4px; cursor:pointer; }
+.ref { white-space: nowrap; padding-right: 10px; font-size: 12px; color: var(--muted); vertical-align: top; }
+.reader-table { width:100%; border-collapse: collapse; }
+
 #bottombar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: var(--muted); }
 #bottombar div { text-align: center; cursor: pointer; }
 #bottombar div.active { color: var(--accent); font-weight: bold; }
+
 .modal { position: fixed; inset:0; background: rgba(0,0,0,0.5); z-index:200; display:flex; justify-content:center; align-items:center; }
 .modal-content { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
 .modal-row { display: flex; gap: 8px; margin: 12px 0; }
@@ -50,39 +87,17 @@ main { padding: 16px; }
 .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 .modal-buttons button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; }
 #btn-go { background: var(--accent); color: white; border-color: var(--accent); }
-.verse-block { 
-  margin: 16px 0; 
-  padding: 16px; 
-  border-left: 4px solid var(--accent); /* thicker accent bar */
-  background: var(--card); 
-  border-radius: 10px; 
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06); /* card shadow */
-  border: 1px solid var(--border); /* full border */
-}
-.verse-block.highlight { 
-  border-left: 4px solid var(--accent); 
-  background: #faf8f5; 
-  box-shadow: 0 4px 12px rgba(139,90,43,0.15); /* stronger shadow for selected */
-}
-.card-header { 
-  font-size: 12px; 
-  font-weight: bold; 
-  color: var(--accent); 
-  letter-spacing: 1px; 
-  margin-bottom: 6px;
-}
-.card-question { 
-  font-size: 11px; 
-  color: var(--muted); 
-  font-style: italic; 
-  margin-bottom: 10px;
-}
+
+/* HBVS RENDERING */
+sup { color: royalblue; font-weight: bold; font-size: 0.6em; }
 </style>
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.svg" alt="Splash Logo"/>
-  <p id="splash-text">Initializing HBVS - 68 Books</p>
+  <img src="assets/IGoToTheFather.PNG?v=764" alt="I Go To The Father"/>
+  <div style="font-size:18px; font-weight:bold; color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
+  <p id="splash-text">Initializing HBVS v5.2.764 - 68 Books + 7606 Wrappers</p>
+  <div id="splash-sub">Phrase(Location) Engine Active</div>
 </div>
 
 <div id="overlay"></div>
@@ -112,11 +127,11 @@ main { padding: 16px; }
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
       <div class="logo-title">
-        <img src="assets/IGoToTheFather.PNG" alt="Logo"/>
+        <img src="assets/IGoToTheFather.PNG?v=764" alt="Logo"/>
         <div class="app-title">Holy Bible Vector Space</div>
       </div>
       <div class="topbar-icons">
-	<button id="btn-search" title="Random Verse">🎲</button>
+        <button id="btn-search" title="Random Verse">🎲</button>
         <button id="btn-refresh">↻</button>
       </div>
     </div>
@@ -145,9 +160,18 @@ main { padding: 16px; }
   </nav>
 </div>
 
-<!-- FIXED PATHS: relative to index.html -->
-<script src="js/sql.js-1.14.1/dist/sql-wasm.js"></script>
-<script src="js/app.js"></script>
+<!-- CRITICAL ORDER: SQL -> HBVS Engine -> Splash Helper -> App -->
+<script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
+<script src="js/hbvs_engine.js?v=764"></script>
+<script>
+  // Splash fade controller
+  function hideSplash(){
+    const s = document.getElementById('splash');
+    if(s){ s.style.opacity = 0; setTimeout(()=>{ s.remove(); document.getElementById('app').classList.remove('hidden'); }, 500); }
+  }
+  window.HBVS_SPLASH_READY = hideSplash;
+</script>
+<script src="js/app.js?v=764"></script>
 
 </body>
 </html>
