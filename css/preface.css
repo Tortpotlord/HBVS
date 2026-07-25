@@ -1,0 +1,32 @@
+/* PREFACE - Each line = 1 verse. Concatenate. ¶ = paragraph break */
+.preface {
+  font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  text-align: justify;
+  white-space: pre-line; /* respect line breaks from DB */
+  max-width: 760px;       /* readability */
+  margin: 0 auto;         /* center */
+  padding: 1rem 2rem;     /* breathing room */
+}
+
+/* Standalone EOL without punctuation = space */
+.preface .eol-space::after { content: " "; }
+
+/* Paragraph marker */
+.preface .para-marker {
+  font-weight: bold;
+  margin: 0 0.4em;
+  color: #555;
+  font-size: 1.3em;       /* make ¶ stand out */
+  vertical-align: -0.1em;
+}
+
+/* Hook for chapter-specific background/image */
+.preface[data-chapter] {
+  background-repeat: no-repeat;
+  background-position: top right;
+  background-size: contain;
+}
+/* Example: <div class="preface" data-chapter="genesis"> */
+.preface[data-chapter="genesis"] { background-image: url('../img/preface/genesis.png'); }

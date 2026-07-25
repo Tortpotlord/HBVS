@@ -19,42 +19,26 @@ let currentRef = {book: "Genesis", bkorder:1, chap: 1, verse: 1};
 let selectedBible = "akjv";
 let selectedMath = "akjv";
 let selectedVerses = [1];
-let CONTINUITY = [];
-let PARENS = [];
-
-async function loadMathTables(){
-  try {
-    const c = await fetch('../Continuity.json'); CONTINUITY = await c.json();
-    const p = await fetch('../Parentheses.json'); PARENS = await p.json();
-    PARENS.sort((a,b) => b.AuxVerb.length - a.AuxVerb.length);
-  } catch(e){ console.error("Failed to load JSON tables", e); }
-}
 
 const bookMap = {"Pre":[0],"Gen":[1],"Exo":[2],"Lev":[3],"Num":[4],"Deu":[5],"Jos":[6],"Jud":[7],"Rut":[8],"1Sa":[9],"2Sa":[10],"1Ki":[11],"2Ki":[12],"1Ch":[13],"2Ch":[14],"Ezr":[15],"Neh":[16],"Est":[17],"Job":[18],"Psa":[19],"Pro":[20],"Ecc":[21],"Son":[22],"Isa":[23],"Jer":[24],"Lam":[25],"Eze":[26],"Dan":[27],"Hos":[28],"Joe":[29],"Amo":[30],"Oba":[31],"Jon":[32],"Mic":[33],"Nah":[34],"Hab":[35],"Zep":[36],"Hag":[37],"Zec":[38],"Mal":[39],"Mat":[40],"Mar":[41],"Luk":[42],"Joh":[43],"Act":[44],"Rom":[45],"1Co":[46],"2Co":[47],"Gal":[48],"Eph":[49],"Phi":[50],"Col":[51],"1Th":[52],"2Th":[53],"1Ti":[54],"2Ti":[55],"Tit":[56],"Phm":[57],"Heb":[58],"Jam":[59],"1Pe":[60],"2Pe":[61],"1Jo":[62],"2Jo":[63],"3Jo":[64],"Jde":[65],"Rev":[66],"Epi":[67]};
 function getCode(bookName){ return Object.keys(bookMap).find(k=>bookMap[k][0]==currentRef.bkorder) || "Gen"; }
 
-function applyParentheses(text){ let out = text; PARENS.forEach(rule => { let pattern = rule.AuxVerb.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); let re = new RegExp(pattern, 'g'); let replacement = rule.Symbol.replace(/\(/g, `(<span class="paren">`).replace(/\)/g, `</span>)`); out = out.replace(re, replacement); }); return out; }
+// DELETED: loadMathTables, CONTINUITY, PARENS. HBVS engine handles it now.
 
 function renderVerse(text, mathClass, bkorder) {
   if(!text) return "[Verse not found]";
   let raw = text.replace(/¶/g, '<div class="para"></div>');
   if(bkorder == 0 || bkorder == 67) return `<div class="math-preface">${raw}</div>`;
-  if(mathClass === "superscript") { let words = raw.split(/(\s+|[.,:;])/); let count = 0; return words.map(w => { if(w.match(/^[a-zA-Z]+$/)) count++; return w.match(/^[a-zA-Z]+$/)? `${w}<span class="word-count">${count}</span>` : w; }).join(''); }
-  let words = raw.split(/(\s+|[.,:;!?])/); let out = [];
-  for(let i=0; i<words.length; i++){
-    let w = words[i]; let clean = w.replace(/[.,:;!?]/g,'').toLowerCase();
-    let prev = words[i-1] || ''; let isStart = i===0 || prev.match(/[.!?]/); let isAfterPunct = prev.match(/[.,:;!?]/); let isNoun = prev.match(/\b(thy|his|the|my)\b/i);
-    let entry = CONTINUITY.find(c => c.FunctionWord.toLowerCase() === clean);
-    if(entry &&!isNoun){
-      let shouldReplace = false;
-      if(mathClass === "mathp"){ if(!isStart &&!isAfterPunct) shouldReplace = true; }
-      if(mathClass === "maths"){ if(!isStart && isAfterPunct) shouldReplace = true; }
-      if(mathClass === "matht"){ shouldReplace = true; }
-      if(shouldReplace){ out.push(w.replace(new RegExp(clean, 'i'), `<span class="sym">${entry.Symbol}</span>`)); continue; }
-    }
-    out.push(w);
-  }
-  return applyParentheses(out.join(''));
+
+  // Pass to HBVS Engine
+  let mode = 'akjv';
+  if(mathClass === "superscript") mode = 'superscript';
+  if(mathClass === "mathp") mode = 'P';
+  if(mathClass === "maths") mode = 'S';
+  if(mathClass === "matht") mode = 'T';
+
+  const {text: processedText, wordcount} = window.HBVS.renderVerse({TEXT: raw}, mode);
+  return processedText;
 }
 
 function buildBookGrid(filter=""){
@@ -137,7 +121,8 @@ function showReader(mode){
     if(stmt.step()) text = stmt.getAsObject().text;
     stmt.free();
     const processedText = renderVerse(text, selectedMath, currentRef.bkorder);
-    content += `<div class="verse-block math-${selectedMath}"><b>${uiCode}${displayChap}:${v}</b> ${processedText}</div>`;
+    const {wordcount} = window.HBVS.renderVerse({TEXT: text}, selectedMath==='superscript'?'superscript':selectedMath==='mathp'?'P':selectedMath==='maths'?'S':selectedMath==='matht'?'T':'akjv');
+    content += `<div class="verse-block math-${selectedMath}"><b>${uiCode}${displayChap}:${v}:${wordcount}-WORDCOUNT</b> ${processedText}</div>`;
   });
   readerContent.innerHTML = content;
 }
@@ -150,16 +135,19 @@ function copyReader(){
 
 async function loadDB() {
   try {
-    await loadMathTables();
-    const _TextDecoder = TextDecoder; window.TextDecoder = function(...args) { const td = new _TextDecoder(...args); const _decode = td.decode.bind(td); td.decode = (buffer,...rest) => _decode(buffer.slice(0),...rest); return td; };
+    // 1. SIMPLE initSqlJs - no wasmBinary
+    SQL = await window.initSqlJs({
+      locateFile: file => `js/sql.js-1.8.0/dist/${file}`
+    });
 
-    const wasmResponse = await fetch('sql.js-1.14.1/dist/sql-wasm.wasm');
-    const wasmBinary = (await wasmResponse.arrayBuffer()).slice(0);
-    SQL = await window.initSqlJs({ wasmBinary, locateFile: file => `js/sql.js-1.14.1/dist/${file}` });
+    // 2. Load v2.db
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=${Date.now()}`);
+    const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
+    db = new SQL.Database(dbBinary);
+    window.DB_INSTANCE = db;
 
-    const dbResponse = await fetch('../hbvs_data.db');
-    const dbBinary = (await dbResponse.arrayBuffer()).slice(0);
-    db = new SQL.Database(new Uint8Array(dbBinary));
+    // 3. Tell HBVS engine to load tables
+    window.HBVS.loadHBVSData(db);
 
     let stmtBooks = db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
     while(stmtBooks.step()) bookArray.push(stmtBooks.getAsObject()); stmtBooks.free();
@@ -173,12 +161,10 @@ async function loadDB() {
     const bookFilter = document.getElementById('bookFilter');
     if(bookFilter) bookFilter.oninput = (e)=>{ buildBookGrid(e.target.value); }
 
-    // ALL BUTTON HANDLERS - MOVED INSIDE loadDB
     document.getElementById('btn-prev-chap')?.addEventListener('click', ()=>{ if(currentRef.chap>1){ currentRef.chap--; currentRef.verse=1; selectedVerses=[1]; buildChapterGrid(); buildVerseGrid(); showReader('single'); } });
     document.getElementById('btn-next-chap')?.addEventListener('click', ()=>{ currentRef.chap++; currentRef.verse=1; selectedVerses=[1]; buildChapterGrid(); buildVerseGrid(); showReader('single'); });
     document.getElementById('btn-copy-reader')?.addEventListener('click', copyReader);
 
-    // NEW BUTTONS
     document.getElementById('btn-all-chap')?.addEventListener('click', ()=>{
       let dbChap = currentRef.chap;
       if(ONE_CHAP_BKORDERS.includes(currentRef.bkorder) && currentRef.chap > 1) dbChap = 1;
@@ -207,7 +193,7 @@ async function loadDB() {
     document.getElementById('btn-audio')?.addEventListener('click', ()=>{
       const text = document.getElementById('readerContent').innerText;
       if('speechSynthesis' in window){
-        speechSynthesis.cancel(); // stop previous
+        speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(text);
         utter.rate = 0.9;
         speechSynthesis.speak(utter);

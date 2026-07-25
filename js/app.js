@@ -7,7 +7,7 @@ const BIBLES = [
 ];
 const MATHS = [
   {name: "AKJV1611 PCE circa 1900", class: "akjv"},
-  {name: "Superscript KJV", class: "superscript"},
+  {name: "Superscript KJV", class: "superscript-kjv"},
   {name: "MathKJVP", class: "mathp"},
   {name: "MathKJVS", class: "maths"},
   {name: "MathKJVT", class: "matht"}
@@ -23,11 +23,20 @@ const bookMap = {"Pre":[0],"Gen":[1],"Exo":[2],"Lev":[3],"Num":[4],"Deu":[5],"Jo
 function getCode(bookName){ return Object.keys(bookMap).find(k=>bookMap[k][0]==currentRef.bkorder) || "Gen"; }
 
 function modeFromClass(mathClass){
-  if(mathClass === "superscript") return 'superscript';
+  if(mathClass === "superscript-kjv") return 'superscript';
   if(mathClass === "mathp") return 'P';
   if(mathClass === "maths") return 'S';
   if(mathClass === "matht") return 'T';
   return 'akjv';
+}
+
+function getCardClasses(mathClass){
+  if(mathClass === "mathp") return "card mathkjv sym-primary";
+  if(mathClass === "maths") return "card mathkjv sym-secondary";
+  if(mathClass === "matht") return "card mathkjv sym-tertiary";
+  if(mathClass === "superscript-kjv") return "card superscript-kjv";
+  if(mathClass === "akjv") return "card akjv";
+  return "card";
 }
 
 function render5Cards(row){
@@ -44,40 +53,37 @@ function render5Cards(row){
   const wordcount = row.WordCount?? row.wordcount?? row.WORDCOUNT?? 0;
   const refString = `${uiCode}${displayChap}:${currentRef.verse}`;
 
-  // Clean raw text once here. Replace ¶ with paragraph div
   let rawText = row.text || "";
-  rawText = rawText.replace(/¶/g, '<div class="para"></div>');
-  // FIX: Keep <i> tags from AKJV. Only remove old <span> tags from previous renders
-  rawText = rawText.replace(/<\/?span[^>]*>/g, '');
+  rawText = rawText.replace(/¶/g, '<span class="para-marker">¶</span>');
+  rawText = rawText.replace(/([^\.,:;!?])\n([A-Za-z])/g, '$1<span class="eol-space"></span>\n$2');
+  rawText = rawText.replace(/<span class="old-sym[^>]*>.*?<\/span>/g, '');
 
   if(currentRef.bkorder == 0 || currentRef.bkorder == 67){
-    container.innerHTML = `<div class="math-preface">${rawText}</div>`;
+    container.innerHTML = `<div class="card preface">${rawText}</div>`;
     return;
   }
 
-  // PASS 1: Build all 5 card shells with empty.verse-text
   let allCardsHTML = '';
   MATHS.forEach(math => {
     const isHighlight = math.class === selectedMath? 'highlight' : '';
     const refText = `${uiCode}${displayChap}:${currentRef.verse}:1-${wordcount}`;
+    const cardClasses = getCardClasses(math.class);
     allCardsHTML += `
-      <div class="verse-block ${isHighlight} math-${math.class}">
-        <div class="card-header">${math.name.toUpperCase()}</div>
+      <div class="${cardClasses} ${isHighlight}">
+        <h4>${math.name.toUpperCase()}</h4>
         <div class="card-question">how readest thou?</div>
-        <table class="reader-table">
-          <tr><td class="ref">${refText}</td><td class="verse-text"></td></tr>
-        </table>
+        <div class="verse-header">${refText}</div>
+        <div class="verse-text"></div>
       </div>
     `;
   });
   container.innerHTML = allCardsHTML;
 
-  // PASS 2: Inject processed HTML using innerHTML to force rendering
   const verseTds = container.querySelectorAll('.verse-text');
   MATHS.forEach((math, index) => {
     const mode = modeFromClass(math.class);
     const {text: processedText} = window.HBVS.renderVerse({TEXT: rawText, ref: refString}, mode);
-    if(verseTds[index]) verseTds[index].innerHTML = processedText; // CRITICAL: innerHTML not textContent
+    if(verseTds[index]) verseTds[index].innerHTML = processedText;
   });
 }
 
@@ -98,20 +104,39 @@ async function renderHomeVerse(){
 }
 
 async function fillModal(){
+  if(!bookArray.length ||!db) return; // FIX: wait for DB
   const bookSel = document.getElementById('modal-book');
   const chapSel = document.getElementById('modal-chap');
   const verseSel = document.getElementById('modal-verse');
-  if(!bookSel ||!db) return;
+
   bookSel.innerHTML = bookArray.map(b=>`<option value="${b.BKORDER}">${b.BKORDER}. ${b.BOOKS}</option>`).join('');
   bookSel.value = currentRef.bkorder;
+
   let stmtChap = db.prepare("SELECT DISTINCT CHAPTER FROM Verses WHERE BKORDER=? ORDER BY CHAPTER ASC");
-  stmtChap.bind([currentRef.bkorder]); let chapters = []; while(stmtChap.step()) chapters.push(stmtChap.getAsObject().CHAPTER); stmtChap.free();
-  chapSel.innerHTML = chapters.map(c=>`<option value="${c}">${c}</option>`).join(''); chapSel.value = currentRef.chap;
+  stmtChap.bind([currentRef.bkorder]);
+  let chapters = [];
+  while(stmtChap.step()) chapters.push(stmtChap.getAsObject().CHAPTER);
+  stmtChap.free();
+  chapSel.innerHTML = chapters.map(c=>`<option value="${c}">${c}</option>`).join('');
+  chapSel.value = currentRef.chap;
+
   let stmtVerse = db.prepare("SELECT DISTINCT VERSE FROM Verses WHERE BKORDER=? AND CHAPTER=? ORDER BY VERSE ASC");
-  stmtVerse.bind([currentRef.bkorder, currentRef.chap]); let verses = []; while(stmtVerse.step()) verses.push(stmtVerse.getAsObject().VERSE); stmtVerse.free();
-  verseSel.innerHTML = verses.map(v=>`<option value="${v}">${v}</option>`).join(''); verseSel.value = currentRef.verse;
-  bookSel.onchange = () => { currentRef.bkorder = parseInt(bookSel.value); currentRef.book = bookArray.find(b=>b.BKORDER==currentRef.bkorder).BOOKS; fillModal(); }
-  chapSel.onchange = () => { currentRef.chap = parseInt(chapSel.value); fillModal(); }
+  stmtVerse.bind([currentRef.bkorder, currentRef.chap]);
+  let verses = [];
+  while(stmtVerse.step()) verses.push(stmtVerse.getAsObject().VERSE);
+  stmtVerse.free();
+  verseSel.innerHTML = verses.map(v=>`<option value="${v}">${v}</option>`).join('');
+  verseSel.value = currentRef.verse;
+
+  bookSel.onchange = () => {
+    currentRef.bkorder = parseInt(bookSel.value);
+    currentRef.book = bookArray.find(b=>b.BKORDER==currentRef.bkorder).BOOKS;
+    fillModal();
+  }
+  chapSel.onchange = () => {
+    currentRef.chap = parseInt(chapSel.value);
+    fillModal();
+  }
 }
 
 async function loadRandomVerse(){
@@ -130,23 +155,20 @@ async function loadRandomVerse(){
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    SQL = await window.initSqlJs({
-      locateFile: file => `js/sql.js-1.8.0/dist/${file}`
-    });
-
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=764&${Date.now()}`); // cache bust
+    SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7725&${Date.now()}`);
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
-    window.DB = db; // <--- Expose for debugging
+    window.DB = db;
 
     if(window.HBVS && typeof window.HBVS.loadHBVSData === 'function'){
       window.HBVS.loadHBVSData(db);
-    } else {
-      throw new Error("HBVS Engine not loaded. Check script order in index.html");
-    }
+    } else { throw new Error("HBVS Engine not loaded. Check script order in index.html"); }
 
+    // 1. LOAD BOOKS FIRST
     let stmtBooks = db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
-    while(stmtBooks.step()) bookArray.push(stmtBooks.getAsObject()); stmtBooks.free();
+    while(stmtBooks.step()) bookArray.push(stmtBooks.getAsObject());
+    stmtBooks.free();
 
     const bibleSel = document.getElementById('bible-select');
     const mathSel = document.getElementById('math-select');
@@ -156,8 +178,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(bibleSel) bibleSel.onchange = (e)=>{ selectedBible = e.target.value; renderHomeVerse(); }
     if(mathSel) mathSel.onchange = (e)=>{
       selectedMath = e.target.value;
-      document.querySelectorAll('.verse-block').forEach(b=>b.classList.remove('highlight'));
-      document.querySelector(`.math-${selectedMath}`)?.classList.add('highlight');
+      document.querySelectorAll('.card').forEach(b=>b.classList.remove('highlight'));
+      const targetClass = getCardClasses(selectedMath).split(' ').pop();
+      document.querySelector(`.card.${targetClass}`)?.classList.add('highlight');
       const sub2 = document.getElementById('sub2');
       if(sub2) sub2.innerText = `Reader: ${MATHS.find(m=>m.class==selectedMath).name}`;
     }
@@ -177,10 +200,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-refresh')?.addEventListener('click', () => { renderHomeVerse(); });
     document.getElementById('btn-search')?.addEventListener('click', () => { loadRandomVerse(); });
 
-    // KEY FIX: Don't hide splash immediately. Wait for HBVS to be ready
-    if(window.HBVS_SPLASH_READY) window.HBVS_SPLASH_READY();
+    // 2. NOW POPULATE MODAL AND RENDER
     fillModal();
     renderHomeVerse();
+    if(window.HBVS_SPLASH_READY) window.HBVS_SPLASH_READY();
 
   } catch(err) {
     console.error("FATAL STARTUP ERROR:", err);

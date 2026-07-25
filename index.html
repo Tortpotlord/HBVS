@@ -3,101 +3,26 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v5.2.764</title>
+<title>Holy Bible Vector Space v7.7.25</title>
 <!-- Cache bust -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<style>
-:root{ --bg:#fdfcf9; --card:#ffffff; --border:#e5e1d8; --accent:#8B5A2B; --text:#2b2b2b; --muted:#6b6b6b; }
-* { box-sizing: border-box; }
-body { margin: 0; font-family: "Georgia", serif; background: var(--bg); color: var(--text); }
-.hidden { display: none!important; }
 
-/* SPLASH */
-#splash {position: fixed;inset:0;background:#1a1a1a;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999; gap:16px; transition: opacity 0.5s ease-out;}
-#splash img {width:160px; height:auto; filter: drop-shadow(0 0 15px rgba(139,90,43,0.6));}
-#splash-text { font-size:13px; color:#ccc; letter-spacing:1px; text-align:center; padding:0 20px; }
-#splash-sub { font-size:11px; color:#8B5A2B; }
+<!-- CSS LOAD ORDER: Shell -> Global -> Content Specific -->
+<link rel="stylesheet" href="css/style.css?v=7725">
+<link rel="stylesheet" href="css/global.css?v=7725">
+<link rel="stylesheet" href="css/preface.css?v=7725">
+<link rel="stylesheet" href="css/superscript.css?v=7725">
+<link rel="stylesheet" href="css/mathkjv.css?v=7725"> <!-- Handles P/S/T colors -->
 
-#app { padding-top: 120px; padding-bottom: 70px; max-width: 720px; margin: 0 auto; }
-#topbar { position: fixed; top: 0; left: 0; right: 0; background: var(--card); border-bottom: 1px solid var(--border); z-index: 50; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
-.topbar-row1 { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
-.hamburger { font-size: 24px; background: none; border: none; cursor: pointer; color: var(--accent); }
-.topbar-icons { display: flex; gap: 16px; }
-.topbar-icons button { font-size: 20px; background: none; border: none; cursor: pointer; color: var(--accent); }
-.logo-title { display: flex; align-items: center; gap: 8px; }
-.logo-title img { width: 32px; height: 32px; border-radius: 6px; }
-.app-title { font-size: 16px; font-weight: bold; color: var(--accent); }
-.subtitle { font-size: 11px; color: var(--muted); text-align: center; }
-.topbar-row2 { display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); background: #faf8f5; }
-#topbar select { flex:1; padding: 6px 8px; font-size: 13px; border:1px solid var(--border); border-radius: 6px; background: white; font-family: serif; }
-#sidemenu { position: fixed; top:0; left:-260px; width:260px; height:100%; background:var(--card); z-index:100; transition:0.3s; box-shadow: 2px 0 8px rgba(0,0,0,0.1); padding:20px; }
-#sidemenu.open { left:0; }
-#sidemenu h4 { color: var(--accent); margin-top:0; }
-#sidemenu a { color: var(--text); text-decoration: none; }
-#overlay { position: fixed; inset:0; background:rgba(0,0,0,0.3); z-index:99; display:none; }
-#overlay.show { display:block; }
-main { padding: 16px; }
-.daily-bread { text-align: center; font-size: 13px; color: var(--muted); margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px; }
-.current-ref { text-align: center; font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: var(--accent); }
-.change-verse { text-align: center; font-size: 12px; color: var(--accent); margin: 0 0 16px 0; cursor: pointer; text-decoration: underline; }
-
-/* VERSE CARDS */
-.verse-block { 
-  margin: 16px 0; 
-  padding: 16px; 
-  border-left: 4px solid var(--accent);
-  background: var(--card); 
-  border-radius: 10px; 
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  border: 1px solid var(--border);
-}
-.verse-block.highlight { 
-  background: #faf8f5; 
-  box-shadow: 0 4px 12px rgba(139,90,43,0.15);
-}
-.card-header { 
-  font-size: 12px; 
-  font-weight: bold; 
-  color: var(--accent); 
-  letter-spacing: 1px; 
-  margin-bottom: 6px;
-  text-transform: uppercase;
-}
-.card-question { 
-  font-size: 13px; 
-  color: var(--accent); 
-  font-style: italic; 
-  margin-bottom: 10px;
-}
-.verse-text { user-select: text; line-height: 1.9; font-size: 16px; }
-.ref { white-space: nowrap; padding-right: 10px; font-size: 12px; color: var(--muted); vertical-align: top; }
-.reader-table { width:100%; border-collapse: collapse; }
-
-#bottombar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: var(--muted); }
-#bottombar div { text-align: center; cursor: pointer; }
-#bottombar div.active { color: var(--accent); font-weight: bold; }
-
-.modal { position: fixed; inset:0; background: rgba(0,0,0,0.5); z-index:200; display:flex; justify-content:center; align-items:center; }
-.modal-content { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
-.modal-row { display: flex; gap: 8px; margin: 12px 0; }
-.modal-row label { flex: 0 0 70px; font-size: 13px; color: var(--muted); padding-top: 6px; }
-.modal-row select { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-family: serif; }
-.modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-.modal-buttons button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; }
-#btn-go { background: var(--accent); color: white; border-color: var(--accent); }
-
-/* HBVS RENDERING */
-sup { color: royalblue; font-weight: bold; font-size: 0.6em; }
-</style>
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.PNG?v=764" alt="I Go To The Father"/>
+  <img src="assets/IGoToTheFather.PNG?v=7725" alt="I Go To The Father"/>
   <div style="font-size:18px; font-weight:bold; color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
-  <p id="splash-text">Initializing HBVS v5.2.764 - 68 Books + 7606 Wrappers</p>
-  <div id="splash-sub">Phrase(Location) Engine Active</div>
+  <p id="splash-text">Initializing HBVS v7.7.25 - 68 Books + 7606 Wrappers</p>
+  <div id="sub-splash">Phrase(Location) Engine Active</div>
 </div>
 
 <div id="overlay"></div>
@@ -127,7 +52,7 @@ sup { color: royalblue; font-weight: bold; font-size: 0.6em; }
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
       <div class="logo-title">
-        <img src="assets/IGoToTheFather.PNG?v=764" alt="Logo"/>
+        <img src="assets/IGoToTheFather.PNG?v=7725" alt="Logo"/>
         <div class="app-title">Holy Bible Vector Space</div>
       </div>
       <div class="topbar-icons">
@@ -149,6 +74,13 @@ sup { color: royalblue; font-weight: bold; font-size: 0.6em; }
       <h2 class="current-ref" id="current-ref">Gen1:4</h2>
       <p class="change-verse" id="btn-change-verse">Change Verse</p>
       <div id="home-cards" class="cards-vertical"></div>
+      <!-- app.js must inject cards like:
+           <div class="card akjv preface">...</div>
+           <div class="card superscript-kjv">...</div>
+           <div class="card mathkjv sym-primary">...</div>
+           <div class="card mathkjv sym-secondary">...</div>
+           <div class="card mathkjv sym-tertiary">...</div>
+      -->
     </section>
   </main>
 
@@ -160,9 +92,9 @@ sup { color: royalblue; font-weight: bold; font-size: 0.6em; }
   </nav>
 </div>
 
-<!-- CRITICAL ORDER: SQL -> HBVS Engine -> Splash Helper -> App -->
+<!-- CRITICAL ORDER: SQL -> HBVS Engine v7.7.25 -> Splash Helper -> App -->
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=764"></script>
+<script src="js/hbvs_engine.js?v=7725&t=20250724_001"></script> <!-- Bumped -->
 <script>
   // Splash fade controller
   function hideSplash(){
@@ -171,7 +103,7 @@ sup { color: royalblue; font-weight: bold; font-size: 0.6em; }
   }
   window.HBVS_SPLASH_READY = hideSplash;
 </script>
-<script src="js/app.js?v=764"></script>
+<script src="js/app.js?v=7725"></script> <!-- Bumped -->
 
 </body>
 </html>

@@ -1,0 +1,54 @@
+/* BASE MATHKJV */
+.mathkjv {
+  font-family: "EB Garamond", "Garamond", "Times New Roman", serif; /* FIX: match global */
+  font-size: 1.1rem;
+  line-height: 1.8;
+  text-align: justify; /* ADDED: matches spec */
+}
+
+.mathkjv .sym { 
+  font-weight: 600;
+}
+
+/* SUBTITLE STYLE */
+.card .card-question {
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.75;
+  margin: -4px 0 8px 0; /* FIX: was -8px, too tight */
+  font-family: "EB Garamond", serif;
+}
+
+/* PRIMARY - Burgundy */
+.sym-primary .sym,
+.sym-primary .paren,
+.sym-primary .eq,
+.sym-primary .arrow {
+  color: #800020 !important; /* Burgundy - needs !important to beat style.css */
+}
+.sym-primary .paren { font-style: normal; }
+
+/* SECONDARY - Tomato */
+.sym-secondary .sym,
+.sym-secondary .paren,
+.sym-secondary .eq,
+.sym-secondary .arrow {
+  color: #FF6347 !important; /* Tomato */
+}
+.sym-secondary .paren { font-style: normal; }
+
+/* TERTIARY - Gold */
+.sym-tertiary .sym,
+.sym-tertiary .paren,
+.sym-tertiary .eq,
+.sym-tertiary .arrow {
+  color: #DAA520 !important; /* Gold */
+}
+.sym-tertiary .paren { font-style: normal; }
+
+/* Specific symbols */
+.eq { /* = */ }
+.arrow { /* > */ }
+
+/* Italics must stay */
+.mathkjv i { font-style: italic; }

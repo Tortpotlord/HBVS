@@ -1,101 +1,121 @@
+console.log("HBVS ENGINE v7.7.25 LOADED - SINGLE MATHKJV.CSS");
 const HBVS = (() => {
-  let continuityWords = [];
+  let fwMap = new Map();
   let wrappersMap = new Map();
-  const PUNCT = /[.,:;!?]/g;
-  const DEBUG = true;
-  const DETERMINERS = /^(the|thy|his|my|our|your|a|an)\s/i; // for 1f noun check
+  const PUNCT = /[.,:;!?]/; 
+  const DETERMINERS = /^(the|thy|his|my|our|your|a|an|this|that|these|those)$/i;
 
   const loadHBVSData = (db) => {
-    continuityWords = []; wrappersMap.clear();
+    fwMap.clear(); wrappersMap.clear();
     try {
       const stmtC = db.prepare("SELECT FunctionWord, Symbol FROM Continuity");
-      while (stmtC.step()) continuityWords.push(stmtC.getAsObject());
+      while (stmtC.step()) {
+        let row = stmtC.getAsObject();
+        fwMap.set(row.FunctionWord.toLowerCase(), row.Symbol);
+      }
       stmtC.free();
-
       const stmtW = db.prepare("SELECT key, value FROM Wrappers ORDER BY LENGTH(key) DESC");
       while (stmtW.step()) {
         let row = stmtW.getAsObject();
-        wrappersMap.set(row.key.toLowerCase().trim(), row.value); // key = "of the deep"
+        wrappersMap.set(row.key.toLowerCase().trim(), row.value);
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    if(DEBUG) console.log(`HBVS v7.6.8 LOADED. Continuity: ${continuityWords.length} Wrappers: ${wrappersMap.size}`);
+    console.log(`HBVS v7.7.25 LOADED. Continuity: ${fwMap.size} Wrappers: ${wrappersMap.size}`);
   };
 
-  const processTextNodes = (html, processor) => {
-    return html.replace(/(<[^>]+>)|([^<]+)/g, (match, tag, text) => {
-      if (tag) return tag; 
-      return processor(text); 
-    });
-  };
+  const isFW = (w) => w && fwMap.has(w.toLowerCase());
+
+  const getChainPos = (allWords, i) => {
+    let count = 0;
+    for(let j=i; j>=0; j--){
+      if(PUNCT.test(allWords[j])) break;
+      if(isFW(allWords[j])) count++; 
+      else return count;
+    }
+    return count; 
+  }
 
   const parseOfGroups = (text, mode) => {
-    let color = mode==='P'?'burgundy':mode==='S'?'Tomato':'gold';
     if(wrappersMap.size === 0) return text;
-    
-    const keys = [...wrappersMap.keys()];
-    keys.sort((a,b) => b.length - a.length);
+    const keys = [...wrappersMap.keys()].sort((a,b) => b.length - a.length);
     let pattern = keys.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    
-    let regex = new RegExp(`(\\s*)(${pattern})([.,:;!?]*)`, 'gi');
-    
-    text = text.replace(regex, (fullMatch, space, group, punct) => {
-      let key = group.toLowerCase().trim(); // "of the deep"
+    let regex = new RegExp(`\\s*(?<!<span class="paren">)(${pattern})([.,:;!?]*)`, 'gi');
+    text = text.replace(regex, (fullMatch, group, punct) => {
+      let key = group.toLowerCase().trim();
       if(wrappersMap.has(key)){
-        if(DEBUG) console.log(`WRAPPER HIT: "${group}${punct}"`);
-        let wrapper = wrappersMap.get(key); // "(the deep)"
-        return wrapper + (punct || ''); // rule g: drop the captured space
+        let wrapper = wrappersMap.get(key);
+        return `<span class="paren">${wrapper}</span>` + (punct || '');
       }
       return fullMatch;
     });
-    
-    // Rule 2c/2d/2e for TERTIARY
+
     if(mode === 'T'){
-      text = text.replace(/of\s*([.,:;!?])/g, `<span style="color:${color}">()</span>$1`);
-      text = text.replace(/([.,:;!?]\s*)of\s+/gi, `$1<span style="color:${color}">of</span> `);
-      text = text.replace(/^of\s+/i, `<span style="color:${color}">of</span> `);
+      text = text.replace(/of\s*([.,:;!?])/g, `<span class="paren"></span>$1`);
+      text = text.replace(/([.,:;!?]\s*)of\s+/gi, `$1<span class="paren">(</span>`);
+      text = text.replace(/^of\s+/i, `<span class="paren">(</span>`);
+    } else {
+      text = text.replace(/\bof\s+/gi, `<span class="sym eq">of</span> `);
     }
     return text;
   };
 
-  const isFW = (t) => t && continuityWords.some(r=>r.FunctionWord.toLowerCase()===t.toLowerCase());
-
-  const shouldReplaceFW = (word, idx, tokens, mode) => {
-    const prev = tokens[idx-2] || '';
-    const next = tokens[idx+2] || '';
-    const isStart = idx <= 2;
-    const isAfterPunct = PUNCT.test(prev);
-    const isBeforePunct = PUNCT.test(next);
-    const lower = word.toLowerCase();
+  const replaceFunctionWords = (text, mode) => {
+    // 1. Strip tags to build global word list for chain/isStart logic
+    const wordsOnly = text.replace(/<[^>]*>/g, ' ');
+    const allWords = wordsOnly.split(/\s+/).filter(w => /[A-Za-z]/.test(w));
+    let wordIdx = 0;
     
-    // 1f: Noun detection. Block if preceded by determiner: "thy will", "his might"
-    // Verbs like "I will give" are allowed
-    if(['will','might'].includes(lower) && DETERMINERS.test(prev)) return false;
-
-    const prevIsFW = isFW(tokens[idx-2]);
-    const nextIsFW = isFW(tokens[idx+2]);
-
-    // P = PRIMARY: First of consecutive only. No start. No before/after punct
-    if(mode === 'P'){
-      if(isStart || isAfterPunct || isBeforePunct) return false;
-      if(prevIsFW) return false; // not first
-      return true; // isolated or first
-    }
-
-    // S = SECONDARY: 1a ISOLATED = YES, 1b SECOND of consecutive, 1d AFTER PUNCT = YES
-    if(mode === 'S'){
-      if(isStart) return false;
-      if(!prevIsFW && !nextIsFW) return true; // 1a ISOLATED FIX
-      if(prevIsFW && !isFW(tokens[idx-4])) return true; // 1b SECOND
-      if(isAfterPunct) return true; // 1d
-      return false;
-    }
-
-    // T = TERTIARY: All
-    if(mode === 'T'){
-      return true;
-    }
-    return false;
+    return text.replace(/(<[^>]+>)|([^<]+)/g, (match, tag, txt) => {
+      if(tag) return tag; // pass tags through
+      
+      let tokens = txt.split(/(\s+|[.,:;!?])/);
+      let newTxt = tokens.map((tok) => {
+        if(!/[A-Za-z]/.test(tok)) return tok;
+        let clean = tok.trim();
+        let lower = clean.toLowerCase();
+        let currentWordIdx = wordIdx++;
+        if(!fwMap.has(lower)) return tok;
+        
+        const prevWord = currentWordIdx > 0 ? allWords[currentWordIdx-1] : '';
+        const nextWord = currentWordIdx < allWords.length-1 ? allWords[currentWordIdx+1] : '';
+        const isStart = currentWordIdx === 0;
+        
+        // Check surrounding tokens in original txt for punct
+        const tokenPos = tokens.indexOf(tok);
+        const isAfterPunct = PUNCT.test(tokens[tokenPos-1] || '');
+        const isBeforePunct = PUNCT.test(tokens[tokenPos+1] || '');
+        
+        if(['will','might'].includes(lower) && DETERMINERS.test(prevWord)) return tok; // 1f
+        
+        const prevIsFW = isFW(prevWord); 
+        const nextIsFW = isFW(nextWord);
+        const isIsolated = !prevIsFW && !nextIsFW;
+        const chainPos = getChainPos(allWords, currentWordIdx);
+        
+        let shouldReplace = false;
+        // APPLY 1a-1e TO ALL TEXT INCLUDING INSIDE ITALICS
+        if(isIsolated){
+          shouldReplace = true; // 1a
+        } else {
+          if(mode === 'P') shouldReplace = chainPos === 1; // 1b
+          if(mode === 'S') shouldReplace = chainPos === 2; // 1b
+          if(mode === 'T') shouldReplace = true; // 1b
+        }
+        
+        if(mode === 'P' && (isStart || isAfterPunct || isBeforePunct)) shouldReplace = false; // 1d
+        if(mode === 'S' && isStart) shouldReplace = false; // 1e
+        if(mode === 'S' && isBeforePunct) shouldReplace = false; // 1c
+        
+        if(shouldReplace){
+          let sym = fwMap.get(lower);
+          let symClass = lower === 'of' ? 'eq' : 'arrow';
+          return `<span class="sym ${symClass}">${sym}</span>`;
+        }
+        return tok;
+      }).join('');
+      return newTxt;
+    });
   }
 
   const renderVerse = (verseObj, mode) => {
@@ -103,34 +123,18 @@ const HBVS = (() => {
     let rawText = (verseObj.text || verseObj.TEXT || "");
     const wordcount = rawText.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
     
-    // SUPERSCRIPT KJV
     if(mode === 'superscript') { 
       let c=0; 
-      let text = processTextNodes(rawText, (txt) => {
-        return txt.replace(/\b([A-Za-z]+)\b/g, (w) => `${w}<sup style="color:royalblue; font-weight:bold; font-size:0.6em; vertical-align:super;">${++c}</sup>`);
+      let text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => {
+        if(tag) return tag;
+        return `${word}<sup>${++c}</sup>`;
       });
       return {text, wordcount}; 
     }
     if(!['P','S','T'].includes(mode)) return {text: rawText, wordcount};
-
-    let color = mode==='P'?'burgundy':mode==='S'?'Tomato':'gold';
-    let text = rawText; 
     
-    // STEP 1: CONTINUITY REPLACEMENT WITH MODE RULES
-    text = processTextNodes(text, (txt) => {
-      let tokens = txt.split(/(\s+|[.,:;!?])/);
-      return tokens.map((tok, i) => {
-        let fw = continuityWords.find(r => r.FunctionWord.toLowerCase() === tok.toLowerCase());
-        if(fw && shouldReplaceFW(tok, i, tokens, mode)){
-          return `<span class="sym" style="color:${color}">${fw.Symbol}</span>`;
-        }
-        return tok;
-      }).join('');
-    });
-    
-    // STEP 2: PARENTHESES WRAPPERS
-    text = processTextNodes(text, (txt) => parseOfGroups(txt, mode));
-    
+    let text = replaceFunctionWords(rawText, mode);
+    text = parseOfGroups(text, mode);
     return {text, wordcount};
   };
   return { loadHBVSData, renderVerse };

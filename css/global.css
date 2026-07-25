@@ -1,0 +1,27 @@
+/* GLOBAL.HELPERS.CSS */
+
+/* Base font for all bible text */
+body {
+  font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
+  background: #fdfdf8;
+  color: #222;
+}
+
+/* All 5 card containers */
+.card {
+  max-width: 760px;
+  margin: 1rem auto;
+  padding: 1rem 2rem;
+}
+
+.verse-header {
+  font-size: 0.85rem;
+  color: #666;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.3em;
+  font-family: monospace;
+}
+
+/* Chapter specific images - you said you will provide */
+.chapter-Gen1 { background: url('../img/gen1.png') top right no-repeat; background-size: contain; }
+.chapter-Exo3 { background: url('../img/exo3.png') top right no-repeat; background-size: contain; }

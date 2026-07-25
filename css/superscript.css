@@ -1,0 +1,27 @@
+/* SUPERSCRIPT KJV - Count every word */
+.superscript-kjv {
+  font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
+  font-size: 1.1rem;
+  line-height: 2.2; /* room for superscripts */
+  text-align: justify;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+}
+
+.superscript-kjv .verse-ref {
+  font-weight: bold;
+  margin-right: 0.5em;
+}
+
+.superscript-kjv sup {
+  font-size: 0.6em;
+  vertical-align: super;
+  color: royalblue;       /* per spec */
+  font-weight: 600;
+  margin-left: 1px;
+}
+
+.superscript-kjv i {
+  font-style: italic;
+}
