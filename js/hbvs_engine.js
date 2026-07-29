@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.11h LOADED - NUCLEAR SPEC v7.7.15 + 2 PASSES + TAG JOIN + SMART PARENS");
+console.log("HBVS ENGINE v7.8.11m LOADED - NUCLEAR SPEC v7.7.15 + 2 PASSES + TAG JOIN + TIGHT PARENS");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -37,7 +37,7 @@ const HBVS = (() => {
       stmtW.free();
       buildWrapperRegex();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.11h LOADED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size} Chunks: ${wrapperRegexChunks.length}`);
+    console.log(`HBVS v7.8.11m LOADED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size} Chunks: ${wrapperRegexChunks.length}`);
   };
 
   const isFW = (w) => w && fwMap.has(w.toLowerCase());
@@ -57,10 +57,12 @@ const HBVS = (() => {
       result = result.replace(new RegExp(`^${ofTag}\\s+`, 'g'), ``);
     }
 
+    let working = result.replace(/<\/?i>/g, '');
+
     for(let i=0; i<2; i++){
       for(const rx of wrapperRegexChunks){
-        result = result.replace(rx, (match) => {
-          const cleanMatch = match.replace(/<\/?i>/g, '').replace(/\s+/g,' ').trim();
+        working = working.replace(rx, (match) => {
+          const cleanMatch = match.replace(/\s+/g,' ').trim();
           const replacement = wrapperMap.get(cleanMatch);
           if(replacement){
             return replacement.replace(/\(/g, OPEN).replace(/\)/g, CLOSE) + ' ';
@@ -69,14 +71,19 @@ const HBVS = (() => {
         });
       }
     }
+    result = working;
 
-    // Only generate tokens for parens with NO space before ( = we created them
+    // Tokenize
     result = result.replace(/(\w)\s*\(/g, `$1${OPEN}`);
-    result = result.replace(/\)\s*(\w)/g, `${CLOSE} $1`);
+    result = result.replace(new RegExp(`${OPEN}([^${OPEN}${CLOSE}]*)(\\)\\s*(\\w|[.,:;!?]))`, 'g'), `${OPEN}$1${CLOSE}$3`);
 
-    // Convert only our tokens
+    // Convert tokens
     result = result.replace(new RegExp(OPEN, 'g'), `<span class="paren">(</span>`);
     result = result.replace(new RegExp(CLOSE, 'g'), `<span class="paren">)</span>`);
+
+    // NUCLEAR FIX: Final pass to kill any remaining spaces around parens
+    result = result.replace(/(\w)\s*<span class="paren">\(<\/span>/g, `$1<span class="paren">(</span>`);
+    result = result.replace(/<span class="paren">\)<\/span>\s*([.,:;!?]|\w)/g, `<span class="paren">)</span>$1`);
 
     return result;
   }
