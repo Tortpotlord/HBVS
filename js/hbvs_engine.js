@@ -1,89 +1,90 @@
-console.log("HBVS ENGINE v7.8.11m LOADED - NUCLEAR SPEC v7.7.15 + 2 PASSES + TAG JOIN + TIGHT PARENS");
+console.log("HBVS ENGINE v7.8.11an LOADED - NUCLEAR SPEC v7.7.15 + WFF + RENDER TIGHT ALL");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
-  let wrapperRegexChunks = [];
   const PUNCT_RE = /[.,:;!?]/;
   const DETERMINERS_RE = /^(the|thy|his|my|our|your|a|an|this|that|these|those)$/i;
-  const ITAG = '(?:\\s*<i>\\s*)?(?:\\s*<\\/i>\\s*)?';
-  const ITAG_BETWEEN = '(?:\\s*<\\/?i>\\s*)*\\s+';
-  const CHUNK_SIZE = 200;
-  const OPEN = '##HBVS_OPEN##';
-  const CLOSE = '##HBVS_CLOSE##';
+  const WFF_OPEN = '##HBVS_WFF_OPEN##';
+  const WFF_CLOSE = '##HBVS_WFF_CLOSE##';
+  const INH_OPEN = '##HBVS_INH_OPEN##';
+  const INH_CLOSE = '##HBVS_INH_CLOSE##';
 
+  const normalizeLoosePreserveCase = (s) => s.replace(/<\/?i>/g, '').replace(/\s+/g,' ').trim();
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  const buildWrapperRegex = () => {
-    wrapperRegexChunks = [];
-    const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
-    const patterns = keys.map(k => {
-      const words = k.split(' ');
-      return words.map(w => `${ITAG}${escapeRegExp(w)}${ITAG}`).join(ITAG_BETWEEN);
-    });
-    for(let i=0; i<patterns.length; i+=CHUNK_SIZE){
-      const chunk = patterns.slice(i, i+CHUNK_SIZE).join('|');
-      wrapperRegexChunks.push(new RegExp(`(${chunk})`, 'gi'));
-    }
-  }
-
   const loadHBVSData = (db) => {
-    fwMap.clear(); wrapperMap.clear(); wrapperRegexChunks = [];
+    fwMap.clear(); wrapperMap.clear();
     try {
       const stmtC = db.prepare("SELECT FunctionWord, Symbol FROM Continuity");
-      while (stmtC.step()) {let r=stmtC.getAsObject(); fwMap.set(r.FunctionWord.toLowerCase().trim(), r.Symbol.trim());}
+      while (stmtC.step()) {let r=stmtC.getAsObject(); fwMap.set(r.FunctionWord.trim(), r.Symbol.trim());}
       stmtC.free();
       const stmtW = db.prepare("SELECT key, value FROM Wrappers ORDER BY LENGTH(key) DESC");
-      while (stmtW.step()) {let r=stmtW.getAsObject(); wrapperMap.set(r.key.trim(), r.value);}
+      while (stmtW.step()) {let r=stmtW.getAsObject();
+        const normKey = normalizeLoosePreserveCase(r.key);
+        wrapperMap.set(normKey, r.value);
+      }
       stmtW.free();
-      buildWrapperRegex();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.11m LOADED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size} Chunks: ${wrapperRegexChunks.length}`);
+    console.log(`HBVS v7.8.11an LOADED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
   };
 
-  const isFW = (w) => w && fwMap.has(w.toLowerCase());
+  const isFW = (w) => w && fwMap.has(w);
 
   const applyWrappers = (input, mode) => {
-    if(wrapperMap.size === 0 || wrapperRegexChunks.length === 0) return input;
-    let result = input;
-    const ofTag = `(?:${ITAG}of${ITAG})`;
+    if(wrapperMap.size === 0) return input;
 
-    if(mode === 'T'){
-      result = result.replace(new RegExp(`${ofTag}\\s*([.,:;!?])`, 'g'), `()${CLOSE}$1`);
-      result = result.replace(new RegExp(`([.,:;!?]\\s*)${ofTag}\\s+`, 'g'), `$1${OPEN}`);
-      result = result.replace(new RegExp(`^${ofTag}\\s+`, 'g'), `${OPEN}`);
-    } else {
-      result = result.replace(new RegExp(`${ofTag}\\s*([.,:;!?])`, 'g'), `$1`);
-      result = result.replace(new RegExp(`([.,:;!?]\\s*)${ofTag}\\s+`, 'g'), `$1`);
-      result = result.replace(new RegExp(`^${ofTag}\\s+`, 'g'), ``);
-    }
+    // STEP 0: PRESERVE INHERENT PARENS FIRST
+    let result = input.replace(/<\/?i>/g, '');
+    result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
 
-    let working = result.replace(/<\/?i>/g, '');
-
-    for(let i=0; i<2; i++){
-      for(const rx of wrapperRegexChunks){
-        working = working.replace(rx, (match) => {
-          const cleanMatch = match.replace(/\s+/g,' ').trim();
-          const replacement = wrapperMap.get(cleanMatch);
-          if(replacement){
-            return replacement.replace(/\(/g, OPEN).replace(/\)/g, CLOSE) + ' ';
-          }
-          return match;
+    // STEP 1: ITERATIVE WFF MATCH - CASE SENSITIVE
+    let working = result;
+    const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
+    let changed = true;
+    let safety = 0;
+    while(changed && safety < 10){
+      changed = false;
+      safety++;
+      for(const key of keys){
+        const replacement = wrapperMap.get(key);
+        const rx = new RegExp(escapeRegExp(key).replace(/ /g, '\\s+'), 'g');
+        const before = working;
+        working = working.replace(rx, () => {
+          changed = true;
+          return replacement;
         });
+        if(before!== working) changed = true;
       }
     }
     result = working;
 
-    // Tokenize
-    result = result.replace(/(\w)\s*\(/g, `$1${OPEN}`);
-    result = result.replace(new RegExp(`${OPEN}([^${OPEN}${CLOSE}]*)(\\)\\s*(\\w|[.,:;!?]))`, 'g'), `${OPEN}$1${CLOSE}$3`);
+    // STEP 2: CONVERT WFF ( ) TO TOKENS
+    result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
 
-    // Convert tokens
-    result = result.replace(new RegExp(OPEN, 'g'), `<span class="paren">(</span>`);
-    result = result.replace(new RegExp(CLOSE, 'g'), `<span class="paren">)</span>`);
+    // STEP 3: NEST WFF
+    let nestSafety = 0;
+    while(nestSafety < 10){
+      const before = result;
+      result = result.replace(new RegExp(`${WFF_CLOSE}\\s*${WFF_OPEN}`, 'g'), "");
+      if(before === result) break;
+      nestSafety++;
+    }
 
-    // NUCLEAR FIX: Final pass to kill any remaining spaces around parens
-    result = result.replace(/(\w)\s*<span class="paren">\(<\/span>/g, `$1<span class="paren">(</span>`);
-    result = result.replace(/<span class="paren">\)<\/span>\s*([.,:;!?]|\w)/g, `<span class="paren">)</span>$1`);
+    // STEP 4: RENDER TIGHT FOR ALL WFF TOKENS - Rule 2a-2g
+    result = result.replace(/(\S)\s*##HBVS_WFF_OPEN##/g, `$1##HBVS_WFF_OPEN##`);
+
+    // STEP 5: FORCE CLOSE WFF
+    let openCount = (result.match(new RegExp(WFF_OPEN, 'g')) || []).length;
+    let closeCount = (result.match(new RegExp(WFF_CLOSE, 'g')) || []).length;
+    if(openCount > closeCount){
+      result += WFF_CLOSE.repeat(openCount - closeCount);
+    }
+
+    // STEP 6: FINAL CONVERT TO HTML
+    result = result.replace(new RegExp(WFF_OPEN, 'g'), `<span class="paren">(</span>`);
+    result = result.replace(new RegExp(WFF_CLOSE, 'g'), `<span class="paren">)</span>`);
+    result = result.replace(new RegExp(INH_OPEN, 'g'), `(`);
+    result = result.replace(new RegExp(INH_CLOSE, 'g'), `)`);
 
     return result;
   }
@@ -108,8 +109,8 @@ const HBVS = (() => {
       if(nextIsPunct && (mode === 'P' || mode === 'S')) replace = false;
       if(prevIsPunct && mode === 'P') replace = false; if(prevIsPunct && (mode === 'S' || mode === 'T')) replace = true;
       if(isStart && (mode === 'P' || mode === 'S')) replace = false; if(isStart && mode === 'T') replace = true;
-      if(j >= 0 && tokens[j].type === 'WORD' && DETERMINERS_RE.test(tokens[j].w) && ['will','might'].includes(t.w.toLowerCase())) replace = false;
-      const symbol = fwMap.get(t.w.toLowerCase());
+      if(j >= 0 && tokens[j].type === 'WORD' && DETERMINERS_RE.test(tokens[j].w) && ['will','might'].includes(t.w)) replace = false;
+      const symbol = fwMap.get(t.w);
       t.out = replace? `<span class="sym">${symbol}</span>` : t.w;
     }
     return tokens.map(t => t.out).join('');
