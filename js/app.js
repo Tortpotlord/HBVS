@@ -12,12 +12,13 @@ const MATHS = [
   {name: "MathKJVS", class: "maths"},
   {name: "MathKJVT", class: "matht"}
 ];
-const ONE_CHAP_BKORDERS = [31,57,63,64,65]; // Obadiah, Philemon, 2John, 3John, Jude
+const ONE_CHAP_BKORDERS = [31,57,63,64,65];
 
 let SQL, db, bookArray = [];
 let currentRef = {book: "Genesis", bkorder:1, chap: 1, verse: 1};
 let selectedBible = "akjv";
 let selectedMath = "akjv";
+let isModalFilling = false; // KEY: prevent recursive fillModal
 
 const bookMap = {"Pre":[0],"Gen":[1],"Exo":[2],"Lev":[3],"Num":[4],"Deu":[5],"Jos":[6],"Jud":[7],"Rut":[8],"1Sa":[9],"2Sa":[10],"1Ki":[11],"2Ki":[12],"1Ch":[13],"2Ch":[14],"Ezr":[15],"Neh":[16],"Est":[17],"Job":[18],"Psa":[19],"Pro":[20],"Ecc":[21],"Son":[22],"Isa":[23],"Jer":[24],"Lam":[25],"Eze":[26],"Dan":[27],"Hos":[28],"Joe":[29],"Amo":[30],"Oba":[31],"Jon":[32],"Mic":[33],"Nah":[34],"Hab":[35],"Zep":[36],"Hag":[37],"Zec":[38],"Mal":[39],"Mat":[40],"Mar":[41],"Luk":[42],"Joh":[43],"Act":[44],"Rom":[45],"1Co":[46],"2Co":[47],"Gal":[48],"Eph":[49],"Phi":[50],"Col":[51],"1Th":[52],"2Th":[53],"1Ti":[54],"2Ti":[55],"Tit":[56],"Phm":[57],"Heb":[58],"Jam":[59],"1Pe":[60],"2Pe":[61],"1Jo":[62],"2Jo":[63],"3Jo":[64],"Jde":[65],"Rev":[66],"Epi":[67]};
 function getCode(bookName){ return Object.keys(bookMap).find(k=>bookMap[k][0]==currentRef.bkorder) || "Gen"; }
@@ -51,39 +52,45 @@ function render5Cards(row){
   if(refEl) refEl.innerText = `${uiCode}${displayChap}:${currentRef.verse}`;
 
   const wordcount = row.WordCount?? row.wordcount?? row.WORDCOUNT?? 0;
-  const refString = `${uiCode}${displayChap}:${currentRef.verse}`;
-
   let rawText = row.text || "";
   rawText = rawText.replace(/¶/g, '<span class="para-marker">¶</span>');
   rawText = rawText.replace(/([^\.,:;!?])\n([A-Za-z])/g, '$1<span class="eol-space"></span>\n$2');
   rawText = rawText.replace(/<span class="old-sym[^>]*>.*?<\/span>/g, '');
 
-  if(currentRef.bkorder == 0 || currentRef.bkorder == 67){
-    container.innerHTML = `<div class="card preface">${rawText}</div>`;
-    return;
-  }
+  const isPreface = (currentRef.bkorder == 0 || currentRef.bkorder == 67);
+  let bookCode = uiCode.toLowerCase();
 
   let allCardsHTML = '';
   MATHS.forEach(math => {
+    const mode = modeFromClass(math.class);
     const isHighlight = math.class === selectedMath? 'highlight' : '';
     const refText = `${uiCode}${displayChap}:${currentRef.verse}:1-${wordcount}`;
     const cardClasses = getCardClasses(math.class);
+
+    // KEY: Preface gets preface class + data-chapter but still renders 5 cards
+    const extraClass = isPreface? ' preface' : '';
+    const dataChapter = isPreface? ` data-chapter="${bookCode}"` : '';
+
     allCardsHTML += `
-      <div class="${cardClasses} ${isHighlight}">
+      <div class="${cardClasses}${extraClass} ${isHighlight}" data-mode="${mode}" data-bible="${selectedBible}"${dataChapter}>
         <h4>${math.name.toUpperCase()}</h4>
         <div class="card-question">how readest thou?</div>
         <div class="verse-header">${refText}</div>
-        <div class="verse-text"></div>
+        <div class="verse-text" data-mode="${mode}"></div>
       </div>
     `;
   });
   container.innerHTML = allCardsHTML;
 
-  const verseTds = container.querySelectorAll('.verse-text');
-  MATHS.forEach((math, index) => {
+  MATHS.forEach((math) => {
     const mode = modeFromClass(math.class);
-    const {text: processedText} = window.HBVS.renderVerse({TEXT: rawText, ref: refString}, mode);
-    if(verseTds[index]) verseTds[index].innerHTML = processedText;
+    const {text: processedText} = window.HBVS.renderVerse(
+      {TEXT: rawText, BIBLE: selectedBible},
+      mode
+    );
+    console.log(`[${mode}] ${selectedBible}:`, processedText);
+    const targetTd = container.querySelector(`.verse-text[data-mode="${mode}"]`);
+    if(targetTd) targetTd.innerHTML = processedText;
   });
 }
 
@@ -104,7 +111,8 @@ async function renderHomeVerse(){
 }
 
 async function fillModal(){
-  if(!bookArray.length ||!db) return; // FIX: wait for DB
+  if(!bookArray.length ||!db || isModalFilling) return;
+  isModalFilling = true;
   const bookSel = document.getElementById('modal-book');
   const chapSel = document.getElementById('modal-chap');
   const verseSel = document.getElementById('modal-verse');
@@ -137,6 +145,7 @@ async function fillModal(){
     currentRef.chap = parseInt(chapSel.value);
     fillModal();
   }
+  isModalFilling = false;
 }
 
 async function loadRandomVerse(){
@@ -156,7 +165,7 @@ async function loadRandomVerse(){
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7725&${Date.now()}`);
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7811an&${Date.now()}`);
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB = db;
@@ -165,7 +174,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.HBVS.loadHBVSData(db);
     } else { throw new Error("HBVS Engine not loaded. Check script order in index.html"); }
 
-    // 1. LOAD BOOKS FIRST
     let stmtBooks = db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
     while(stmtBooks.step()) bookArray.push(stmtBooks.getAsObject());
     stmtBooks.free();
@@ -198,9 +206,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-menu')?.addEventListener('click', () => { document.getElementById('sidemenu').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); });
     document.getElementById('overlay')?.addEventListener('click', () => { document.getElementById('sidemenu').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); });
     document.getElementById('btn-refresh')?.addEventListener('click', () => { renderHomeVerse(); });
-    document.getElementById('btn-search')?.addEventListener('click', () => { loadRandomVerse(); });
+    document.getElementById('btn-random')?.addEventListener('click', () => { loadRandomVerse(); });
+    document.getElementById('btn-search')?.addEventListener('click', () => { /* future: open search modal */ });
 
-    // 2. NOW POPULATE MODAL AND RENDER
     fillModal();
     renderHomeVerse();
     if(window.HBVS_SPLASH_READY) window.HBVS_SPLASH_READY();

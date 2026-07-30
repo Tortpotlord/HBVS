@@ -1,25 +1,11 @@
-:root{
-  --bg:#FDF6E3; /* Parchment */
-  --card:#FFFDF7; /* Warm white */
-  --border:#E0D5C0; /* Sepia border */
-  --accent:#8B5A2B; /* Saddle Brown */
-  --text:#3E2F1C; /* Dark Sepia Text */
-  --muted:#7A6A5A; /* Muted Sepia */
-  --burgundy:#800020; /* Primary */
-  --tomato:#FF6347; /* Secondary */
-  --gold:#DAA520; /* FIX: Changed to match mathkjv.css. Was #D4AF37 */
-}
-* { box-sizing: border-box; }
-body { 
-  margin: 0; 
-  font-family: "EB Garamond", "Georgia", serif;
-  background: var(--bg) url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlMGQ1YzAiIHN0cm9rZS13aWR0aD0iMC4xIi8+PC9zdmc+'); 
-  color: var(--text); 
-}
-.hidden { display: none!important; }
+/* STYLE.CSS - Shell, Layout, Components. Uses vars from global.css */
 
 /* === SPLASH + LAYOUT === */
-#splash {position: fixed;inset:0;background:#2a1e14;color:#FDF6E3;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999; gap:16px;}
+#splash {
+  position: fixed; inset:0; background:#2a1e14; color:var(--bg);
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  z-index:9999; gap:16px; transition: opacity 0.5s;
+}
 #splash img {width:120px; height:120px;}
 #app { padding-top: 120px; padding-bottom: 70px; max-width: 720px; margin: 0 auto; }
 
@@ -35,15 +21,15 @@ body {
 .topbar-icons button { font-size: 20px; background: none; border: none; cursor: pointer; color: var(--accent); }
 .logo-title { display: flex; align-items: center; gap: 8px; }
 .logo-title img { width: 32px; height: 32px; border-radius: 6px; }
-.app-title { font-family: "EB Garamond", serif; font-size: 16px; font-weight: bold; color: var(--accent); }
+.app-title { font-size: 16px; font-weight: bold; color: var(--accent); }
 .subtitle { font-size: 11px; color: var(--muted); text-align: center; }
 .topbar-row2 { 
   display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); 
-  background: #F9F3E6;
+  background: var(--table-hover);
 }
 #topbar select { 
   flex:1; padding: 6px 8px; font-size: 13px; border:1px solid var(--border); 
-  border-radius: 6px; background: white; font-family: "EB Garamond", serif; color: var(--text);
+  border-radius: 6px; background: var(--card); color: var(--text);
 }
 
 /* === SIDEMENU + MODAL === */
@@ -55,30 +41,20 @@ body {
 .modal-content { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
 .modal-row { display: flex; gap: 8px; margin: 12px 0; }
 .modal-row label { flex: 0 0 70px; font-size: 13px; color: var(--muted); padding-top: 6px; }
-.modal-row select { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-family: "EB Garamond", serif; background: white; color: var(--text); }
+.modal-row select { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); }
 .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 .modal-buttons button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; color: var(--text); }
-#btn-go { background: var(--accent); color: white; border-color: var(--accent); }
+#btn-go { background: var(--accent); color: var(--card); border-color: var(--accent); }
 
 /* === MAIN + HOME === */
 main { padding: 16px; }
 .daily-bread { text-align: center; font-size: 13px; color: var(--muted); margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px; }
-.current-ref { font-family: "EB Garamond", serif; text-align: center; font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: var(--accent); }
+.current-ref { text-align: center; font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: var(--accent); }
 .change-verse { text-align: center; font-size: 12px; color: var(--accent); margin: 0 0 16px 0; cursor: pointer; text-decoration: underline; }
 .cards-vertical { display: flex; flex-direction: column; gap: 14px; }
 
 /* === 5 CARDS === */
-.card { 
-  border: 1px solid var(--border); background: var(--card); 
-  border-radius: 10px; position: relative; 
-  box-shadow: 0 1px 3px rgba(139,90,43,0.06);
-  line-height: 1.9; font-size: 16px;
-}
 .card h4 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.card .card-question { /* ADDED: subtitle */
-  font-size: 0.9rem; font-style: italic; opacity: 0.75; margin: -4px 0 8px 0;
-}
-.verse-header { font-weight: 600; font-family: monospace; font-size: 0.9em; margin-bottom: 8px; color: var(--accent); }
 
 /* HIGHLIGHT SELECTED CARD */
 .card.highlight { box-shadow: 0 0 0 2px var(--accent); }
@@ -94,37 +70,30 @@ main { padding: 16px; }
 
 /* === BIBLE TAB GRIDS === */
 .bible-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.grid-btn { padding: 8px 12px; background: var(--card); border: 1px solid var(--border); cursor: pointer; border-radius: 6px; font-size: 13px; color: var(--text); }
-.grid-btn:hover { background: #F9F3E6; }
-.grid-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.grid-btn { padding: 8px 12px; background: var(--card); border: 1px solid var(--border); cursor: pointer; border-radius: 6px; font-size: 13px; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.grid-btn:hover { background: var(--table-hover); }
+.grid-btn.active { background: var(--accent); color: var(--card); border-color: var(--accent); box-shadow: 0 2px 6px rgba(139,90,43,0.2); }
 .section-label { font-size: 12px; color: var(--muted); margin-top: 10px; font-weight: bold; text-transform: uppercase; }
-
-/* === HBVS RENDERING ENGINE STYLES === */
-
-/* 1. AKJV Italics */
-.card i { font-style: italic; }
-
-/* 2. Superscripts */
-.superscript-kjv sup {
-  font-size: 0.6em;
-  vertical-align: super;
-  color: royalblue;
-  font-weight: 600;
-  margin-left: 1px;
-  line-height: 0;
+#bookFilter { 
+  padding: 8px; width: 100%; background: var(--card); color: var(--text); 
+  border: 1px solid var(--border); border-radius: 6px; font-family: serif; 
+  margin-bottom: 8px;
 }
 
-/* 3. MathKJ Styles - BORDER ONLY. Color comes from mathkjv.css */
+/* === BIBLE READER VIEW === */
+.reader-view { border-top: 2px solid var(--border); margin-top: 20px; padding-top: 15px; }
+.reader-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.reader-title { font-weight: bold; font-size: 18px; color: var(--accent); }
+.reader-tools span { margin-left: 12px; cursor: pointer; font-size: 18px; color: var(--accent); }
+.reader-tools span:hover { opacity: 0.7; }
+
+/* === CARD TYPE BORDERS - Layout only. Colors from mathkjv.css === */
+.card.akjv { border-left: 4px solid var(--accent); }
+.card.superscript-kjv { border-left: 4px solid var(--muted); }
 .card.sym-primary { border-left: 4px solid var(--burgundy); }
 .card.sym-secondary { border-left: 4px solid var(--tomato); }
 .card.sym-tertiary { border-left: 4px solid var(--gold); }
 
-/* DELETED: Color rules moved to mathkjv.css to avoid !important conflict */
-
-/* 4. Card Borders by Type */
-.card.akjv { border-left: 4px solid var(--accent); }
-.card.superscript-kjv { border-left: 4px solid #6b6b6b; }
-
-/* 5. Preface/Paragraph markers - handled by preface.css */
-.para-marker { font-weight: bold; font-size: 1.2em; margin-right: 4px; }
+/* === BASE MARKERS - Content styling in preface.css === */
+.para-marker { font-weight: bold; font-size: 1.2em; margin-right: 4px; color: var(--accent); }
 .eol-space { display: inline-block; width: 0.5em; } /* for word wrap fix */

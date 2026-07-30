@@ -3,25 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v7.7.25</title>
-<!-- Cache bust -->
+<title>Holy Bible Vector Space v7.8.11an</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 
-<!-- CSS LOAD ORDER: Shell -> Global -> Content Specific -->
-<link rel="stylesheet" href="css/style.css?v=7725">
-<link rel="stylesheet" href="css/global.css?v=7725">
-<link rel="stylesheet" href="css/preface.css?v=7725">
-<link rel="stylesheet" href="css/superscript.css?v=7725">
-<link rel="stylesheet" href="css/mathkjv.css?v=7725"> <!-- Handles P/S/T colors -->
-
+<link rel="stylesheet" href="css/global.css?v=7811an">
+<link rel="stylesheet" href="css/style.css?v=7811an">
+<link rel="stylesheet" href="css/preface.css?v=7811an">
+<link rel="stylesheet" href="css/superscript.css?v=7811an">
+<link rel="stylesheet" href="css/mathkjv.css?v=7811an">
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.PNG?v=7725" alt="I Go To The Father"/>
+  <img src="assets/IGoToTheFather.PNG?v=7811an" alt="I Go To The Father"/>
   <div style="font-size:18px; font-weight:bold; color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
-  <p id="splash-text">Initializing HBVS v7.7.25 - 68 Books + 7606 Wrappers</p>
+  <p id="splash-text">Initializing HBVS v7.8.11an - 68 Books + 7618 Wrappers</p>
   <div id="sub-splash">Phrase(Location) Engine Active</div>
 </div>
 
@@ -52,12 +49,28 @@
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
       <div class="logo-title">
-        <img src="assets/IGoToTheFather.PNG?v=7725" alt="Logo"/>
+        <img src="assets/IGoToTheFather.PNG?v=7811an" alt="Logo"/>
         <div class="app-title">Holy Bible Vector Space</div>
       </div>
-      <div class="topbar-icons">
-        <button id="btn-search" title="Random Verse">🎲</button>
-        <button id="btn-refresh">↻</button>
+      <div class="topbar-icons header-icons">
+        <!-- 3 ICONS: Random | Search | Refresh -->
+        <button id="btn-random" class="icon-btn" title="Random Verse">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M16 3h5v5M4 20L20 4M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button id="btn-search" class="icon-btn" title="Search">
+          <svg class="search-glass" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+        <button id="btn-refresh" class="icon-btn" title="Refresh">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M17.65 6.35A8 8 0 1 0 19 12" stroke="currentColor" stroke-width="2" fill="none"/>
+            <path d="M19 2v4h-4" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="subtitle" id="sub1">Bible: AKJV 1611 PCE circa 1900</div>
@@ -74,13 +87,6 @@
       <h2 class="current-ref" id="current-ref">Gen1:4</h2>
       <p class="change-verse" id="btn-change-verse">Change Verse</p>
       <div id="home-cards" class="cards-vertical"></div>
-      <!-- app.js must inject cards like:
-           <div class="card akjv preface">...</div>
-           <div class="card superscript-kjv">...</div>
-           <div class="card mathkjv sym-primary">...</div>
-           <div class="card mathkjv sym-secondary">...</div>
-           <div class="card mathkjv sym-tertiary">...</div>
-      -->
     </section>
   </main>
 
@@ -92,18 +98,15 @@
   </nav>
 </div>
 
-<!-- CRITICAL ORDER: SQL -> HBVS Engine v7.7.25 -> Splash Helper -> App -->
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=7725&t=20250724_001"></script> <!-- Bumped -->
+<script src="js/hbvs_engine.js?v=7811an&t=20250724_001"></script>
 <script>
-  // Splash fade controller
   function hideSplash(){
     const s = document.getElementById('splash');
     if(s){ s.style.opacity = 0; setTimeout(()=>{ s.remove(); document.getElementById('app').classList.remove('hidden'); }, 500); }
   }
   window.HBVS_SPLASH_READY = hideSplash;
 </script>
-<script src="js/app.js?v=7725"></script> <!-- Bumped -->
-
+<script src="js/app.js?v=7811an"></script>
 </body>
 </html>

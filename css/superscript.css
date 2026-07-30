@@ -1,4 +1,6 @@
-/* SUPERSCRIPT KJV - Count every word */
+/* B: CSS stylesheet for Superscript KJV */
+/* We are COUNTING ONE BY ONE, each word in the given verse */
+
 .superscript-kjv {
   font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
   font-size: 1.1rem;
@@ -9,9 +11,21 @@
   padding: 1rem 2rem;
 }
 
-.superscript-kjv .verse-ref {
+.superscript-kjv .verse-ref,
+.superscript-kjv .verse-header { /* match app.js class */
   font-weight: bold;
-  margin-right: 0.5em;
+  font-family: monospace;
+  font-size: 0.9em;
+  margin-bottom: 8px;
+  color: var(--accent);
+  display: block;
+}
+
+.superscript-kjv .card-question { /* match other cards */
+  font-size: 0.9rem; 
+  font-style: italic; 
+  opacity: 0.75; 
+  margin: -4px 0 8px 0;
 }
 
 .superscript-kjv sup {
@@ -20,8 +34,15 @@
   color: royalblue;       /* per spec */
   font-weight: 600;
   margin-left: 1px;
+  line-height: 0;         /* KEY: prevents line height from growing */
+  user-select: none;      /* don't copy the numbers */
 }
 
 .superscript-kjv i {
   font-style: italic;
+}
+
+/* Card border */
+.card.superscript-kjv { 
+  border-left: 4px solid #6b6b6b; 
 }
