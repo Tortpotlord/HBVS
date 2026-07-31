@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.11an LOADED - NUCLEAR SPEC v7.7.15 + WFF + RENDER TIGHT ALL");
+console.log("HBVS ENGINE v7.8.11ar LOADED - NUCLEAR SPEC v7.7.15 + WFF + RENDER TIGHT ALL + OF_CASE_INSENSITIVE + PUNCT_TOKENIZE + REJOIN");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -16,7 +16,7 @@ const HBVS = (() => {
     fwMap.clear(); wrapperMap.clear();
     try {
       const stmtC = db.prepare("SELECT FunctionWord, Symbol FROM Continuity");
-      while (stmtC.step()) {let r=stmtC.getAsObject(); fwMap.set(r.FunctionWord.trim(), r.Symbol.trim());}
+      while (stmtC.step()) {let r=stmtC.getAsObject(); fwMap.set(r.FunctionWord.trim().toLowerCase(), r.Symbol.trim());} // lowercase key for case-insensitive lookup
       stmtC.free();
       const stmtW = db.prepare("SELECT key, value FROM Wrappers ORDER BY LENGTH(key) DESC");
       while (stmtW.step()) {let r=stmtW.getAsObject();
@@ -25,10 +25,21 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.11an LOADED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.11ar LOADED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
   };
 
-  const isFW = (w) => w && fwMap.has(w);
+  const isFW = (w) => w && fwMap.has(w.toLowerCase()); // case-insensitive check for 58
+
+  // Case-insensitive "of" operator, case-sensitive payload
+  const lookupWrapper = (phrase) => {
+    const parts = phrase.trim().split(/\s+/);
+    if(parts.length < 2) return null;
+    const op = parts[0].toLowerCase();
+    if(op !== 'of') return null;
+    const payload = parts.slice(1).join(' '); // preserve case
+    const keyToFind = `of ${payload}`;
+    return wrapperMap.get(keyToFind) || null;
+  };
 
   const applyWrappers = (input, mode) => {
     if(wrapperMap.size === 0) return input;
@@ -37,7 +48,7 @@ const HBVS = (() => {
     let result = input.replace(/<\/?i>/g, '');
     result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
 
-    // STEP 1: ITERATIVE WFF MATCH - CASE SENSITIVE
+    // STEP 1: ITERATIVE WFF MATCH - now uses case-insensitive "of"
     let working = result;
     const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
     let changed = true;
@@ -47,7 +58,8 @@ const HBVS = (() => {
       safety++;
       for(const key of keys){
         const replacement = wrapperMap.get(key);
-        const rx = new RegExp(escapeRegExp(key).replace(/ /g, '\\s+'), 'g');
+        // match "of X" with any case for "of", but X case-sensitive
+        const rx = new RegExp(`\\b${escapeRegExp(key).replace(/^of\\s+/i, '(?i:of)\\s+')}\\b`, 'g');
         const before = working;
         working = working.replace(rx, () => {
           changed = true;
@@ -90,10 +102,14 @@ const HBVS = (() => {
   }
 
   const replaceFunctionWords = (text, mode) => {
+    // 1. SPACE OUT PUNCTUATION FOR TOKENIZING - Rule 1d fix
+    let spacedText = text.replace(/([,.:;!?])/g, ' $1 ');
     const tokens = [];
-    text.replace(/(<[^>]+>)|([A-Za-z]+)|([^A-Za-z<]+)/g, (m, tag, plain, other) => {
-      if(tag) tokens.push({w: tag, type:'TAG'}); else if(plain) tokens.push({w: plain, type:'FW?'});
-      else tokens.push({w: other, type: PUNCT_RE.test(other)? 'PUNCT' : 'SPACE'}); return '';
+    spacedText.replace(/(<[^>]+>)|([A-Za-z]+)|([^A-Za-z<]+)/g, (m, tag, plain, other) => {
+      if(tag) tokens.push({w: tag, type:'TAG'}); 
+      else if(plain) tokens.push({w: plain, type:'FW?'});
+      else tokens.push({w: other, type: PUNCT_RE.test(other)? 'PUNCT' : 'SPACE'}); 
+      return '';
     });
     tokens.forEach(t => { if(t.type==='FW?') t.type = isFW(t.w)? 'FW' : 'WORD'; });
     let fwChainCount = 0;
@@ -109,11 +125,16 @@ const HBVS = (() => {
       if(nextIsPunct && (mode === 'P' || mode === 'S')) replace = false;
       if(prevIsPunct && mode === 'P') replace = false; if(prevIsPunct && (mode === 'S' || mode === 'T')) replace = true;
       if(isStart && (mode === 'P' || mode === 'S')) replace = false; if(isStart && mode === 'T') replace = true;
-      if(j >= 0 && tokens[j].type === 'WORD' && DETERMINERS_RE.test(tokens[j].w) && ['will','might'].includes(t.w)) replace = false;
-      const symbol = fwMap.get(t.w);
+      if(j >= 0 && tokens[j].type === 'WORD' && DETERMINERS_RE.test(tokens[j].w) && ['will','might'].includes(t.w.toLowerCase())) replace = false;
+      const symbol = fwMap.get(t.w.toLowerCase()); // case-insensitive lookup
       t.out = replace? `<span class="sym">${symbol}</span>` : t.w;
     }
-    return tokens.map(t => t.out).join('');
+    
+    // 2. REJOIN PUNCTUATION: remove space before punctuation and collapse spaces
+    let joined = tokens.map(t => t.out).join("");
+    joined = joined.replace(/\s+([,.:;!?])/g, '$1'); // "word ," -> "word,"
+    joined = joined.replace(/\s{2,}/g, " "); // FIXED: was missing closing quote. Used " for visibility
+    return joined.trim();
   }
 
   const renderVerse = (verseObj, mode) => {

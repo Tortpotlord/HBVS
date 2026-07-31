@@ -165,7 +165,7 @@ async function loadRandomVerse(){
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7811an&${Date.now()}`);
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7811ar&${Date.now()}`);
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB = db;
