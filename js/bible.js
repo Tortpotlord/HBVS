@@ -19,8 +19,9 @@ let selectedBible = "akjv";
 let selectedMath = "akjv";
 let selectedVerses = [1];
 let viewMode = 'card';
+let verses = []; // v7.8.17bg: global array to hold actual VERSE values from DB
 
-// === SEARCH MODULE v7.8.11bm ===
+// === SEARCH MODULE v7.8.16bg ===
 const SEARCH_KEY = 'hbvs_search_results_v1';
 let searchResults = JSON.parse(localStorage.getItem(SEARCH_KEY) || '[]');
 let lastSearchPhrase = localStorage.getItem('hbvs_last_phrase') || '';
@@ -28,7 +29,6 @@ let lastSearchPhrase = localStorage.getItem('hbvs_last_phrase') || '';
 function normalizeText(str){
   return str.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
-
 function getWordIndices(text, phrase){
   const words = normalizeText(text).split(' ');
   const phraseWords = normalizeText(phrase).split(' ');
@@ -42,21 +42,19 @@ function getWordIndices(text, phrase){
   }
   return hits;
 }
-
 function highlightText(text, phrase){
   const regex = new RegExp(`(${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
   return text.replace(regex, `<mark class="search-highlight">$1</mark>`);
 }
-
 function formatRef(bk, chap, verse, start, end){
   if(start === end) return `${bk}${chap}:${verse}:${start}`;
   return `${bk}${chap}:${verse}:${start}-${end}`;
 }
-
 function autoCopy(text){
   navigator.clipboard.writeText(text).catch(()=>{});
 }
 
+// v7.8.16bg PATCH: Search Result for "X":Location() - Grouped by Book with WordCount
 function doSearch(phrase){
   if(!phrase ||!db) return;
   phrase = phrase.trim();
@@ -64,73 +62,26 @@ function doSearch(phrase){
 
   lastSearchPhrase = phrase;
   localStorage.setItem('hbvs_last_phrase', phrase);
-  let results = [];
+  const container = document.getElementById('searchResults');
+  container.innerHTML = 'Searching...';
 
-  let stmt = db.prepare(`SELECT BKORDER, CHAPTER, VERSE, text, WORDCOUNT FROM Verses WHERE text LIKE?`);
+  // a) Grouped by BOOKS with WordCount per Book
+  let stmt = db.prepare(`SELECT BOOKS, COUNT(*) as WordCount FROM Verses WHERE text LIKE? GROUP BY BOOKS ORDER BY BKORDER`);
   stmt.bind([`%${phrase}%`]);
-
-  while(stmt.step()){
-    let row = stmt.getAsObject();
-    let rawText = row.text;
-    let hits = getWordIndices(rawText, phrase);
-    if(hits.length > 0){
-      let highlighted = highlightText(rawText, phrase);
-      let processed = renderVerse(highlighted, selectedMath, row.BKORDER);
-      let bkName = Object.keys(bookMap).find(k=>bookMap[k][0]==row.BKORDER) || "Gen";
-
-      hits.forEach(hit => {
-        let ref = formatRef(bkName, row.CHAPTER, row.VERSE, hit.start, hit.end);
-        let raw = `${phrase}(${ref})`;
-        results.push({ ref, bkorder: row.BKORDER, chapter: row.CHAPTER, verse: row.VERSE, phrase, html: processed, raw });
-        autoCopy(raw);
-      });
-    }
-  }
+  const bookResults = [];
+  while(stmt.step()) bookResults.push(stmt.getAsObject());
   stmt.free();
 
-  searchResults = results;
-  localStorage.setItem(SEARCH_KEY, JSON.stringify(searchResults));
-  renderSearchResults();
-}
-
-function jumpToVerse(bkorder, chapter, verse){
-  let bkName = Object.keys(bookMap).find(k=>bookMap[k][0]==bkorder) || "Gen";
-  currentRef.bkorder = bkorder;
-  currentRef.book = bookArray.find(b=>b.BKORDER==bkorder)?.BOOKS || bkName;
-  currentRef.chap = chapter;
-  selectedVerses = [verse];
-  document.getElementById('btn-tab-reader')?.click();
-  buildBookGrid(); buildChapterGrid(); buildVerseGrid(); showReader();
-}
-
-function renderSearchResults(){
-  const container = document.getElementById('searchResults');
-  if(!container) return;
-
-  let summaryHtml = '';
-  if(lastSearchPhrase && searchResults.length > 0){
-    let locs = searchResults.map(r=>r.ref);
-    let summary = `${lastSearchPhrase} ↦ ${lastSearchPhrase}(${locs.join(', ')}): RecordCount${locs.length}`;
-    summaryHtml = `<div class="search-summary" onclick="autoCopy('${summary.replace(/'/g, "\\'")}')" title="Click to copy summary">
-      <b>${summary}</b>
-      <span class="copy-hint">Click to Copy</span>
-    </div>`;
-    autoCopy(summary);
+  let html = `<div class="section-label">Search Result for the Inverse Relation:Location("${phrase}")</div>`;
+  if(bookResults.length > 0){
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding:8px;border:1px solid var(--border);border-radius:8px;">`;
+    bookResults.forEach(r=> html += `<span style="padding:4px 8px;background:var(--bg2);border-radius:6px;">${r.BOOKS}(${r.WordCount})</span>`);
+    html += `</div>`;
+    autoCopy(`${phrase} ↦ ${bookResults.map(r=>`${r.BOOKS}(${r.WordCount})`).join(' | ')}`);
+  } else {
+    html += `<p class="muted">No results for "${phrase}"</p>`;
   }
-
-  if(searchResults.length === 0){
-    container.innerHTML = summaryHtml + '<p class="muted">No results. Use Manual Clear to reset.</p>';
-    return;
-  }
-
-  let html = summaryHtml + `<button id="btn-clear-search" class="btn-small btn-danger">Manual Clear</button>`;
-  searchResults.forEach(r=>{
-    html += `<div class="search-item" onclick="jumpToVerse(${r.bkorder},${r.chapter},${r.verse})" style="cursor:pointer;">
-      <b>${r.ref}</b>
-      <div class="hbvs-output ${selectedMath}">${r.html}</div>
-      <button onclick="event.stopPropagation(); autoCopy('${r.raw.replace(/'/g, "\\'")}')" class="btn-small">Copy</button>
-    </div>`;
-  });
+  html += `<button id="btn-clear-search" class="btn-small btn-danger">Manual Clear</button>`;
   container.innerHTML = html;
   document.getElementById('btn-clear-search').onclick = clearSearch;
 }
@@ -140,9 +91,8 @@ function clearSearch(){
   lastSearchPhrase = '';
   localStorage.removeItem(SEARCH_KEY);
   localStorage.removeItem('hbvs_last_phrase');
-  renderSearchResults();
+  document.getElementById('searchResults').innerHTML = '<p class="muted">Search cleared</p>';
 }
-
 function initSearchUI(){
   const btn = document.getElementById('btn-search');
   const input = document.getElementById('searchInput');
@@ -150,13 +100,11 @@ function initSearchUI(){
     btn.onclick = () => doSearch(input.value);
     input.onkeydown = (e) => { if(e.key === 'Enter') doSearch(input.value); }
   }
-  renderSearchResults();
 }
 // === END SEARCH MODULE ===
 
-// === CHERRY PICK MODULE v7.8.11bm - FIXED ===
+// === CHERRY PICK MODULE ===
 let cherryBuffer = [];
-
 function getVerseWordMap(bkorder, chap, verse){
   let stmt = db.prepare(`SELECT text, WORDCOUNT FROM Verses WHERE BKORDER=? AND CHAPTER=? AND VERSE=?`);
   stmt.bind([bkorder, chap, verse]);
@@ -164,108 +112,70 @@ function getVerseWordMap(bkorder, chap, verse){
   stmt.free();
   return normalizeText(row.text).split(' ');
 }
-
 function compressRefs(refs){
   if(refs.length === 0) return "";
-
-  // Parse and sort numerically: Gen1:1:3
   let parsed = refs.map(r=>{
     let parts = r.split(':');
     return {full:r, bkchap:parts[0], verse:parseInt(parts[1]), word:parseInt(parts[2])};
   }).sort((a,b)=> a.bkchap.localeCompare(b.bkchap) || a.verse-b.verse || a.word-b.word);
-
-  let groups = [];
-  let current = [parsed[0]];
+  let groups = []; let current = [parsed[0]];
   for(let i=1; i<parsed.length; i++){
-    let prev = current[current.length-1];
-    let curr = parsed[i];
-    // Same bookchap + same verse + adjacent words
-    if(prev.bkchap===curr.bkchap && prev.verse===curr.verse && curr.word === prev.word+1){
-      current.push(curr);
-    } else {
-      groups.push(current);
-      current = [curr];
-    }
+    let prev = current[current.length-1]; let curr = parsed[i];
+    if(prev.bkchap===curr.bkchap && prev.verse===curr.verse && curr.word === prev.word+1){ current.push(curr); }
+    else { groups.push(current); current = [curr]; }
   }
   groups.push(current);
-
   return groups.map(g=>{
     if(g.length === 1) return g[0].full;
-    let first = g[0];
-    let last = g[g.length-1];
-    // Same verse contiguous
-    if(first.bkchap===last.bkchap && first.verse===last.verse){
-      return `${first.bkchap}:${first.verse}:${first.word}-${last.word}`;
-    }
-    // Cross verse
+    let first = g[0]; let last = g[g.length-1];
+    if(first.bkchap===last.bkchap && first.verse===last.verse){ return `${first.bkchap}:${first.verse}:${first.word}-${last.word}`; }
     return `${g[0].full}_${g[g.length-1].full}`;
   }).join(', ');
 }
-
 function handleCherryPick(){
   const sel = window.getSelection();
   if(!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
   const selectedText = sel.toString().trim();
   if(selectedText.length < 1) return;
-
   let anchorNode = sel.anchorNode;
   let verseBlock = anchorNode.nodeType === 3? anchorNode.parentElement.closest('.verse-block') : anchorNode.closest('.verse-block');
   if(!verseBlock) return;
-
-  let header = verseBlock.querySelector('b').innerText; // Gen1:1:1-31
+  let header = verseBlock.querySelector('b').innerText;
   let m = header.match(/([A-Za-z0-9]+)(\d+):(\d+):(\d+)-(\d+)/);
   if(!m) return;
   let bk = m[1], chap = parseInt(m[2]), verse = parseInt(m[3]);
   let bkorder = bookMap[bk][0];
-
   let wordsInVerse = getVerseWordMap(bkorder, chap, verse);
   let selectedWords = normalizeText(selectedText).split(' ');
-
   let refs = [];
   for(let i=0; i<=wordsInVerse.length-selectedWords.length; i++){
     let match = true;
-    for(let j=0; j<selectedWords.length; j++){
-      if(wordsInVerse[i+j]!== selectedWords[j]){ match=false; break; }
-    }
+    for(let j=0; j<selectedWords.length; j++){ if(wordsInVerse[i+j]!== selectedWords[j]){ match=false; break; } }
     if(match){
-      for(let k=0; k<selectedWords.length; k++){
-        refs.push(`${bk}${chap}:${verse}:${i+k+1}`);
-      }
+      for(let k=0; k<selectedWords.length; k++){ refs.push(`${bk}${chap}:${verse}:${i+k+1}`); }
       break;
     }
   }
   if(refs.length === 0) return;
-
   let compressed = compressRefs(refs);
   let output = `${selectedText}(${compressed})`;
-
   navigator.clipboard.writeText(output);
   showToast(`Copied: ${output}`);
-
-  // Flash gold for 1s so you see what was copied
   verseBlock.style.background = 'var(--highlight)';
   setTimeout(()=>{ verseBlock.style.background = ''; }, 1000);
 }
-
 function showToast(msg){
   let t = document.getElementById('hbvs-toast');
-  if(!t){
-    t = document.createElement('div');
-    t.id = 'hbvs-toast';
-    document.body.appendChild(t);
-  }
-  t.innerText = msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 3000); // 3s now
+  if(!t){ t = document.createElement('div'); t.id = 'hbvs-toast'; document.body.appendChild(t); }
+  t.innerText = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
 }
-
 document.addEventListener('mouseup', handleCherryPick);
 document.addEventListener('touchend', handleCherryPick);
 // === END CHERRY PICK MODULE ===
 
 const bookMap = {"Pre":[0],"Gen":[1],"Exo":[2],"Lev":[3],"Num":[4],"Deu":[5],"Jos":[6],"Jud":[7],"Rut":[8],"1Sa":[9],"2Sa":[10],"1Ki":[11],"2Ki":[12],"1Ch":[13],"2Ch":[14],"Ezr":[15],"Neh":[16],"Est":[17],"Job":[18],"Psa":[19],"Pro":[20],"Ecc":[21],"Son":[22],"Isa":[23],"Jer":[24],"Lam":[25],"Eze":[26],"Dan":[27],"Hos":[28],"Joe":[29],"Amo":[30],"Oba":[31],"Jon":[32],"Mic":[33],"Nah":[34],"Hab":[35],"Zep":[36],"Hag":[37],"Zec":[38],"Mal":[39],"Mat":[40],"Mar":[41],"Luk":[42],"Joh":[43],"Act":[44],"Rom":[45],"1Co":[46],"2Co":[47],"Gal":[48],"Eph":[49],"Phi":[50],"Col":[51],"1Th":[52],"2Th":[53],"1Ti":[54],"2Ti":[55],"Tit":[56],"Phm":[57],"Heb":[58],"Jam":[59],"1Pe":[60],"2Pe":[61],"1Jo":[62],"2Jo":[63],"3Jo":[64],"Jde":[65],"Rev":[66],"Epi":[67]};
 function getCode(bookName){ return Object.keys(bookMap).find(k=>bookMap[k][0]==currentRef.bkorder) || "Gen"; }
-
 function getEngineMode(mathClass){
   if(mathClass === "superscript") return 'superscript';
   if(mathClass === "mathp") return 'P';
@@ -273,18 +183,10 @@ function getEngineMode(mathClass){
   if(mathClass === "matht") return 'T';
   return null;
 }
-
 function getMathSubtitle(mathClass){
-  const map = {
-    akjv: {key: "KEY", val: "READ"},
-    superscript:{key: "ARRAY", val: "COUNTING ONE BY ONE"},
-    mathp: {key: "PROPORTION", val: "TONGUE OF THE MATHEMATICIANS"},
-    maths: {key: "BALANCE", val: "TONGUE OF THE MATHEMATICIANS"},
-    matht: {key: "JOIN", val: "TONGUE OF THE MATHEMATICIANS"}
-  }
+  const map = { akjv: {key: "KEY", val: "READ"}, superscript:{key: "ARRAY", val: "COUNTING ONE BY ONE"}, mathp: {key: "PROPORTION", val: "TONGUE OF THE MATHEMATICIANS"}, maths: {key: "BALANCE", val: "TONGUE OF THE MATHEMATICIANS"}, matht: {key: "JOIN", val: "TONGUE OF THE MATHEMATICIANS"} }
   return map[mathClass] || {key: "KEY", val: "READ"};
 }
-
 function renderVerse(text, mathClass, bkorder) {
   if(!text) return "[Verse not found]";
   let raw = text.replace(/¶/g, '<div class="para"></div>');
@@ -294,7 +196,6 @@ function renderVerse(text, mathClass, bkorder) {
   const {text: processedText} = window.HBVS.renderVerse({TEXT: raw}, mode);
   return `<div class="hbvs-output ${mathClass}">${processedText}</div>`;
 }
-
 function compressRanges(arr){
   if(arr.length === 0) return '';
   let ranges = []; let start = arr[0];
@@ -307,7 +208,6 @@ function compressRanges(arr){
   }
   return ranges.join(',');
 }
-
 function buildBookGrid(filter=""){
   const grid = document.getElementById('bookGrid');
   if(!grid) return;
@@ -320,7 +220,6 @@ function buildBookGrid(filter=""){
     grid.appendChild(btn);
   });
 }
-
 function buildChapterGrid(){
   const grid = document.getElementById('chapterGrid');
   if(!grid) return;
@@ -339,23 +238,27 @@ function buildChapterGrid(){
   }
 }
 
+// v7.8.17bg PATCH: Pull directly from VERSE column
 function buildVerseGrid(){
   const grid = document.getElementById('verseGrid');
   if(!grid) return;
   grid.innerHTML = '';
   let dbChap = currentRef.chap;
-  let minVerse = 0; let maxVerse = 0;
-  let stmt = db.prepare("SELECT MIN(VERSE) as min, MAX(VERSE) as max FROM Verses WHERE BKORDER=? AND CHAPTER=?");
+
+  verses = []; // reset global
+  let stmt = db.prepare("SELECT DISTINCT VERSE FROM Verses WHERE BKORDER=? AND CHAPTER=? ORDER BY VERSE ASC");
   stmt.bind([currentRef.bkorder, dbChap]);
-  if(stmt.step()) { minVerse = stmt.getAsObject().min; maxVerse = stmt.getAsObject().max; }
+  while(stmt.step()) verses.push(stmt.getAsObject().VERSE);
   stmt.free();
-  for(let i=minVerse; i<=maxVerse; i++){
+
+  for(let i=0; i<verses.length; i++){
+    const v = verses[i];
     const btn = document.createElement('button');
-    btn.className = 'grid-btn' + (selectedVerses.includes(i)?' active':'');
-    btn.innerText = i;
+    btn.className = 'grid-btn' + (selectedVerses.includes(v)?' active':'');
+    btn.innerText = v;
     btn.onclick = () => {
-      if(selectedVerses.includes(i)){ selectedVerses = selectedVerses.filter(v=>v!=i); if(selectedVerses.length==0) selectedVerses=[i]; }
-      else { selectedVerses.push(i); }
+      if(selectedVerses.includes(v)){ selectedVerses = selectedVerses.filter(x=>x!=v); if(selectedVerses.length==0) selectedVerses=[v]; }
+      else { selectedVerses.push(v); }
       selectedVerses.sort((a,b)=>a-b);
       buildVerseGrid();
       showReader();
@@ -368,7 +271,6 @@ function showReader(){
   if(viewMode === 'table') renderTableView();
   else renderCardView();
 }
-
 function renderCardView(){
   const readerView = document.getElementById('readerView');
   const readerTitle = document.getElementById('readerTitle');
@@ -391,7 +293,6 @@ function renderCardView(){
   });
   readerContent.innerHTML = content;
 }
-
 function renderTableView(){
   const readerView = document.getElementById('readerView');
   const readerTitle = document.getElementById('readerTitle');
@@ -419,12 +320,10 @@ function renderTableView(){
   html += `</table>`;
   readerContent.innerHTML = html;
 }
-
 function copyReader(){
   const text = document.getElementById('readerContent').innerText;
   autoCopy(text);
 }
-
 function toggleView(){
   viewMode = viewMode === 'card'? 'table' : 'card';
   const btn = document.getElementById('btn-view-toggle');
@@ -454,17 +353,14 @@ async function loadDB() {
     document.getElementById('btn-prev-chap')?.addEventListener('click', ()=>{ if(currentRef.chap>0){ currentRef.chap--; currentRef.verse=0; selectedVerses=[0]; buildChapterGrid(); buildVerseGrid(); showReader(); } });
     document.getElementById('btn-next-chap')?.addEventListener('click', ()=>{ currentRef.chap++; currentRef.verse=0; selectedVerses=[0]; buildChapterGrid(); buildVerseGrid(); showReader(); });
     document.getElementById('btn-copy-reader')?.addEventListener('click', copyReader);
+
+    // v7.8.17bg PATCH: ALL button pulls directly from VERSE column
     document.getElementById('btn-all-chap')?.addEventListener('click', ()=>{
-      let dbChap = currentRef.chap;
-      let stmt = db.prepare("SELECT MIN(VERSE) as min, MAX(VERSE) as max FROM Verses WHERE BKORDER=? AND CHAPTER=?");
-      stmt.bind([currentRef.bkorder, dbChap]);
-      let minVerse = 0, maxVerse = 1;
-      if(stmt.step()) { minVerse = stmt.getAsObject().min; maxVerse = stmt.getAsObject().max; }
-      stmt.free();
-      selectedVerses = Array.from({length: maxVerse - minVerse + 1}, (_, i) => i + minVerse);
+      selectedVerses = [...verses]; // copy all actual verses for this chapter
       buildVerseGrid();
       showReader();
     });
+
     document.getElementById('btn-share')?.addEventListener('click', async ()=>{
       const text = document.getElementById('readerContent').innerText;
       const title = document.getElementById('readerTitle').innerText;
@@ -486,5 +382,4 @@ async function loadDB() {
     if(splash) splash.innerText = "Error: " + err.message;
   }
 }
-
 document.addEventListener('DOMContentLoaded', loadDB);
