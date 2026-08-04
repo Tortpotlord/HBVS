@@ -1,0 +1,65 @@
+:root{
+  --burgundy: #800020;
+  --math-accent: #00AEEF;
+}
+.sym { color: var(--burgundy); }
+/* GLOBAL.HELPERS.CSS - Base theme + vars for HBVS v7.8.11ao */
+
+:root{
+  --bg:#FDF6E3; /* Parchment */
+  --card:#FFFDF7; /* Warm white */
+  --border:#E0D5C0; /* Sepia border */
+  --accent:#8B5A2B; /* Saddle Brown */
+  --text:#3E2F1C; /* Dark Sepia Text */
+  --muted:#7A6A5A; /* Muted Sepia */
+  --burgundy:#800020; /* Primary P */
+  --tomato:#FF6347; /* Secondary S */
+  --gold:#DAA520; /* Tertiary T */
+  --table-head:#F9F3E6; /* NEW: Table header bg */
+  --table-hover:#F9F3E6; /* NEW: Hover */
+}
+
+/* Reset + Base font for all bible text */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
+  background: var(--bg) url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlMGQ1YzAiIHN0cm9rZS13aWR0aD0iMC4xIi8+PC9zdmc+'); 
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.hidden { display: none!important; }
+
+/* All 5 card containers */
+.card {
+  max-width: 760px;
+  margin: 1rem auto;
+  padding: 1rem 2rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(139,90,43,0.06);
+  line-height: 1.9; 
+  font-size: 1.1rem;
+}
+
+.verse-header {
+  font-size: 0.85rem;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  margin-bottom: 0.8em;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+/* AKJV Italics base */
+.card i { font-style: italic; }
+
+/* Chapter specific images - you said you will provide */
+.chapter-Gen1 { background: url('../img/gen1.png') top right no-repeat; background-size: contain; }
+.chapter-Exo3 { background: url('../img/exo3.png') top right no-repeat; background-size: contain; }
+
+/* Preface chapter images hook - matches preface.css */
+.preface[data-chapter="genesis"] { background-image: url('../img/preface/genesis.png'); }

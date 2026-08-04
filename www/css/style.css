@@ -1,0 +1,38 @@
+/* HBVS v7.8.11bk - Math Tab Styles */
+
+.math-wrap {
+  font-family: 'EB Garamond', serif;
+  font-size: 18px;
+  line-height: 1.6;
+  color: #111;
+  padding: 12px;
+}
+
+.math-eq {
+  margin: 8px 0;
+  white-space: pre-wrap;
+}
+
+/* Rule 2d/2e: Color parentheses and operators */
+.sym {
+  color: var(--burgundy); /* #800020 from global.css */
+  font-weight: 600;
+}
+
+/* Rule 2e: The = operator gets math-accent */
+.math-eq .op-eq {
+  color: var(--math-accent); /* #00AEEF */
+  font-weight: 700;
+}
+
+/* Highlight continuity terms */
+.continuity-term {
+  background: rgba(0, 174, 239, 0.1);
+  border-bottom: 1px dotted var(--math-accent);
+}
+
+/* Face term fix for v7.8.39bg */
+.face-term {
+  font-style: italic;
+  color: var(--burgundy);
+}
