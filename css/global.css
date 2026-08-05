@@ -1,4 +1,4 @@
-/* GLOBAL.HELPERS.CSS - Base theme + vars for HBVS v7.8.11bk */
+/* GLOBAL.HELPERS.CSS - Base theme + vars for HBVS v7.8.36bg */
 
 :root{
   --bg:#FDF6E3; /* Parchment */
@@ -13,6 +13,7 @@
   --table-head:#F9F3E6; /* Table header bg */
   --table-hover:#F5EAD6; /* Stronger Hover */
   --highlight:#FFEB3B; /* Search highlight */
+  --math-accent:#00e5ff; /* [NEW] Cyan for MathP/S/T/Superscript symbols + () */
 }
 
 /* Reset + Base font for all bible text */

@@ -12,6 +12,30 @@
 <link rel="stylesheet" href="css/superscript.css">
 <link rel="stylesheet" href="css/preface.css">
 
+<style>
+/* SEARCH GLASS STYLES */
+#searchTab .search-bar{display:flex;gap:8px;margin-bottom:12px;}
+#searchTab input{flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);}
+#searchTab button{padding:8px 12px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;}
+mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2px;}
+.search-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;}
+.search-table th,.search-table td{border:1px solid var(--border);padding:6px;text-align:left;vertical-align:top;}
+.search-table th{background:var(--bg2);}
+.search-table .ref-col{width:220px;white-space:nowrap;cursor:pointer;}
+.section-label{font-weight:bold;margin:12px 0 6px 0;color:var(--accent);}
+.btn-small{padding:4px 8px;font-size:12px;border:none;border-radius:4px;cursor:pointer;}
+.btn-danger{background:#c00;color:#fff;}
+#hbvs-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:8px;opacity:0;transition:opacity .3s;z-index:9999;}
+#hbvs-toast.show{opacity:1;}
+#search-filter-bar{margin:8px 0;display:none;}
+#search-filter-bar select{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);color:var(--text);}
+
+/* [NEW] Reader Tools Layout */
+.reader-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.reader-tools span{cursor:pointer;font-size:18px;padding:4px 6px;border-radius:4px;}
+.reader-tools span:hover{background:var(--bg2);}
+</style>
+
 </head>
 <body>
 <div id="splash">
@@ -51,6 +75,7 @@
             <span id="btn-prev-chap" title="Prev Chapter"><</span>
             <span id="btn-all-chap" title="All Chapter">ALL</span> 
             <span id="btn-next-chap" title="Next Chapter">></span>
+            <span id="btn-refresh" title="Refresh Page">🔄</span> <!-- [NEW] REFRESH -->
             <span id="btn-audio" title="Play Audio">🔊</span>
             <span id="btn-copy-reader" title="Copy">📋</span>
             <span id="btn-share" title="Share">📤</span>
@@ -61,21 +86,34 @@
       </div>
     </div>
 
-    <!-- SEARCH TAB -->
+    <!-- SEARCH TAB v1.2.4 -->
     <div id="searchTab" class="hidden">
       <div class="section-label">SEARCH - FIND ALL WHOLE WORDS</div>
       <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Enter phrase to search..." />
+        <input type="text" id="searchInput" placeholder="Enter Phrase OR Location: 1Co3:1" />
         <button id="btn-search">🔍 Search</button>
+        <button id="btn-clear-search" class="btn-small btn-danger">Clear</button>
       </div>
+      
+      <!-- Book Filter for Search Results - Auto populated by JS -->
+      <div id="search-filter-bar">
+        <label for="bookFilterSearch">Filter by Book: </label>
+        <select id="bookFilterSearch">
+          <option value="ALL">ALL</option>
+        </select>
+      </div>
+
       <div id="searchResults"></div>
     </div>
 
   </main>
 </div>
+
+<!-- SCRIPT LOAD ORDER MATTERS -->
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=7817bg&t=20250801_002"></script> <!-- v7.8.17bg PATCH -->
-<script src="js/bible.js?v=7817bg"></script> <!-- v7.8.17bg PATCH -->
+<script src="js/hbvs_engine.js?v=7818bg&t=20250803_001"></script>
+<script src="js/search_glass.js?v=124"></script> <!-- v1.2.4 -->
+<script src="js/bible.js?v=7823bg"></script> <!-- v7.8.23bg -->
 
 <script>
 // Tab switching logic
@@ -85,19 +123,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const readerTab = document.getElementById('readerTab');
   const searchTab = document.getElementById('searchTab');
 
-  btnReader.onclick = () => {
-    readerTab.classList.remove('hidden');
-    searchTab.classList.add('hidden');
-    btnReader.style.opacity = '1';
-    btnSearch.style.opacity = '0.5';
+  function setActiveTab(tab){
+    if(tab === 'reader'){
+      readerTab.classList.remove('hidden');
+      searchTab.classList.add('hidden');
+      btnReader.style.opacity = '1';
+      btnSearch.style.opacity = '0.5';
+    } else {
+      searchTab.classList.remove('hidden');
+      readerTab.classList.add('hidden');
+      btnSearch.style.opacity = '1';
+      btnReader.style.opacity = '0.5';
+      // Load persisted results when opening tab
+      if(window.SEARCH_GLASS) SEARCH_GLASS.loadResults().then(res=>{
+        const book = document.getElementById('bookFilterSearch').value;
+        document.getElementById('searchResults').innerHTML = SEARCH_GLASS.renderTable(res, book);
+      });
+    }
   }
-  btnSearch.onclick = () => {
-    searchTab.classList.remove('hidden');
-    readerTab.classList.add('hidden');
-    btnSearch.style.opacity = '1';
-    btnReader.style.opacity = '0.5';
-  }
-  btnReader.click(); // default to reader tab
+
+  btnReader.onclick = () => setActiveTab('reader');
+  btnSearch.onclick = () => setActiveTab('search');
+  
+  setActiveTab('reader'); // default to reader tab
 });
 </script>
 

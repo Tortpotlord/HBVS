@@ -80,12 +80,38 @@ main { padding: 16px; }
   margin-bottom: 8px;
 }
 
+/* === SEARCH FILTER BAR === */
+#search-filter-bar { display: none; gap: 8px; margin: 10px 16px; }
+
 /* === BIBLE READER VIEW === */
 .reader-view { border-top: 2px solid var(--border); margin-top: 20px; padding-top: 15px; }
 .reader-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .reader-title { font-weight: bold; font-size: 18px; color: var(--accent); }
 .reader-tools span { margin-left: 12px; cursor: pointer; font-size: 18px; color: var(--accent); }
 .reader-tools span:hover { opacity: 0.7; }
+
+/* === VERSE BLOCKS === */
+.verse-block { padding: 10px 12px; margin: 6px 0; border-radius: 8px; background: var(--card); line-height: 1.7; }
+.verse-block b { color: var(--accent); margin-right: 6px; }
+
+/* === RULE 2e: SYMBOL COLORING === */
+.sym { 
+  color: var(--math-accent, #00e5ff); 
+  font-weight: 700; 
+}
+
+/* === HOME PAGE MATH TRANSLATION THEME FOR BIBLE TAB === */
+#readerContent .hbvs-output.mathp .sym,
+#readerContent .hbvs-output.maths .sym,
+#readerContent .hbvs-output.matht .sym,
+#readerContent .hbvs-output.superscript .sym {
+  color: var(--math-accent, #00e5ff);
+  font-weight: 700;
+  text-shadow: 0 0 1px var(--math-accent, #00e5ff);
+}
+
+/* Table view headers also get math color */
+.math-table .header-row { color: var(--math-accent, #00e5ff); font-weight: bold; }
 
 /* === CARD TYPE BORDERS - Layout only. Colors from mathkjv.css === */
 .card.akjv { border-left: 4px solid var(--accent); }
