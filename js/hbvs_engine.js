@@ -1,54 +1,101 @@
-console.log("HBVS ENGINE v7.8.40al LOADED - TABLE OWNS 'of'");
+console.log("HBVS ENGINE v7.8.40al MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
   const PUNCT_RE = /[.,:;!?]/;
   const DETERMINERS_RE = /^(the|thy|his|my|our|your|a|an|this|that|these|those)$/i;
-  const COLOR_SYMBOLS_RE = /([=↦()])/g;
+  const COLOR_SYMBOLS_RE = /([=↦])/g; // from STABLE
+  const WFF_OPEN = '##HBVS_WFF_OPEN##';
+  const WFF_CLOSE = '##HBVS_WFF_CLOSE##';
+  const INH_OPEN = '##HBVS_INH_OPEN##';
+  const INH_CLOSE = '##HBVS_INH_CLOSE##';
+
+  const normalizeLoosePreserveCase = (s) => s.replace(/<\/?i>/g, '').replace(/\s+/g,' ').trim();
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const getModeColor = (mode) => mode === 'P'? 'var(--burgundy)' : mode === 'S'? 'var(--tomato)' : mode === 'T'? 'var(--gold)' : 'var(--accent)'; // from STABLE
 
   const loadHBVSData = (db) => {
     fwMap.clear(); wrapperMap.clear();
     try {
       const stmtC = db.prepare("SELECT FunctionWord, Symbol FROM Continuity");
-      while (stmtC.step()) {let r=stmtC.getAsObject(); fwMap.set(r.FunctionWord.trim().toLowerCase(), r.Symbol.trim());}
+      while (stmtC.step()) {let r=stmtC.getAsObject(); fwMap.set(r.FunctionWord.trim().toLowerCase(), r.Symbol.trim());} // STABLE: lowercase keys
       stmtC.free();
       const stmtW = db.prepare("SELECT key, value FROM Wrappers ORDER BY LENGTH(key) DESC");
-      while (stmtW.step()) {let r=stmtW.getAsObject(); wrapperMap.set(r.key.trim(), r.value.trim());}
+      while (stmtW.step()) {let r=stmtW.getAsObject();
+        const normKey = normalizeLoosePreserveCase(r.key); // VERSION: normalize
+        wrapperMap.set(normKey, r.value);
+      }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.40al LOADED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.40al MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
   };
 
-  const isFW = (w) => w && fwMap.has(w.toLowerCase());
-  const getModeColor = (mode) => mode === 'P'? 'var(--burgundy)' : mode === 'S'? 'var(--tomato)' : mode === 'T'? 'var(--gold)' : 'var(--accent)';
+  const isFW = (w) => w && fwMap.has(w.toLowerCase()); // STABLE: lowercase check
 
-  // [REMOVED] applyOfRules - table handles "of" now
-
-  // [SIMPLE] RULE 2a-2g: FIND KEY, REPLACE WITH VALUE, COLOR ()
-  const applyWrappers = (text, mode) => {
-    if(!text || wrapperMap.size === 0) return text;
+  // EXTRACTED FROM VERSION-GOOD: NUCLEAR WRAPPER ENGINE
+  const applyWrappers = (input, mode) => {
+    if(wrapperMap.size === 0) return input;
     const color = getModeColor(mode);
-    
-    for(const [key, value] of wrapperMap){
-      const rx = new RegExp(escapeRegExp(key), 'gi'); // literal match "of that Light"
-      const coloredValue = value.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
-      text = text.replace(rx, coloredValue);
+
+    // STEP 0: PRESERVE INHERENT PARENS FIRST
+    let result = input.replace(/<\/?i>/g, '');
+    result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
+
+    // STEP 1: ITERATIVE WFF MATCH - LONGEST FIRST
+    let working = result;
+    const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
+    let changed = true;
+    let safety = 0;
+    while(changed && safety < 10){
+      changed = false;
+      safety++;
+      for(const key of keys){
+        let replacement = wrapperMap.get(key);
+        replacement = replacement.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`); // STABLE: color
+        const rx = new RegExp(escapeRegExp(key).replace(/ /g, '\\s+'), 'gi'); // STABLE: case-insensitive
+        const before = working;
+        working = working.replace(rx, () => {
+          changed = true;
+          return replacement;
+        });
+        if(before!== working) changed = true;
+      }
     }
-    return text;
+    result = working;
+
+    // STEP 2: CONVERT WFF ( ) TO TOKENS
+    result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
+
+    // STEP 3: NEST WFF
+    let nestSafety = 0;
+    while(nestSafety < 10){
+      const before = result;
+      result = result.replace(new RegExp(`${WFF_CLOSE}\\s*${WFF_OPEN}`, 'g'), "");
+      if(before === result) break;
+      nestSafety++;
+    }
+
+    // STEP 4: RENDER TIGHT FOR ALL WFF TOKENS
+    result = result.replace(/(\S)\s*##HBVS_WFF_OPEN##/g, `$1##HBVS_WFF_OPEN##`);
+
+    // STEP 5: FORCE CLOSE WFF
+    let openCount = (result.match(new RegExp(WFF_OPEN, 'g')) || []).length;
+    let closeCount = (result.match(new RegExp(WFF_CLOSE, 'g')) || []).length;
+    if(openCount > closeCount){
+      result += WFF_CLOSE.repeat(openCount - closeCount);
+    }
+
+    // STEP 6: FINAL CONVERT TO HTML
+    result = result.replace(new RegExp(WFF_OPEN, 'g'), `<span class="sym" style="color:${color}">(</span>`); // STABLE: colored
+    result = result.replace(new RegExp(WFF_CLOSE, 'g'), `<span class="sym" style="color:${color}">)</span>`);
+    result = result.replace(new RegExp(INH_OPEN, 'g'), `(`);
+    result = result.replace(new RegExp(INH_CLOSE, 'g'), `)`);
+
+    return result;
   }
 
-  const applyNoSpaceRule = (text, mode) => {
-    if(!text) return text;
-    const color = getModeColor(mode);
-    const symOpen = `<span class="sym" style="color:${color}">(</span>`;
-    const symClose = `<span class="sym" style="color:${color}">)</span>`;
-    text = text.replace(new RegExp(`\\s+${escapeRegExp(symOpen)}`, 'g'), symOpen);
-    text = text.replace(new RegExp(`\\s+${escapeRegExp(symClose)}`, 'g'), symClose);
-    return text;
-  }
-
-  const replaceFunctionWords = (text, mode) => { /* SAME 2a-2g */ 
+  // KEPT FROM STABLE-BROKEN: 2a-2g Logic
+  const replaceFunctionWords = (text, mode) => { 
     const tokens = []; text.replace(/(<[^>]+>)|([A-Za-z]+)|([.,:;!?])|([^A-Za-z<.,:;!?]+)/g, (m, tag, plain, punct, other) => {
       if(tag) tokens.push({w: tag, type:'TAG'}); else if(plain) tokens.push({w: plain, type:'FW?'}); else if(punct) tokens.push({w: punct, type:'PUNCT'}); else tokens.push({w: other, type: 'SPACE'}); return '';
     });
@@ -71,6 +118,7 @@ const HBVS = (() => {
     return tokens.map(t => t.out).join('');
   }
 
+  // CORRECT ORDER: DNA/Spectrum/Line = Wrappers -> FW -> Tighten
   const renderVerse = (verseObj, mode) => {
     if(!verseObj) return {text: "", wordcount: 0};
     let rawText = (verseObj.TEXT || "");
@@ -79,9 +127,14 @@ const HBVS = (() => {
     if(mode === 'akjv') return {text: rawText, wordcount};
     
     let text = rawText;
-    text = applyWrappers(text, mode);        // 1. FIND KEY, REPLACE VALUE
-    text = replaceFunctionWords(text, mode); // 2. FW rules 2a-2g
-    text = applyNoSpaceRule(text, mode);     // 3. Tighten ()
+    text = applyWrappers(text, mode);        // 1a-1f: FROM VERSION-GOOD
+    text = replaceFunctionWords(text, mode); // 2a-2g: FROM STABLE
+    // NoSpace rule is now handled inside applyWrappers Step 4
+    
+    // SAFE HOOKS
+    if(window.SearchGlass && window.SearchGlass.postProcess) text = window.SearchGlass.postProcess(text);
+    if(window.HighlightCopy && window.HighlightCopy.postProcess) text = window.HighlightCopy.postProcess(text);
+    
     return {text, wordcount};
   };
   return { loadHBVSData, renderVerse };
