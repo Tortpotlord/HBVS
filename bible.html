@@ -112,12 +112,17 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
 <!-- SCRIPT LOAD ORDER MATTERS -->
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
 <script src="js/hbvs_engine.js?v=7818bg&t=20250803_001"></script>
-<script src="js/search_glass.js?v=124"></script> <!-- v1.2.4 -->
+<script src="js/search_glass.js?v=124"></script> <!-- lowercase -->
+<script src="js/highlight_copy.js?v=001"></script> <!-- NEW: lowercase -->
 <script src="js/bible.js?v=7823bg"></script> <!-- v7.8.23bg -->
 
 <script>
-// Tab switching logic
+// Init modules + Tab switching logic
 document.addEventListener('DOMContentLoaded', ()=>{
+  // [NEW] Init our 2 modules
+  if(window.SearchGlass) SearchGlass.init();
+  if(window.HighlightCopy) HighlightCopy.init();
+
   const btnReader = document.getElementById('btn-tab-reader');
   const btnSearch = document.getElementById('btn-tab-search');
   const readerTab = document.getElementById('readerTab');
