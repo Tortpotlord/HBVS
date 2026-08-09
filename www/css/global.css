@@ -1,22 +1,19 @@
-:root{
-  --burgundy: #800020;
-  --math-accent: #00AEEF;
-}
-.sym { color: var(--burgundy); }
-/* GLOBAL.HELPERS.CSS - Base theme + vars for HBVS v7.8.11ao */
+/* GLOBAL.HELPERS.CSS - Base theme + vars for HBVS v7.8.36bg */
 
 :root{
   --bg:#FDF6E3; /* Parchment */
   --card:#FFFDF7; /* Warm white */
   --border:#E0D5C0; /* Sepia border */
   --accent:#8B5A2B; /* Saddle Brown */
-  --text:#3E2F1C; /* Dark Sepia Text */
-  --muted:#7A6A5A; /* Muted Sepia */
+  --text:#2A1F14; /* DARKER for AAA contrast */
+  --muted:#6A5A4A; /* Darker Muted */
   --burgundy:#800020; /* Primary P */
   --tomato:#FF6347; /* Secondary S */
   --gold:#DAA520; /* Tertiary T */
-  --table-head:#F9F3E6; /* NEW: Table header bg */
-  --table-hover:#F9F3E6; /* NEW: Hover */
+  --table-head:#F9F3E6; /* Table header bg */
+  --table-hover:#F5EAD6; /* Stronger Hover */
+  --highlight:#FFEB3B; /* Search highlight */
+  --math-accent:#00e5ff; /* [NEW] Cyan for MathP/S/T/Superscript symbols + () */
 }
 
 /* Reset + Base font for all bible text */
@@ -28,30 +25,213 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 16px; /* Base up 1px */
 }
 
 .hidden { display: none!important; }
 
+/* === TOPBAR TABS === */
+.topbar-icons button {
+  background: none;
+  border: none;
+  font-size: 22px; /* Bigger */
+  cursor: pointer;
+  padding: 6px 10px;
+  color: var(--accent);
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.topbar-icons button:hover { opacity: 1; }
+.topbar-icons button[title="Reader"],
+.topbar-icons button[title="Search"] { opacity: 1; }
+
+/* === SECTION LABELS === */
+.section-label {
+  font-size: 12px; /* Bigger */
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 18px 0 10px 0;
+}
+
+/* === GRID BUTTONS === */
+.bible-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); /* Bigger */
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.grid-btn {
+  padding: 10px 4px;
+  border: 2px solid var(--border); /* Thicker */
+  background: var(--card);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px; /* Bigger */
+  font-family: "Consolas", monospace;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.grid-btn:hover { background: var(--table-hover); border-color: var(--accent); }
+.grid-btn.active { 
+  background: var(--accent); 
+  color: #fff; 
+  border-color: var(--accent);
+}
+
+/* === READER VIEW === */
+.reader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 18px 0;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 10px;
+}
+.reader-title { font-weight: 800; font-size: 18px; color: var(--accent); }
+.reader-tools span {
+  cursor: pointer;
+  font-size: 20px;
+  margin-left: 14px;
+  user-select: none;
+}
+.reader-tools span:hover { color: var(--accent); }
+
 /* All 5 card containers */
 .card {
-  max-width: 760px;
-  margin: 1rem auto;
-  padding: 1rem 2rem;
-  border: 1px solid var(--border);
+  max-width: 780px; /* Wider */
+  margin: 1.2rem auto;
+  padding: 1.2rem 2.2rem;
+  border: 2px solid var(--border);
   background: var(--card);
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(139,90,43,0.06);
-  line-height: 1.9; 
-  font-size: 1.1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(139,90,43,0.08);
+  line-height: 2.0; /* More spacing */
+  font-size: 1.2rem; /* Bigger for eyes */
 }
 
 .verse-header {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--accent);
   letter-spacing: 0.5px;
   margin-bottom: 0.8em;
-  font-family: monospace;
+  font-family: "Consolas", monospace;
+  font-weight: 700;
+}
+
+/* === SEARCH TAB v7.8.11bk === */
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin: 18px 0;
+}
+.search-bar input {
+  flex: 1;
+  padding: 14px 16px; /* Bigger */
+  border: 3px solid var(--border);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 17px; /* Bigger */
   font-weight: 600;
+  background: var(--card);
+}
+.search-bar input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139,90,43,0.15);
+}
+.search-bar button {
+  padding: 14px 20px;
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 16px;
+}
+.search-bar button:hover { opacity: 0.9; }
+
+/* SUMMARY: Click to Copy */
+.search-summary {
+  background: var(--table-head);
+  border: 3px solid var(--gold);
+  padding: 16px 18px;
+  border-radius: 10px;
+  margin: 14px 0;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 15px; /* Bigger */
+  font-weight: 700;
+  color: var(--text); /* Dark text for contrast */
+  word-break: break-all;
+  cursor: pointer;
+  line-height: 1.7;
+  position: relative;
+  transition: all 0.2s;
+}
+.search-summary:hover { background: var(--card); border-color: var(--accent); }
+.search-summary::after {
+  content: "Click to Copy";
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: "EB Garamond", serif;
+  font-weight: 700;
+  background: var(--card);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* HIGH CONTRAST Danger button */
+.btn-danger {
+  background: var(--burgundy);
+  color: #FFFFFF; /* Pure white */
+  border: 3px solid var(--burgundy);
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.btn-danger:hover { background: #5A0016; border-color: #5A0016; }
+
+.search-item {
+  padding: 16px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  border-radius: 10px;
+  margin-bottom: 14px;
+  transition: all 0.2s;
+}
+.search-item:hover { background: var(--table-hover); border-color: var(--accent); }
+.search-item b { 
+  display: block; 
+  margin-bottom: 8px; 
+  color: var(--accent); 
+  font-family: "Consolas", monospace;
+  font-size: 15px; /* Bigger */
+  font-weight: 700;
+}
+.btn-small {
+  font-size: 14px;
+  padding: 8px 14px;
+  margin-top: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.btn-small:hover { background: var(--table-hover); border-color: var(--accent); }
+.muted { color: var(--muted); font-style: italic; font-size: 15px; }
+
+/* Search highlight */
+mark.search-highlight {
+  background: var(--highlight);
+  padding: 2px 3px;
+  border-radius: 4px;
+  font-weight: 700;
 }
 
 /* AKJV Italics base */
@@ -63,3 +243,36 @@ body {
 
 /* Preface chapter images hook - matches preface.css */
 .preface[data-chapter="genesis"] { background-image: url('../img/preface/genesis.png'); }
+/* CHERRY PICK v7.8.11bl */
+::selection {
+  background: var(--gold);
+  color: var(--text);
+}
+::-moz-selection {
+  background: var(--gold);
+  color: var(--text);
+}
+
+#hbvs-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--burgundy);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-family: "Consolas", monospace;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 9999;
+  max-width: 90%;
+  word-break: break-all;
+}
+#hbvs-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}

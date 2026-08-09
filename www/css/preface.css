@@ -1,0 +1,39 @@
+/* PREFACE CARD - Background + Tight Layout */
+.card.preface {
+  background: #f8f4e8 url('../assets/parchment.jpg') repeat;
+  border: 1px solid #d4c8a8;
+  border-radius: 10px;
+  font-style: italic;
+  padding: 10px 14px; /* KEY: was 16px 20px. Reduced for compactness */
+  line-height: 1.5;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  color: #3a3326;
+}
+
+.card.preface h4 {
+  margin: 0 0 4px 0; /* Reduced from 8px */
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.card.preface .card-question {
+  margin: 0 0 4px 0; /* Reduced from 6px */
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.card.preface .verse-header {
+  margin: 0 0 6px 0; /* Reduced from 10px */
+  font-size: 12px;
+  font-weight: bold;
+  color: #5a4a2e;
+}
+
+.card.preface .verse-text {
+  margin: 0;
+  font-size: 15px;
+  color: #2f2718;
+}

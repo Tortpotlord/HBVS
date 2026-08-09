@@ -18,7 +18,7 @@ let SQL, db, bookArray = [];
 let currentRef = {book: "Genesis", bkorder:1, chap: 1, verse: 1};
 let selectedBible = "akjv";
 let selectedMath = "akjv";
-let isModalFilling = false; // KEY: prevent recursive fillModal
+let isModalFilling = false;
 
 const bookMap = {"Pre":[0],"Gen":[1],"Exo":[2],"Lev":[3],"Num":[4],"Deu":[5],"Jos":[6],"Jud":[7],"Rut":[8],"1Sa":[9],"2Sa":[10],"1Ki":[11],"2Ki":[12],"1Ch":[13],"2Ch":[14],"Ezr":[15],"Neh":[16],"Est":[17],"Job":[18],"Psa":[19],"Pro":[20],"Ecc":[21],"Son":[22],"Isa":[23],"Jer":[24],"Lam":[25],"Eze":[26],"Dan":[27],"Hos":[28],"Joe":[29],"Amo":[30],"Oba":[31],"Jon":[32],"Mic":[33],"Nah":[34],"Hab":[35],"Zep":[36],"Hag":[37],"Zec":[38],"Mal":[39],"Mat":[40],"Mar":[41],"Luk":[42],"Joh":[43],"Act":[44],"Rom":[45],"1Co":[46],"2Co":[47],"Gal":[48],"Eph":[49],"Phi":[50],"Col":[51],"1Th":[52],"2Th":[53],"1Ti":[54],"2Ti":[55],"Tit":[56],"Phm":[57],"Heb":[58],"Jam":[59],"1Pe":[60],"2Pe":[61],"1Jo":[62],"2Jo":[63],"3Jo":[64],"Jde":[65],"Rev":[66],"Epi":[67]};
 function getCode(bookName){ return Object.keys(bookMap).find(k=>bookMap[k][0]==currentRef.bkorder) || "Gen"; }
@@ -66,11 +66,8 @@ function render5Cards(row){
     const isHighlight = math.class === selectedMath? 'highlight' : '';
     const refText = `${uiCode}${displayChap}:${currentRef.verse}:1-${wordcount}`;
     const cardClasses = getCardClasses(math.class);
-
-    // KEY: Preface gets preface class + data-chapter but still renders 5 cards
     const extraClass = isPreface? ' preface' : '';
     const dataChapter = isPreface? ` data-chapter="${bookCode}"` : '';
-
     allCardsHTML += `
       <div class="${cardClasses}${extraClass} ${isHighlight}" data-mode="${mode}" data-bible="${selectedBible}"${dataChapter}>
         <h4>${math.name.toUpperCase()}</h4>
@@ -84,11 +81,8 @@ function render5Cards(row){
 
   MATHS.forEach((math) => {
     const mode = modeFromClass(math.class);
-    const {text: processedText} = window.HBVS.renderVerse(
-      {TEXT: rawText, BIBLE: selectedBible},
-      mode
-    );
-    console.log(`[${mode}] ${selectedBible}:`, processedText);
+    if(!window.HBVS) return; // [FIX] safety
+    const {text: processedText} = window.HBVS.renderVerse({TEXT: rawText, BIBLE: selectedBible}, mode);
     const targetTd = container.querySelector(`.verse-text[data-mode="${mode}"]`);
     if(targetTd) targetTd.innerHTML = processedText;
   });
@@ -106,8 +100,8 @@ async function renderHomeVerse(){
   stmt.free();
   const sub1 = document.getElementById('sub1');
   const sub2 = document.getElementById('sub2');
-  if(sub1) sub1.innerText = `Bible: ${BIBLES.find(b=>b.id==selectedBible).name}`;
-  if(sub2) sub2.innerText = `Reader: ${MATHS.find(m=>m.class==selectedMath).name}`;
+  if(sub1) sub1.innerText = `Bible: ${BIBLES.find(b=>b.id==selectedBible)?.name || selectedBible}`;
+  if(sub2) sub2.innerText = `Reader: ${MATHS.find(m=>m.class==selectedMath)?.name || selectedMath}`;
 }
 
 async function fillModal(){
@@ -116,6 +110,7 @@ async function fillModal(){
   const bookSel = document.getElementById('modal-book');
   const chapSel = document.getElementById('modal-chap');
   const verseSel = document.getElementById('modal-verse');
+  if(!bookSel) { isModalFilling = false; return; } // [FIX] safety
 
   bookSel.innerHTML = bookArray.map(b=>`<option value="${b.BKORDER}">${b.BKORDER}. ${b.BOOKS}</option>`).join('');
   bookSel.value = currentRef.bkorder;
@@ -138,7 +133,7 @@ async function fillModal(){
 
   bookSel.onchange = () => {
     currentRef.bkorder = parseInt(bookSel.value);
-    currentRef.book = bookArray.find(b=>b.BKORDER==currentRef.bkorder).BOOKS;
+    currentRef.book = bookArray.find(b=>b.BKORDER==currentRef.bkorder)?.BOOKS || "Genesis";
     fillModal();
   }
   chapSel.onchange = () => {
@@ -154,7 +149,7 @@ async function loadRandomVerse(){
   if(stmt.step()){
     let row = stmt.getAsObject();
     currentRef.bkorder = row.BKORDER;
-    currentRef.book = bookArray.find(b=>b.BKORDER==row.BKORDER).BOOKS;
+    currentRef.book = bookArray.find(b=>b.BKORDER==row.BKORDER)?.BOOKS || "Genesis";
     currentRef.chap = row.CHAPTER;
     currentRef.verse = row.VERSE;
     renderHomeVerse();
@@ -162,10 +157,13 @@ async function loadRandomVerse(){
   stmt.free();
 }
 
+// [KEY FIX] Wait for Capacitor before running anything - v7.8.42
 document.addEventListener('DOMContentLoaded', async () => {
+  if(window.Capacitor) await Capacitor.whenReady(); // stops triggerEvent error
+
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7840al&${Date.now()}`);
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7843&${Date.now()}`); // [UPDATED]
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB = db;
@@ -190,13 +188,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const targetClass = getCardClasses(selectedMath).split(' ').pop();
       document.querySelector(`.card.${targetClass}`)?.classList.add('highlight');
       const sub2 = document.getElementById('sub2');
-      if(sub2) sub2.innerText = `Reader: ${MATHS.find(m=>m.class==selectedMath).name}`;
+      if(sub2) sub2.innerText = `Reader: ${MATHS.find(m=>m.class==selectedMath)?.name || selectedMath}`;
     }
 
     document.getElementById('btn-change-verse')?.addEventListener('click', () => { fillModal(); document.getElementById('verse-modal').classList.remove('hidden'); });
     document.getElementById('btn-go')?.addEventListener('click', () => {
       currentRef.bkorder = parseInt(document.getElementById('modal-book').value);
-      currentRef.book = bookArray.find(b=>b.BKORDER==currentRef.bkorder).BOOKS;
+      currentRef.book = bookArray.find(b=>b.BKORDER==currentRef.bkorder)?.BOOKS || "Genesis";
       currentRef.chap = parseInt(document.getElementById('modal-chap').value);
       currentRef.verse = parseInt(document.getElementById('modal-verse').value);
       document.getElementById('verse-modal').classList.add('hidden');
@@ -207,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('overlay')?.addEventListener('click', () => { document.getElementById('sidemenu').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); });
     document.getElementById('btn-refresh')?.addEventListener('click', () => { renderHomeVerse(); });
     document.getElementById('btn-random')?.addEventListener('click', () => { loadRandomVerse(); });
-    document.getElementById('btn-search')?.addEventListener('click', () => { /* future: open search modal */ });
+    document.getElementById('btn-search')?.addEventListener('click', () => { location.href='bible.html'; }); // [FIX] go to bible tab
 
     fillModal();
     renderHomeVerse();

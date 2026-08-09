@@ -3,22 +3,50 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v7.8.40ae</title>
+<title>Holy Bible Vector Space v7.8.42</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 
-<link rel="stylesheet" href="css/global.css?v=7840ae">
-<link rel="stylesheet" href="css/style.css?v=7840ae">
-<link rel="stylesheet" href="css/preface.css?v=7840ae">
-<link rel="stylesheet" href="css/superscript.css?v=7840ae">
-<link rel="stylesheet" href="css/mathkjv.css?v=7840ae">
+<!-- [CRITICAL FIX] Fake Capacitor Bridge to stop VM4/VM5 triggerEvent crash -->
+<script>
+  window.Capacitor = window.Capacitor || {};
+  window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+  window.Capacitor.Plugins.App = window.Capacitor.Plugins.App || {
+    triggerEvent: function(evt, data){ console.log("[CAP FAKE] triggerEvent:", evt); },
+    addListener: function(){ return { remove: function(){} }; },
+    removeAllListeners: function(){}
+  };
+  window.Capacitor.isNativePlatform = function(){ return true; };
+  window.Capacitor.getPlatform = function(){ return 'android'; };
+  window.Capacitor.whenReady = async function(){ return Promise.resolve(); };
+</script>
+<!-- END FIX -->
+
+<!-- [HBVS HELPER] SafeNotify fallback so engine doesn't crash -->
+<script>
+window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
+  console.log(`[SafeNotify ${type}]`, msg);
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:9999;opacity:0;transition:opacity 0.3s';
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.style.opacity=1, 10);
+  setTimeout(()=>{toast.style.opacity=0; setTimeout(()=>toast.remove(),300)}, 2500);
+};
+</script>
+
+<link rel="stylesheet" href="css/global.css?v=7842">
+<link rel="stylesheet" href="css/style.css?v=7842">
+<link rel="stylesheet" href="css/preface.css?v=7842">
+<link rel="stylesheet" href="css/superscript.css?v=7842">
+<link rel="stylesheet" href="css/mathkjv.css?v=7842">
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.PNG?v=7840ae" alt="I Go To The Father"/>
+  <img src="assets/IGoToTheFather.png?v=7842" alt="I Go To The Father"/>
   <div style="font-size:18px; font-weight:bold; color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
-  <p id="splash-text">Initializing HBVS v7.8.40ae - 68 Books + 7618 Wrappers</p>
+  <p id="splash-text">Initializing HBVS v7.8.42 - 68 Books + 7618 Wrappers</p>
   <div id="sub-splash">Phrase(Location) Engine Active</div>
 </div>
 
@@ -49,11 +77,10 @@
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
       <div class="logo-title">
-        <img src="assets/IGoToTheFather.PNG?v=7840ae" alt="Logo"/>
+        <img src="assets/IGoToTheFather.png?v=7842" alt="Logo"/>
         <div class="app-title">Holy Bible Vector Space</div>
       </div>
       <div class="topbar-icons header-icons">
-        <!-- 3 ICONS: Random | Search | Refresh -->
         <button id="btn-random" class="icon-btn" title="Random Verse">
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path d="M16 3h5v5M4 20L20 4M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
@@ -98,15 +125,35 @@
   </nav>
 </div>
 
-<script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=7840al"></script>
+<!-- SCRIPT LOAD ORDER: SQL -> ENGINE -> APP. All deferred -->
+<script src="js/sql.js-1.8.0/dist/sql-wasm.js" defer></script>
+<script src="js/hbvs_engine.js?v=7843" defer></script>
+<script src="js/app.js?v=7843" defer></script>
+
 <script>
+// [FIX] Wait for Capacitor + DOM before exposing splash callback
+window.addEventListener('DOMContentLoaded', async ()=>{
+  if(window.Capacitor && Capacitor.whenReady){
+    await Capacitor.whenReady(); 
+  }
+  
   function hideSplash(){
     const s = document.getElementById('splash');
-    if(s){ s.style.opacity = 0; setTimeout(()=>{ s.remove(); document.getElementById('app').classList.remove('hidden'); }, 500); }
+    if(s){ 
+      s.style.opacity = 0; 
+      setTimeout(()=>{ 
+        s.remove(); 
+        document.getElementById('app').classList.remove('hidden'); 
+      }, 500); 
+    }
   }
-  window.HBVS_SPLASH_READY = hideSplash;
+  
+  if(window.HBVS){
+    window.HBVS_SPLASH_READY = hideSplash;
+  } else {
+    document.getElementById('splash-text').innerText = "ERROR: hbvs_engine.js not found in www/js/";
+  }
+});
 </script>
-<script src="js/app.js?v=7840al"></script>
 </body>
 </html>

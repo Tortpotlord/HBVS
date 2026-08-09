@@ -1,11 +1,7 @@
 {
   "appId": "com.hbvs.app",
   "appName": "HBVS",
-  "webDir": "releases/v7.8.11bd-STABLE",
-  "server": {
-    "url": "http://192.168.125.32:8080",
-    "cleartext": true
-  },
+  "webDir": "www",
   "android": {
     "allowMixedContent": true
   }

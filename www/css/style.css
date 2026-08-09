@@ -1,38 +1,125 @@
-/* HBVS v7.8.11bk - Math Tab Styles */
+/* STYLE.CSS - Shell, Layout, Components. Uses vars from global.css */
 
-.math-wrap {
-  font-family: 'EB Garamond', serif;
-  font-size: 18px;
-  line-height: 1.6;
-  color: #111;
-  padding: 12px;
+/* === SPLASH + LAYOUT === */
+#splash {
+  position: fixed; inset:0; background:#2a1e14; color:var(--bg);
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  z-index:9999; gap:16px; transition: opacity 0.5s;
+}
+#splash img {width:120px; height:120px;}
+#app { padding-top: 120px; padding-bottom: 70px; max-width: 720px; margin: 0 auto; }
+
+/* === TOPBAR === */
+#topbar { 
+  position: fixed; top: 0; left: 0; right: 0; background: var(--card); 
+  border-bottom: 1px solid var(--border); z-index: 50; 
+  box-shadow: 0 2px 4px rgba(139,90,43,0.08);
+}
+.topbar-row1 { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+.hamburger { font-size: 24px; background: none; border: none; cursor: pointer; color: var(--accent); }
+.topbar-icons { display: flex; gap: 16px; }
+.topbar-icons button { font-size: 20px; background: none; border: none; cursor: pointer; color: var(--accent); }
+.logo-title { display: flex; align-items: center; gap: 8px; }
+.logo-title img { width: 32px; height: 32px; border-radius: 6px; }
+.app-title { font-size: 16px; font-weight: bold; color: var(--accent); }
+.subtitle { font-size: 11px; color: var(--muted); text-align: center; }
+.topbar-row2 { 
+  display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); 
+  background: var(--table-hover);
+}
+#topbar select { 
+  flex:1; padding: 6px 8px; font-size: 13px; border:1px solid var(--border); 
+  border-radius: 6px; background: var(--card); color: var(--text);
 }
 
-.math-eq {
-  margin: 8px 0;
-  white-space: pre-wrap;
+/* === SIDEMENU + MODAL === */
+#sidemenu { position: fixed; top:0; left:-260px; width:260px; height:100%; background:var(--card); z-index:100; transition:0.3s; box-shadow: 2px 0 8px rgba(0,0,0,0.1); padding:20px; }
+#sidemenu.open { left:0; }
+#overlay { position: fixed; inset:0; background:rgba(0,0,0,0.3); z-index:99; display:none; }
+#overlay.show { display:block; }
+.modal { position: fixed; inset:0; background: rgba(0,0,0,0.5); z-index:200; display:flex; justify-content:center; align-items:center; }
+.modal-content { background: var(--card); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
+.modal-row { display: flex; gap: 8px; margin: 12px 0; }
+.modal-row label { flex: 0 0 70px; font-size: 13px; color: var(--muted); padding-top: 6px; }
+.modal-row select { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); }
+.modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.modal-buttons button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); cursor: pointer; color: var(--text); }
+#btn-go { background: var(--accent); color: var(--card); border-color: var(--accent); }
+
+/* === MAIN + HOME === */
+main { padding: 16px; }
+.daily-bread { text-align: center; font-size: 13px; color: var(--muted); margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px; }
+.current-ref { text-align: center; font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: var(--accent); }
+.change-verse { text-align: center; font-size: 12px; color: var(--accent); margin: 0 0 16px 0; cursor: pointer; text-decoration: underline; }
+.cards-vertical { display: flex; flex-direction: column; gap: 14px; }
+
+/* === 5 CARDS === */
+.card h4 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* HIGHLIGHT SELECTED CARD */
+.card.highlight { box-shadow: 0 0 0 2px var(--accent); }
+
+/* === BOTTOMBAR === */
+#bottombar { 
+  position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--card); 
+  border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; 
+  font-size: 11px;
+}
+#bottombar div { text-align: center; cursor: pointer; color: var(--muted); }
+#bottombar .active { color: var(--accent); font-weight: bold; }
+
+/* === BIBLE TAB GRIDS === */
+.bible-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.grid-btn { padding: 8px 12px; background: var(--card); border: 1px solid var(--border); cursor: pointer; border-radius: 6px; font-size: 13px; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.grid-btn:hover { background: var(--table-hover); }
+.grid-btn.active { background: var(--accent); color: var(--card); border-color: var(--accent); box-shadow: 0 2px 6px rgba(139,90,43,0.2); }
+.section-label { font-size: 12px; color: var(--muted); margin-top: 10px; font-weight: bold; text-transform: uppercase; }
+#bookFilter { 
+  padding: 8px; width: 100%; background: var(--card); color: var(--text); 
+  border: 1px solid var(--border); border-radius: 6px; font-family: serif; 
+  margin-bottom: 8px;
 }
 
-/* Rule 2d/2e: Color parentheses and operators */
-.sym {
-  color: var(--burgundy); /* #800020 from global.css */
-  font-weight: 600;
+/* === SEARCH FILTER BAR === */
+#search-filter-bar { display: none; gap: 8px; margin: 10px 16px; }
+
+/* === BIBLE READER VIEW === */
+.reader-view { border-top: 2px solid var(--border); margin-top: 20px; padding-top: 15px; }
+.reader-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.reader-title { font-weight: bold; font-size: 18px; color: var(--accent); }
+.reader-tools span { margin-left: 12px; cursor: pointer; font-size: 18px; color: var(--accent); }
+.reader-tools span:hover { opacity: 0.7; }
+
+/* === VERSE BLOCKS === */
+.verse-block { padding: 10px 12px; margin: 6px 0; border-radius: 8px; background: var(--card); line-height: 1.7; }
+.verse-block b { color: var(--accent); margin-right: 6px; }
+
+/* === RULE 2e: SYMBOL COLORING === */
+.sym { 
+  color: var(--math-accent, #00e5ff); 
+  font-weight: 700; 
 }
 
-/* Rule 2e: The = operator gets math-accent */
-.math-eq .op-eq {
-  color: var(--math-accent); /* #00AEEF */
+/* === HOME PAGE MATH TRANSLATION THEME FOR BIBLE TAB === */
+#readerContent .hbvs-output.mathp .sym,
+#readerContent .hbvs-output.maths .sym,
+#readerContent .hbvs-output.matht .sym,
+#readerContent .hbvs-output.superscript .sym {
+  color: var(--math-accent, #00e5ff);
   font-weight: 700;
+  text-shadow: 0 0 1px var(--math-accent, #00e5ff);
 }
 
-/* Highlight continuity terms */
-.continuity-term {
-  background: rgba(0, 174, 239, 0.1);
-  border-bottom: 1px dotted var(--math-accent);
-}
+/* Table view headers also get math color */
+.math-table .header-row { color: var(--math-accent, #00e5ff); font-weight: bold; }
 
-/* Face term fix for v7.8.39bg */
-.face-term {
-  font-style: italic;
-  color: var(--burgundy);
-}
+/* === CARD TYPE BORDERS - Layout only. Colors from mathkjv.css === */
+.card.akjv { border-left: 4px solid var(--accent); }
+.card.superscript-kjv { border-left: 4px solid var(--muted); }
+.card.sym-primary { border-left: 4px solid var(--burgundy); }
+.card.sym-secondary { border-left: 4px solid var(--tomato); }
+.card.sym-tertiary { border-left: 4px solid var(--gold); }
+
+/* === BASE MARKERS - Content styling in preface.css === */
+.para-marker { font-weight: bold; font-size: 1.2em; margin-right: 4px; color: var(--accent); }
+.eol-space { display: inline-block; width: 0.5em; } /* for word wrap fix */
