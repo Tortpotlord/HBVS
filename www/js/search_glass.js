@@ -1,4 +1,4 @@
-console.log("SEARCH GLASS v1.2.4 LOADED - SHORT CODE + FILTER FIX");
+console.log("SEARCH GLASS v1.2.5 LOADED - SHORT CODE + FILTER FIX");
 const SEARCH_GLASS = (() => {
   const DB_NAME = 'HBVS_SearchCache_v1';
   const STORE_NAME = 'results';
