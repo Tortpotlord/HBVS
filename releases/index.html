@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-font="serif">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Holy Bible Vector Space v7.8.45</title> <!-- [v7845] -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<!-- [CRITICAL FIX] Fake Capacitor Bridge to stop VM4/VM5 triggerEvent crash -->
+<script>
+  window.Capacitor = window.Capacitor || {};
+  window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+  window.Capacitor.Plugins.App = window.Capacitor.Plugins.App || {
+    triggerEvent: function(evt, data){ console.log("[CAP FAKE] triggerEvent:", evt); },
+    addListener: function(){ return { remove: function(){} }; },
+    removeAllListeners: function(){}
+  };
+  window.Capacitor.isNativePlatform = function(){ return true; };
+  window.Capacitor.getPlatform = function(){ return 'android'; };
+  window.Capacitor.whenReady = async function(){ return Promise.resolve(); };
+</script>
+<!-- END FIX -->
+
+<!-- [HBVS HELPER] SafeNotify fallback so engine doesn't crash -->
+<script>
+window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
+  console.log(`[SafeNotify ${type}]`, msg);
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:9999;opacity:0;transition:opacity 0.3s';
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.style.opacity=1, 10);
+  setTimeout(()=>{toast.style.opacity=0; setTimeout(()=>toast.remove(),300)}, 2500);
+};
+</script>
+
+<link rel="stylesheet" href="css/global.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/style.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/preface.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/superscript.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/mathkjv.css?v=7845"> <!-- [v7845] -->
+</head>
+<body>
+<div id="splash">
+  <img src="assets/IGoToTheFather.png?v=7845" alt="I Go To The Father"/> <!-- [v7845] -->
+  <div style="font-size:18px; font-weight:bold; color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
+  <p id="splash-text">Initializing HBVS v7.8.45 - 68 Books + 7618 Wrappers</p> <!-- [v7845] -->
+  <div id="sub-splash">Phrase(Location) Engine Active</div>
+</div>
+
+<div id="overlay"></div>
+<div id="sidemenu">
+  <h4>Menu</h4>
+  <p><a href="index.html">Home</a></p>
+  <p><a href="bible.html">Bible</a></p> <!-- [v7845] fixed link -->
+  <p><a href="studyhub.html">StudyHub</a></p> <!-- [v7845] -->
+  <p><a href="settings.html">Settings</a></p> <!-- [v7845] NEW -->
+</div>
+
+<div id="verse-modal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Change Verse</h3>
+    <div class="modal-row"><label>Book:</label><select id="modal-book"></select></div>
+    <div class="modal-row"><label>Chapter:</label><select id="modal-chap"></select></div>
+    <div class="modal-row"><label>Verse:</label><select id="modal-verse"></select></div>
+    <div class="modal-buttons">
+      <button id="btn-cancel">Cancel</button>
+      <button id="btn-go">Go</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header id="topbar">
+    <div class="topbar-row1">
+      <button class="hamburger" id="btn-menu">☰</button>
+      <div class="logo-title">
+        <img src="assets/IGoToTheFather.png?v=7845" alt="Logo"/> <!-- [v7845] -->
+        <div class="app-title">Holy Bible Vector Space</div>
+      </div>
+      <div class="topbar-icons header-icons">
+        <button id="btn-random" class="icon-btn" title="Random Verse">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M16 3h5v5M4 20L20 4M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button id="btn-search" class="icon-btn" title="Search">
+          <svg class="search-glass" viewBox="0 0 24 24" width="20" height="20">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+        <button id="btn-refresh" class="icon-btn" title="Refresh">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M17.65 6.35A8 8 0 1 0 19 12" stroke="currentColor" stroke-width="2" fill="none"/>
+            <path d="M19 2v4h-4" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="subtitle" id="sub1">Bible: AKJV 1611 PCE circa 1900</div>
+    <div class="subtitle" id="sub2">Reader: MathKJVP</div>
+    <div class="topbar-row2">
+      <select id="bible-select"></select>
+      <select id="math-select"></select>
+    </div>
+  </header>
+
+  <main>
+    <section id="tab-home">
+      <p class="daily-bread">Daily Bread</p>
+      <h2 class="current-ref" id="current-ref">Gen1:4</h2>
+      <p class="change-verse" id="btn-change-verse">Change Verse</p>
+      <div id="home-cards" class="cards-vertical"></div>
+    </section>
+  </main>
+
+  <nav id="bottombar">
+    <div class="active">🏠<br>Home</div>
+    <div onclick="location.href='bible.html'">📖<br>Bible</div>
+    <div onclick="location.href='studyhub.html'">🔍<br>StudyHub</div> <!-- [v7845] -->
+    <div onclick="location.href='settings.html'">⚙️<br>Settings</div> <!-- [v7845] NEW -->
+  </nav>
+</div>
+
+<!-- SCRIPT LOAD ORDER: SQL -> ENGINE -> APP. All deferred -->
+<script src="js/sql.js-1.8.0/dist/sql-wasm.js" defer></script>
+<script src="js/hbvs_engine.js?v=7845" defer></script> <!-- [v7845] -->
+<script src="js/app.js?v=7845" defer></script> <!-- [v7845] -->
+
+<script>
+// [FIX] Wait for Capacitor + DOM before exposing splash callback
+window.addEventListener('DOMContentLoaded', async ()=>{
+  if(window.Capacitor && Capacitor.whenReady){
+    await Capacitor.whenReady();
+  }
+
+  function hideSplash(){
+    const s = document.getElementById('splash');
+    if(s){
+      s.style.opacity = 0;
+      setTimeout(()=>{
+        s.remove();
+        document.getElementById('app').classList.remove('hidden');
+      }, 500);
+    }
+  }
+
+  if(window.HBVS){
+    window.HBVS_SPLASH_READY = hideSplash;
+  } else {
+    document.getElementById('splash-text').innerText = "ERROR: hbvs_engine.js not found in www/js/";
+  }
+});
+</script>
+</body>
+</html>
