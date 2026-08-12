@@ -1,4 +1,4 @@
-console.log("HBVS BIBLE.JS v7.8.42 LOADED");
+console.log("HBVS BIBLE.JS v7.8.45 LOADED"); // [v7845]
 const BIBLES = [
   {id:"akjv", name:"AKJV 1611 PCE circa 1900"},
   {id:"asv", name:"American Standard Version"},
@@ -24,6 +24,51 @@ let verses = [];
 let cherryBuffer = [];
 
 let searchResultsCache = [];
+
+// [v7845] SETTINGS MODULE
+const SETTINGS = {
+  theme: localStorage.getItem('hbvs_theme') || 'light',
+  font: localStorage.getItem('hbvs_font') || 'serif',
+  fontSize: localStorage.getItem('hbvs_fontSize') || '16',
+  epilogueOn: localStorage.getItem('hbvs_epilogueOn') === 'true'
+};
+
+function applySettings(){
+  document.documentElement.setAttribute('data-theme', SETTINGS.theme);
+  document.documentElement.setAttribute('data-font', SETTINGS.font);
+  document.documentElement.style.setProperty('--font-size', SETTINGS.fontSize + 'px');
+}
+
+function initSettingsUI(){
+  const themeLight = document.getElementById('btn-theme-light');
+  const themeDark = document.getElementById('btn-theme-dark');
+  const fontSelect = document.getElementById('font-select');
+  const fontSize = document.getElementById('font-size');
+  const fontSizeLabel = document.getElementById('font-size-label');
+  const epilogueToggle = document.getElementById('epilogue-toggle');
+  const epilogueFile = document.getElementById('epilogue-file');
+
+  if(themeLight) themeLight.onclick = ()=>{ SETTINGS.theme='light'; localStorage.setItem('hbvs_theme','light'); applySettings(); }
+  if(themeDark) themeDark.onclick = ()=>{ SETTINGS.theme='dark'; localStorage.setItem('hbvs_theme','dark'); applySettings(); }
+  if(fontSelect){ fontSelect.value = SETTINGS.font; fontSelect.onchange = (e)=>{ SETTINGS.font=e.target.value; localStorage.setItem('hbvs_font',e.target.value); applySettings(); } }
+  if(fontSize){
+    fontSize.value = SETTINGS.fontSize;
+    if(fontSizeLabel) fontSizeLabel.innerText = SETTINGS.fontSize;
+    fontSize.oninput = (e)=>{ SETTINGS.fontSize=e.target.value; if(fontSizeLabel) fontSizeLabel.innerText=e.target.value; localStorage.setItem('hbvs_fontSize',e.target.value); applySettings(); }
+  }
+  if(epilogueToggle){
+    epilogueToggle.checked = SETTINGS.epilogueOn;
+    epilogueToggle.onchange = (e)=>{ SETTINGS.epilogueOn=e.target.checked; localStorage.setItem('hbvs_epilogueOn',e.target.checked); buildBookGrid(document.getElementById('bookFilter').value); }
+  }
+  if(epilogueFile){
+    epilogueFile.onchange = async (e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      const text = await file.text();
+      localStorage.setItem('hbvs_epilogueOverride', text);
+      SafeNotify('Epilogue.txt loaded. It will override DB on next load', 'success');
+    }
+  }
+}
 
 async function initSearchGlass(){
   if(window.SEARCH_GLASS){
@@ -128,7 +173,7 @@ function jumpToLocation(locStr){
   }, 200);
 }
 
-// === CHERRY PICK + COPY MODULE v7.8.42 ===
+// === CHERRY PICK + COPY MODULE v7.8.44 ===
 function getRefsFromSelection(sel, verseBlock){
   let range = sel.getRangeAt(0);
   let walker = document.createTreeWalker(verseBlock, NodeFilter.SHOW_TEXT, null);
@@ -246,7 +291,6 @@ function getMathSubtitle(mathClass){
 function renderVerse(text, mathClass, bkorder) {
   if(!text) return "[Verse not found]";
   let raw = text.replace(/¶/g, '<div class="para"></div>');
-  if(bkorder == 0 || bkorder == 67) return `<div class="hbvs-output math-preface ${mathClass}">${raw}</div>`;
   if(mathClass === "akjv") return `<div class="hbvs-output ${mathClass}">${raw}</div>`;
   const mode = getEngineMode(mathClass);
   const {text: processedText} = window.HBVS.renderVerse({TEXT: raw}, mode);
@@ -265,11 +309,16 @@ function compressRanges(arr){
   return ranges.join(',');
 }
 
+// [v7845] PATCHED: Hide Epilogue if toggle is OFF
 function buildBookGrid(filter=""){
   const grid = document.getElementById('bookGrid');
   if(!grid) return;
   grid.innerHTML = '';
-  bookArray.filter(b=>b.BOOKS.toLowerCase().includes(filter.toLowerCase())).forEach(b=>{
+  let booksToShow = bookArray.filter(b=>{
+    if(b.BKORDER == 67 &&!SETTINGS.epilogueOn) return false; // [v7845]
+    return b.BOOKS.toLowerCase().includes(filter.toLowerCase());
+  });
+  booksToShow.forEach(b=>{
     const btn = document.createElement('button');
     btn.className = 'grid-btn' + (b.BKORDER==currentRef.bkorder?' active':'');
     btn.innerText = `${b.BKORDER} ${b.BOOKS}`;
@@ -355,6 +404,8 @@ function showReader(){
   if(viewMode === 'table') renderTableView();
   else renderCardView();
 }
+
+// [v7845] PATCHED: Epilogue override from localStorage
 function renderCardView(){
   const readerView = document.getElementById('readerView');
   const readerTitle = document.getElementById('readerTitle');
@@ -365,6 +416,28 @@ function renderCardView(){
   let dbChap = currentRef.chap;
   let rangeStr = compressRanges(selectedVerses);
   readerTitle.innerText = `${uiCode}${dbChap}:${rangeStr}`;
+
+  // [v7845] If Epilogue and override exists, use it
+  if(currentRef.bkorder == 67 && SETTINGS.epilogueOn){
+    const override = localStorage.getItem('hbvs_epilogueOverride');
+    if(override){
+      const mode = getEngineMode(selectedMath);
+      const fakeVerse = [{CHAPTER:1, VERSE:1, text: override, WORDCOUNT: override.split(' ').length}];
+      readerContent.innerHTML = window.HBVS.renderPrefaceBlock(fakeVerse, mode, 67);
+      return;
+    }
+  }
+
+  // [v7844] If Preface bkorder=0 or Epilogue bkorder=67, render all as WYSIWYG block
+  if(currentRef.bkorder == 0 || currentRef.bkorder == 67){
+    let stmt = db.prepare(`SELECT CHAPTER, VERSE, text, WORDCOUNT FROM Verses WHERE BKORDER=? ORDER BY CHAPTER ASC, VERSE ASC`);
+    stmt.bind([currentRef.bkorder]);
+    let prefaceVerses = []; while(stmt.step()) prefaceVerses.push(stmt.getAsObject()); stmt.free();
+    const mode = getEngineMode(selectedMath);
+    readerContent.innerHTML = window.HBVS.renderPrefaceBlock(prefaceVerses, mode, currentRef.bkorder);
+    return;
+  }
+
   let content = '';
   selectedVerses.forEach(v=>{
     let stmt = db.prepare(`SELECT text, WORDCOUNT FROM Verses WHERE BKORDER=? AND CHAPTER=? AND VERSE=?`);
@@ -373,7 +446,8 @@ function renderCardView(){
     if(stmt.step()) { let row = stmt.getAsObject(); text = row.text; wordcount = row.WORDCOUNT || 0; }
     stmt.free();
     const processedText = renderVerse(text, selectedMath, currentRef.bkorder);
-    content += `<div class="verse-block hbvs-output ${selectedMath}"><b>${uiCode}${dbChap}:${v}:1-${wordcount}</b> ${processedText}</div>`;
+    let verseClass = v === 0? 'verse-zero' : '';
+    content += `<div class="verse-block ${verseClass}"><b>${uiCode}${dbChap}:${v}:1-${wordcount}</b> ${processedText}</div>`;
   });
   readerContent.innerHTML = content;
 }
@@ -419,11 +493,11 @@ function toggleView(){
 async function loadDB() {
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7842&${Date.now()}`); // [UPDATED]
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7845&${Date.now()}`); // [v7845]
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB_INSTANCE = db;
-    if(window.HBVS){ window.HBVS.loadHBVSData(db); console.log("HBVS Engine Loaded v7.8.42"); }
+    if(window.HBVS){ window.HBVS.loadHBVSData(db); console.log("HBVS Engine Loaded v7.8.45"); } // [v7845]
     else { console.error("HBVS Engine not found. Did you load hbvs_engine.js?"); }
 
     let stmtBooks = db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
@@ -489,6 +563,10 @@ async function loadDB() {
       if('speechSynthesis' in window){ speechSynthesis.cancel(); const utter = new SpeechSynthesisUtterance(text); utter.rate = 0.9; speechSynthesis.speak(utter); }
       else { alert('Audio not supported on this browser'); }
     });
+
+    applySettings(); // [v7845]
+    initSettingsUI(); // [v7845]
+
     document.getElementById('splash').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     buildBookGrid(); buildChapterGrid(); buildVerseGrid(); showReader();

@@ -1,7 +1,9 @@
-/* GLOBAL.HELPERS.CSS - Base theme + vars for HBVS v7.8.36bg */
+/* GLOBAL.HELPERS.CSS - Base theme + vars for HBVS v7.8.45 */
 
+/* [v7845] BASE DEFAULTS - Parchment Light */
 :root{
   --bg:#FDF6E3; /* Parchment */
+  --bg2:#FFFDF7; /* Warm white / card */
   --card:#FFFDF7; /* Warm white */
   --border:#E0D5C0; /* Sepia border */
   --accent:#8B5A2B; /* Saddle Brown */
@@ -14,21 +16,76 @@
   --table-hover:#F5EAD6; /* Stronger Hover */
   --highlight:#FFEB3B; /* Search highlight */
   --math-accent:#00e5ff; /* [NEW] Cyan for MathP/S/T/Superscript symbols + () */
+  --font-size:16px; /* [v7845] controlled by settings */
 }
+
+/* [v7845] 10 THEMES - data-theme attribute switches these */
+:root[data-theme="light"] { --bg: #ffffff; --bg2: #f5f5f5; --card:#ffffff; --text: #111; --accent: #8B5A2B; --border: #ddd; --highlight: #FFF3CD; --table-head:#f0f0f0; --table-hover:#e8e8e8; }
+:root[data-theme="dark"] { --bg: #121212; --bg2: #1e1e1e; --card:#1e1e1e; --text: #eee; --accent: #D4A76A; --border: #333; --highlight: #3a2f1a; --table-head:#252525; --table-hover:#2a2a2a; }
+:root[data-theme="sepia"] { --bg: #F4ECD8; --bg2: #EAE0C8; --card:#EAE0C8; --text: #5B4636; --accent: #8B5A2B; --border: #D9CFAE; --highlight: #FDEEA4; --table-head:#EFE5D0; --table-hover:#E6DDC4; }
+:root[data-theme="parchment"] { --bg: #EDE3C8; --bg2: #E2D6B3; --card:#E2D6B3; --text: #4A3B2A; --accent: #A0522D; --border: #D1C4A0; --highlight: #FDEEA4; --table-head:#E5DAB8; --table-hover:#DCD1AB; }
+:root[data-theme="amber"] { --bg: #FFF8E1; --bg2: #FFECB3; --card:#FFECB3; --text: #3E2723; --accent: #FF8F00; --border: #FFE082; --highlight: #FFD54F; --table-head:#FFECB3; --table-hover:#FFE082; }
+:root[data-theme="sand"] { --bg: #F5F1E8; --bg2: #E8E0D0; --card:#E8E0D0; --text: #5D534A; --accent: #A67C52; --border: #DAD2C0; --highlight: #EADCA0; --table-head:#EDE5D7; --table-hover:#E4DAC9; }
+:root[data-theme="forest"] { --bg: #1B2A1B; --bg2: #2A3A2A; --card:#2A3A2A; --text: #DDEEDD; --accent: #81C784; --border: #3A4A3A; --highlight: #2E4A2E; --table-head:#2F3F2F; --table-hover:#344534; }
+:root[data-theme="ocean"] { --bg: #0D1B2A; --bg2: #1B263B; --card:#1B263B; --text: #E0E1DD; --accent: #415A77; --border: #27374D; --highlight: #2a3f54; --table-head:#22304A; --table-hover:#273555; }
+:root[data-theme="midnight"] { --bg: #0A0A1A; --bg2: #14142A; --card:#14142A; --text: #C5C6D0; --accent: #7E57C2; --border: #222238; --highlight: #2a2a4a; --table-head:#1A1A35; --table-hover:#202040; }
+:root[data-theme="rose"] { --bg: #FFF0F5; --bg2: #FFE4EC; --card:#FFE4EC; --text: #4A1E2D; --accent: #C2185B; --border: #F8BBD0; --highlight: #F48FB1; --table-head:#FCDDE6; --table-hover:#FAD1DD; }
+
+/* [v7845] 10 FONTS - data-font attribute switches these */
+:root[data-font="serif"] { --app-font: 'Times New Roman', serif; }
+:root[data-font="sans"] { --app-font: Arial, sans-serif; }
+:root[data-font="mono"] { --app-font: 'Courier New', monospace; }
+:root[data-font="georgia"] { --app-font: Georgia, serif; }
+:root[data-font="garamond"] { --app-font: Garamond, serif; }
+:root[data-font="lora"] { --app-font: 'Lora', serif; }
+:root[data-font="merriweather"] { --app-font: 'Merriweather', serif; }
+:root[data-font="roboto"] { --app-font: 'Roboto', sans-serif; }
+:root[data-font="open-sans"] { --app-font: 'Open Sans', sans-serif; }
+:root[data-font="cormorant"] { --app-font: 'Cormorant Garamond', serif; }
 
 /* Reset + Base font for all bible text */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
-  background: var(--bg) url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlMGQ1YzAiIHN0cm9rZS13aWR0aD0iMC4xIi8+PC9zdmc+'); 
+  font-family: var(--app-font, "EB Garamond", "Garamond", "Times New Roman", serif); /* [v7845] */
+  background: var(--bg) url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlMGQ1YzAiIHN0cm9rZS13aWR0aD0iMC4xIi8+PC9zdmc+');
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 16px; /* Base up 1px */
+  font-size: var(--font-size); /* [v7845] Base now controlled by settings 12-32px */
+  padding-bottom: 70px; /* [NEW] space for bottom bar so content doesn't hide */
 }
 
 .hidden { display: none!important; }
+
+/* === BOTTOM BAR v7.8.65 - Shared on all 4 pages === */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: var(--card);
+  border-top: 2px solid var(--border);
+  padding: 8px 0;
+  z-index: 9999;
+  box-shadow: 0 -2px 8px rgba(139,90,43,0.1);
+}
+.nav-btn {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+.nav-btn:hover { color: var(--burgundy); }
+.nav-btn.active { color: var(--burgundy); }
 
 /* === TOPBAR TABS === */
 .topbar-icons button {
@@ -72,11 +129,12 @@ body {
   font-family: "Consolas", monospace;
   font-weight: 600;
   transition: all 0.2s;
+  color: var(--text); /* [v7845] */
 }
 .grid-btn:hover { background: var(--table-hover); border-color: var(--accent); }
-.grid-btn.active { 
-  background: var(--accent); 
-  color: #fff; 
+.grid-btn.active {
+  background: var(--accent);
+  color: #fff;
   border-color: var(--accent);
 }
 
@@ -95,6 +153,7 @@ body {
   font-size: 20px;
   margin-left: 14px;
   user-select: none;
+  color: var(--text); /* [v7845] */
 }
 .reader-tools span:hover { color: var(--accent); }
 
@@ -108,7 +167,7 @@ body {
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(139,90,43,0.08);
   line-height: 2.0; /* More spacing */
-  font-size: 1.2rem; /* Bigger for eyes */
+  font-size: 1.2em; /* [v7845] now scales with --font-size */
 }
 
 .verse-header {
@@ -135,6 +194,7 @@ body {
   font-size: 17px; /* Bigger */
   font-weight: 600;
   background: var(--card);
+  color: var(--text); /* [v7845] */
 }
 .search-bar input:focus {
   outline: none;
@@ -178,7 +238,7 @@ body {
   right: 12px;
   font-size: 11px;
   color: var(--muted);
-  font-family: "EB Garamond", serif;
+  font-family: var(--app-font), serif; /* [v7845] */
   font-weight: 700;
   background: var(--card);
   padding: 2px 6px;
@@ -205,10 +265,10 @@ body {
   transition: all 0.2s;
 }
 .search-item:hover { background: var(--table-hover); border-color: var(--accent); }
-.search-item b { 
-  display: block; 
-  margin-bottom: 8px; 
-  color: var(--accent); 
+.search-item b {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--accent);
   font-family: "Consolas", monospace;
   font-size: 15px; /* Bigger */
   font-weight: 700;
@@ -222,6 +282,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 700;
+  color: var(--text); /* [v7845] */
 }
 .btn-small:hover { background: var(--table-hover); border-color: var(--accent); }
 .muted { color: var(--muted); font-style: italic; font-size: 15px; }
@@ -255,7 +316,7 @@ mark.search-highlight {
 
 #hbvs-toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 90px; /* [FIXED] moved up above bottom bar */
   left: 50%;
   transform: translateX(-50%) translateY(100px);
   background: var(--burgundy);

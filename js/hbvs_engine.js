@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.43 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX");
+console.log("HBVS ENGINE v7.8.45 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -14,7 +14,6 @@ const HBVS = (() => {
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const getModeColor = (mode) => mode === 'P'? 'var(--burgundy)' : mode === 'S'? 'var(--tomato)' : mode === 'T'? 'var(--gold)' : 'var(--accent)';
 
-  // [FIX] Safe Capacitor wrapper - prevents "triggerEvent undefined"
   const SafeApp = window.Capacitor?.Plugins?.App || { triggerEvent: ()=>{ console.log("Capacitor not ready, skipped triggerEvent") } };
   const SafeNotify = (event) => { if(window.Capacitor) SafeApp.triggerEvent(event); }
 
@@ -31,7 +30,7 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.43 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.45 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
     SafeNotify('hbvsEngineLoaded');
   };
 
@@ -52,7 +51,6 @@ const HBVS = (() => {
       for(const key of keys){
         let replacement = wrapperMap.get(key);
         replacement = replacement.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
-        // [FIX v7843] Match any whitespace including &nbsp; \u00A0 and tabs. Android WebView uses these.
         const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'gi');
         const before = working;
         working = working.replace(rx, () => {
@@ -123,11 +121,16 @@ const HBVS = (() => {
 
     return {text, wordcount};
   };
-  return { loadHBVSData, renderVerse };
+
+  // [TEMP DISABLED v7845] Preface renderer removed to test boot
+  const renderPrefaceBlock = (versesArray, mode, bkorder) => {
+    return `<div class="hbvs-output">Preface renderer disabled for boot test</div>`;
+  }
+
+  return { loadHBVSData, renderVerse, renderPrefaceBlock };
 })();
 window.HBVS = HBVS;
 
-// [FIX] Tell app we are ready, but only if Capacitor exists
 document.addEventListener('DOMContentLoaded', ()=>{
   if(window.Capacitor) SafeNotify('hbvsScriptLoaded');
 });

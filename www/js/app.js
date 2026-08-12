@@ -20,6 +20,14 @@ let selectedBible = "akjv";
 let selectedMath = "akjv";
 let isModalFilling = false;
 
+// [v7845] Load settings from localStorage
+const SETTINGS = {
+  theme: localStorage.getItem('hbvs_theme') || 'light',
+  font: localStorage.getItem('hbvs_font') || 'serif',
+  fontSize: localStorage.getItem('hbvs_fontSize') || '16',
+  epilogueOn: localStorage.getItem('hbvs_epilogueOn') === 'true'
+};
+
 const bookMap = {"Pre":[0],"Gen":[1],"Exo":[2],"Lev":[3],"Num":[4],"Deu":[5],"Jos":[6],"Jud":[7],"Rut":[8],"1Sa":[9],"2Sa":[10],"1Ki":[11],"2Ki":[12],"1Ch":[13],"2Ch":[14],"Ezr":[15],"Neh":[16],"Est":[17],"Job":[18],"Psa":[19],"Pro":[20],"Ecc":[21],"Son":[22],"Isa":[23],"Jer":[24],"Lam":[25],"Eze":[26],"Dan":[27],"Hos":[28],"Joe":[29],"Amo":[30],"Oba":[31],"Jon":[32],"Mic":[33],"Nah":[34],"Hab":[35],"Zep":[36],"Hag":[37],"Zec":[38],"Mal":[39],"Mat":[40],"Mar":[41],"Luk":[42],"Joh":[43],"Act":[44],"Rom":[45],"1Co":[46],"2Co":[47],"Gal":[48],"Eph":[49],"Phi":[50],"Col":[51],"1Th":[52],"2Th":[53],"1Ti":[54],"2Ti":[55],"Tit":[56],"Phm":[57],"Heb":[58],"Jam":[59],"1Pe":[60],"2Pe":[61],"1Jo":[62],"2Jo":[63],"3Jo":[64],"Jde":[65],"Rev":[66],"Epi":[67]};
 function getCode(bookName){ return Object.keys(bookMap).find(k=>bookMap[k][0]==currentRef.bkorder) || "Gen"; }
 
@@ -40,6 +48,12 @@ function getCardClasses(mathClass){
   return "card";
 }
 
+function applyGlobalSettings(){ // [v7845] Apply theme/font/size on load
+  document.documentElement.setAttribute('data-theme', SETTINGS.theme);
+  document.documentElement.setAttribute('data-font', SETTINGS.font);
+  document.documentElement.style.setProperty('--font-size', SETTINGS.fontSize + 'px');
+}
+
 function render5Cards(row){
   const container = document.getElementById('home-cards');
   if(!container) return;
@@ -57,7 +71,7 @@ function render5Cards(row){
   rawText = rawText.replace(/([^\.,:;!?])\n([A-Za-z])/g, '$1<span class="eol-space"></span>\n$2');
   rawText = rawText.replace(/<span class="old-sym[^>]*>.*?<\/span>/g, '');
 
-  const isPreface = (currentRef.bkorder == 0 || currentRef.bkorder == 67);
+  const isPreface = (currentRef.bkorder == 0 || currentRef.bkorder == 67); // [v7845] includes Epilogue
   let bookCode = uiCode.toLowerCase();
 
   let allCardsHTML = '';
@@ -157,13 +171,15 @@ async function loadRandomVerse(){
   stmt.free();
 }
 
-// [KEY FIX] Wait for Capacitor before running anything - v7.8.42
+// [KEY FIX] Wait for Capacitor before running anything - v7.8.45
 document.addEventListener('DOMContentLoaded', async () => {
   if(window.Capacitor) await Capacitor.whenReady(); // stops triggerEvent error
 
+  applyGlobalSettings(); // [v7845] Apply theme before splash hides
+
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7843&${Date.now()}`); // [UPDATED]
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7845&${Date.now()}`); // [UPDATED]
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB = db;
@@ -175,6 +191,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     let stmtBooks = db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
     while(stmtBooks.step()) bookArray.push(stmtBooks.getAsObject());
     stmtBooks.free();
+
+    // [v7845] INJECT EPILOGUE AS DYNAMIC BOOK 67 FROM JSON
+    if(SETTINGS.epilogueOn){
+      let epilogueJSON = localStorage.getItem('hbvs_epilogueJSON');
+      if(epilogueJSON){
+        let verses = JSON.parse(epilogueJSON);
+        if(!bookArray.find(b=>b.BKORDER==67)){
+          bookArray.push({BOOKS: "Epilogue", BKORDER: 67});
+        }
+        // Wipe old epilogue verses then insert new ones
+        db.run("DELETE FROM Verses WHERE BKORDER=67");
+        let stmt = db.prepare("INSERT INTO Verses (BKORDER, CHAPTER, VERSE, text, WORDCOUNT) VALUES (?,?,?,?,?)");
+        verses.forEach(v=>{
+          stmt.bind([v.BKORDER, v.CHAPTER, v.VERSE, v.text, v.WORDCOUNT]); // [v7845] Full text
+          stmt.step(); stmt.reset();
+        });
+        stmt.free();
+      }
+    }
 
     const bibleSel = document.getElementById('bible-select');
     const mathSel = document.getElementById('math-select');

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v7.8.42</title>
+<title>Holy Bible Vector Space v7.8.45</title> <!-- [v7845] -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -36,17 +36,17 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 };
 </script>
 
-<link rel="stylesheet" href="css/global.css?v=7842">
-<link rel="stylesheet" href="css/style.css?v=7842">
-<link rel="stylesheet" href="css/preface.css?v=7842">
-<link rel="stylesheet" href="css/superscript.css?v=7842">
-<link rel="stylesheet" href="css/mathkjv.css?v=7842">
+<link rel="stylesheet" href="css/global.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/style.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/preface.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/superscript.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/mathkjv.css?v=7845"> <!-- [v7845] -->
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=7842" alt="I Go To The Father"/>
+  <img src="assets/IGoToTheFather.png?v=7845" alt="I Go To The Father"/> <!-- [v7845] -->
   <div style="font-size:18px; font-weight:bold; color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
-  <p id="splash-text">Initializing HBVS v7.8.42 - 68 Books + 7618 Wrappers</p>
+  <p id="splash-text">Initializing HBVS v7.8.45 - 68 Books + 7618 Wrappers</p> <!-- [v7845] -->
   <div id="sub-splash">Phrase(Location) Engine Active</div>
 </div>
 
@@ -54,9 +54,9 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 <div id="sidemenu">
   <h4>Menu</h4>
   <p><a href="index.html">Home</a></p>
-  <p><a href="bible.html">Bible</a></p>
-  <p>StudyHub</p>
-  <p>Settings</p>
+  <p><a href="bible.html">Bible</a></p> <!-- [v7845] fixed link -->
+  <p><a href="studyhub.html">StudyHub</a></p> <!-- [v7845] -->
+  <p><a href="settings.html">Settings</a></p> <!-- [v7845] NEW -->
 </div>
 
 <div id="verse-modal" class="modal hidden">
@@ -77,7 +77,7 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
       <div class="logo-title">
-        <img src="assets/IGoToTheFather.png?v=7842" alt="Logo"/>
+        <img src="assets/IGoToTheFather.png?v=7845" alt="Logo"/> <!-- [v7845] -->
         <div class="app-title">Holy Bible Vector Space</div>
       </div>
       <div class="topbar-icons header-icons">
@@ -120,34 +120,34 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
   <nav id="bottombar">
     <div class="active">🏠<br>Home</div>
     <div onclick="location.href='bible.html'">📖<br>Bible</div>
-    <div>🔍<br>StudyHub</div>
-    <div>⚙️<br>Settings</div>
+    <div onclick="location.href='studyhub.html'">🔍<br>StudyHub</div> <!-- [v7845] -->
+    <div onclick="location.href='settings.html'">⚙️<br>Settings</div> <!-- [v7845] NEW -->
   </nav>
 </div>
 
 <!-- SCRIPT LOAD ORDER: SQL -> ENGINE -> APP. All deferred -->
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js" defer></script>
-<script src="js/hbvs_engine.js?v=7843" defer></script>
-<script src="js/app.js?v=7843" defer></script>
+<script src="js/hbvs_engine.js?v=7845" defer></script> <!-- [v7845] -->
+<script src="js/app.js?v=7845" defer></script> <!-- [v7845] -->
 
 <script>
 // [FIX] Wait for Capacitor + DOM before exposing splash callback
 window.addEventListener('DOMContentLoaded', async ()=>{
   if(window.Capacitor && Capacitor.whenReady){
-    await Capacitor.whenReady(); 
+    await Capacitor.whenReady();
   }
-  
+
   function hideSplash(){
     const s = document.getElementById('splash');
-    if(s){ 
-      s.style.opacity = 0; 
-      setTimeout(()=>{ 
-        s.remove(); 
-        document.getElementById('app').classList.remove('hidden'); 
-      }, 500); 
+    if(s){
+      s.style.opacity = 0;
+      setTimeout(()=>{
+        s.remove();
+        document.getElementById('app').classList.remove('hidden');
+      }, 500);
     }
   }
-  
+
   if(window.HBVS){
     window.HBVS_SPLASH_READY = hideSplash;
   } else {
