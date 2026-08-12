@@ -23,4 +23,4 @@ venv/
 
 # Logs
 *.log
-npm-debug.log*
+npm-debug.log*"hbvs_data_v2.db" 
