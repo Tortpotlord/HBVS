@@ -23,4 +23,7 @@ venv/
 
 # Logs
 *.log
-npm-debug.log*"hbvs_data_v2.db" 
+npm-debug.log
+
+# Database - DO NOT TRACK
+hbvs_data_v2.db
