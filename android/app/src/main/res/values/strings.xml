@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HBVS</string>
+    <string name="title_activity_main">HBVS</string>
+    <string name="package_name">com.hbvs.app</string>
+    <string name="custom_url_scheme">com.hbvs.app</string>
+</resources>

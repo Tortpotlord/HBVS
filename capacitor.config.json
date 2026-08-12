@@ -1,0 +1,8 @@
+{
+  "appId": "com.hbvs.app",
+  "appName": "HBVS",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  }
+}

@@ -1,0 +1,309 @@
+/* GLOBAL.HELPERS.CSS - Base theme + vars for HBVS v7.8.45 */
+
+/* [v7845] BASE DEFAULTS - Parchment Light */
+:root{
+  --bg:#FDF6E3; /* Parchment */
+  --bg2:#FFFDF7; /* Warm white / card */
+  --card:#FFFDF7; /* Warm white */
+  --border:#E0D5C0; /* Sepia border */
+  --accent:#8B5A2B; /* Saddle Brown */
+  --text:#2A1F14; /* DARKER for AAA contrast */
+  --muted:#6A5A4A; /* Darker Muted */
+  --burgundy:#800020; /* Primary P */
+  --tomato:#FF6347; /* Secondary S */
+  --gold:#DAA520; /* Tertiary T */
+  --table-head:#F9F3E6; /* Table header bg */
+  --table-hover:#F5EAD6; /* Stronger Hover */
+  --highlight:#FFEB3B; /* Search highlight */
+  --math-accent:#00e5ff; /* [NEW] Cyan for MathP/S/T/Superscript symbols + () */
+  --font-size:16px; /* [v7845] controlled by settings */
+}
+
+/* [v7845] 10 THEMES - data-theme attribute switches these */
+:root[data-theme="light"] { --bg: #ffffff; --bg2: #f5f5f5; --card:#ffffff; --text: #111; --accent: #8B5A2B; --border: #ddd; --highlight: #FFF3CD; --table-head:#f0f0f0; --table-hover:#e8e8e8; }
+:root[data-theme="dark"] { --bg: #121212; --bg2: #1e1e1e; --card:#1e1e1e; --text: #eee; --accent: #D4A76A; --border: #333; --highlight: #3a2f1a; --table-head:#252525; --table-hover:#2a2a2a; }
+:root[data-theme="sepia"] { --bg: #F4ECD8; --bg2: #EAE0C8; --card:#EAE0C8; --text: #5B4636; --accent: #8B5A2B; --border: #D9CFAE; --highlight: #FDEEA4; --table-head:#EFE5D0; --table-hover:#E6DDC4; }
+:root[data-theme="parchment"] { --bg: #EDE3C8; --bg2: #E2D6B3; --card:#E2D6B3; --text: #4A3B2A; --accent: #A0522D; --border: #D1C4A0; --highlight: #FDEEA4; --table-head:#E5DAB8; --table-hover:#DCD1AB; }
+:root[data-theme="amber"] { --bg: #FFF8E1; --bg2: #FFECB3; --card:#FFECB3; --text: #3E2723; --accent: #FF8F00; --border: #FFE082; --highlight: #FFD54F; --table-head:#FFECB3; --table-hover:#FFE082; }
+:root[data-theme="sand"] { --bg: #F5F1E8; --bg2: #E8E0D0; --card:#E8E0D0; --text: #5D534A; --accent: #A67C52; --border: #DAD2C0; --highlight: #EADCA0; --table-head:#EDE5D7; --table-hover:#E4DAC9; }
+:root[data-theme="forest"] { --bg: #1B2A1B; --bg2: #2A3A2A; --card:#2A3A2A; --text: #DDEEDD; --accent: #81C784; --border: #3A4A3A; --highlight: #2E4A2E; --table-head:#2F3F2F; --table-hover:#344534; }
+:root[data-theme="ocean"] { --bg: #0D1B2A; --bg2: #1B263B; --card:#1B263B; --text: #E0E1DD; --accent: #415A77; --border: #27374D; --highlight: #2a3f54; --table-head:#22304A; --table-hover:#273555; }
+:root[data-theme="midnight"] { --bg: #0A0A1A; --bg2: #14142A; --card:#14142A; --text: #C5C6D0; --accent: #7E57C2; --border: #222238; --highlight: #2a2a4a; --table-head:#1A1A35; --table-hover:#202040; }
+:root[data-theme="rose"] { --bg: #FFF0F5; --bg2: #FFE4EC; --card:#FFE4EC; --text: #4A1E2D; --accent: #C2185B; --border: #F8BBD0; --highlight: #F48FB1; --table-head:#FCDDE6; --table-hover:#FAD1DD; }
+
+/* [v7845] 10 FONTS - data-font attribute switches these */
+:root[data-font="serif"] { --app-font: 'Times New Roman', serif; }
+:root[data-font="sans"] { --app-font: Arial, sans-serif; }
+:root[data-font="mono"] { --app-font: 'Courier New', monospace; }
+:root[data-font="georgia"] { --app-font: Georgia, serif; }
+:root[data-font="garamond"] { --app-font: Garamond, serif; }
+:root[data-font="lora"] { --app-font: 'Lora', serif; }
+:root[data-font="merriweather"] { --app-font: 'Merriweather', serif; }
+:root[data-font="roboto"] { --app-font: 'Roboto', sans-serif; }
+:root[data-font="open-sans"] { --app-font: 'Open Sans', sans-serif; }
+:root[data-font="cormorant"] { --app-font: 'Cormorant Garamond', serif; }
+
+/* Reset + Base font for all bible text */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--app-font, "EB Garamond", "Garamond", "Times New Roman", serif); /* [v7845] */
+  background: var(--bg) url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlMGQ1YzAiIHN0cm9rZS13aWR0aD0iMC4xIi8+PC9zdmc+');
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: var(--font-size); /* [v7845] Base now controlled by settings 12-32px */
+}
+
+.hidden { display: none!important; }
+
+/* === TOPBAR TABS === */
+.topbar-icons button {
+  background: none;
+  border: none;
+  font-size: 22px; /* Bigger */
+  cursor: pointer;
+  padding: 6px 10px;
+  color: var(--accent);
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.topbar-icons button:hover { opacity: 1; }
+.topbar-icons button[title="Reader"],
+.topbar-icons button[title="Search"] { opacity: 1; }
+
+/* === SECTION LABELS === */
+.section-label {
+  font-size: 12px; /* Bigger */
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 18px 0 10px 0;
+}
+
+/* === GRID BUTTONS === */
+.bible-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); /* Bigger */
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.grid-btn {
+  padding: 10px 4px;
+  border: 2px solid var(--border); /* Thicker */
+  background: var(--card);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px; /* Bigger */
+  font-family: "Consolas", monospace;
+  font-weight: 600;
+  transition: all 0.2s;
+  color: var(--text); /* [v7845] */
+}
+.grid-btn:hover { background: var(--table-hover); border-color: var(--accent); }
+.grid-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* === READER VIEW === */
+.reader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 18px 0;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 10px;
+}
+.reader-title { font-weight: 800; font-size: 18px; color: var(--accent); }
+.reader-tools span {
+  cursor: pointer;
+  font-size: 20px;
+  margin-left: 14px;
+  user-select: none;
+  color: var(--text); /* [v7845] */
+}
+.reader-tools span:hover { color: var(--accent); }
+
+/* All 5 card containers */
+.card {
+  max-width: 780px; /* Wider */
+  margin: 1.2rem auto;
+  padding: 1.2rem 2.2rem;
+  border: 2px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(139,90,43,0.08);
+  line-height: 2.0; /* More spacing */
+  font-size: 1.2em; /* [v7845] now scales with --font-size */
+}
+
+.verse-header {
+  font-size: 0.9rem;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  margin-bottom: 0.8em;
+  font-family: "Consolas", monospace;
+  font-weight: 700;
+}
+
+/* === SEARCH TAB v7.8.11bk === */
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin: 18px 0;
+}
+.search-bar input {
+  flex: 1;
+  padding: 14px 16px; /* Bigger */
+  border: 3px solid var(--border);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 17px; /* Bigger */
+  font-weight: 600;
+  background: var(--card);
+  color: var(--text); /* [v7845] */
+}
+.search-bar input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139,90,43,0.15);
+}
+.search-bar button {
+  padding: 14px 20px;
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 16px;
+}
+.search-bar button:hover { opacity: 0.9; }
+
+/* SUMMARY: Click to Copy */
+.search-summary {
+  background: var(--table-head);
+  border: 3px solid var(--gold);
+  padding: 16px 18px;
+  border-radius: 10px;
+  margin: 14px 0;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 15px; /* Bigger */
+  font-weight: 700;
+  color: var(--text); /* Dark text for contrast */
+  word-break: break-all;
+  cursor: pointer;
+  line-height: 1.7;
+  position: relative;
+  transition: all 0.2s;
+}
+.search-summary:hover { background: var(--card); border-color: var(--accent); }
+.search-summary::after {
+  content: "Click to Copy";
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--app-font), serif; /* [v7845] */
+  font-weight: 700;
+  background: var(--card);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* HIGH CONTRAST Danger button */
+.btn-danger {
+  background: var(--burgundy);
+  color: #FFFFFF; /* Pure white */
+  border: 3px solid var(--burgundy);
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.btn-danger:hover { background: #5A0016; border-color: #5A0016; }
+
+.search-item {
+  padding: 16px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  border-radius: 10px;
+  margin-bottom: 14px;
+  transition: all 0.2s;
+}
+.search-item:hover { background: var(--table-hover); border-color: var(--accent); }
+.search-item b {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-family: "Consolas", monospace;
+  font-size: 15px; /* Bigger */
+  font-weight: 700;
+}
+.btn-small {
+  font-size: 14px;
+  padding: 8px 14px;
+  margin-top: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text); /* [v7845] */
+}
+.btn-small:hover { background: var(--table-hover); border-color: var(--accent); }
+.muted { color: var(--muted); font-style: italic; font-size: 15px; }
+
+/* Search highlight */
+mark.search-highlight {
+  background: var(--highlight);
+  padding: 2px 3px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+/* AKJV Italics base */
+.card i { font-style: italic; }
+
+/* Chapter specific images - you said you will provide */
+.chapter-Gen1 { background: url('../img/gen1.png') top right no-repeat; background-size: contain; }
+.chapter-Exo3 { background: url('../img/exo3.png') top right no-repeat; background-size: contain; }
+
+/* Preface chapter images hook - matches preface.css */
+.preface[data-chapter="genesis"] { background-image: url('../img/preface/genesis.png'); }
+/* CHERRY PICK v7.8.11bl */
+::selection {
+  background: var(--gold);
+  color: var(--text);
+}
+::-moz-selection {
+  background: var(--gold);
+  color: var(--text);
+}
+
+#hbvs-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--burgundy);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-family: "Consolas", monospace;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 9999;
+  max-width: 90%;
+  word-break: break-all;
+}
+#hbvs-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
