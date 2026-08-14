@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.45 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX");
+console.log("HBVS ENGINE v7.8.46 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX + RULES 2c-2d-2e");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -30,7 +30,7 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.45 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.46 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
     SafeNotify('hbvsEngineLoaded');
   };
 
@@ -42,6 +42,21 @@ const HBVS = (() => {
     let result = input.replace(/<\/?i>/g, '');
     result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
     let working = result;
+    
+    // RULE 2c, 2d, 2e: Handle "of" standalone. ONLY for T mode
+    if(mode === 'T'){
+      // 2c: "of" before punctuation -> ()
+      working = working.replace(/\bof\s*([.,:;!?])/gi, `()<span class="sym" style="color:${color}">$1</span>`);
+      
+      // 2e: "of" at start of verse -> (noun group)
+      working = working.replace(/^\s*of\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/gi,
+        `<span class="sym" style="color:${color}">(</span>$1<span class="sym" style="color:${color}">)</span>`);
+      
+      // 2d: "of" after punctuation -> (noun group)
+      working = working.replace(/([.,:;!?])\s*of\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/gi, 
+        `$1 <span class="sym" style="color:${color}">(</span>$2<span class="sym" style="color:${color}">)</span>`);
+    }
+
     const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
     let changed = true;
     let safety = 0;
@@ -122,7 +137,7 @@ const HBVS = (() => {
     return {text, wordcount};
   };
 
-  // [TEMP DISABLED v7845] Preface renderer removed to test boot
+  // [TEMP DISABLED v7846] Preface renderer removed to test boot
   const renderPrefaceBlock = (versesArray, mode, bkorder) => {
     return `<div class="hbvs-output">Preface renderer disabled for boot test</div>`;
   }
