@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.46 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX + RULES 2c-2d-2e");
+console.log("HBVS ENGINE v7.8.59 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX + RULES 2c-2d-2e + T-CUMULATIVE");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -30,7 +30,7 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.46 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.59 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
     SafeNotify('hbvsEngineLoaded');
   };
 
@@ -42,21 +42,8 @@ const HBVS = (() => {
     let result = input.replace(/<\/?i>/g, '');
     result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
     let working = result;
-    
-    // RULE 2c, 2d, 2e: Handle "of" standalone. ONLY for T mode
-    if(mode === 'T'){
-      // 2c: "of" before punctuation -> ()
-      working = working.replace(/\bof\s*([.,:;!?])/gi, `()<span class="sym" style="color:${color}">$1</span>`);
-      
-      // 2e: "of" at start of verse -> (noun group)
-      working = working.replace(/^\s*of\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/gi,
-        `<span class="sym" style="color:${color}">(</span>$1<span class="sym" style="color:${color}">)</span>`);
-      
-      // 2d: "of" after punctuation -> (noun group)
-      working = working.replace(/([.,:;!?])\s*of\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/gi, 
-        `$1 <span class="sym" style="color:${color}">(</span>$2<span class="sym" style="color:${color}">)</span>`);
-    }
 
+    // [v7859 STEP 1] ALL MODES: Run DB wrappers CASE-SENSITIVE. 'g' only
     const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
     let changed = true;
     let safety = 0;
@@ -66,7 +53,7 @@ const HBVS = (() => {
       for(const key of keys){
         let replacement = wrapperMap.get(key);
         replacement = replacement.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
-        const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'gi');
+        const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'g');
         const before = working;
         working = working.replace(rx, () => {
           changed = true;
@@ -75,7 +62,23 @@ const HBVS = (() => {
         if(before!== working) changed = true;
       }
     }
+
+    // [v7859 STEP 2] T MODE ONLY: Rule 2c on PLAIN TEXT before WFF tokenizing
+    if(mode === 'T'){
+      // 2c: of: -> () CASE-INSENSITIVE. Runs on plain text
+      working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`);
+
+      // 2d: () (noun group) after punctuation
+      working = working.replace(/([.,:;!?])\s*\(\)\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/i,
+        `$1 ($2)`);
+
+      // 2e: () (noun group) at start
+      working = working.replace(/^\(\)\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/i,
+        `($1)`);
+    }
+
     result = working;
+    // [v7859] NOW tokenize and color parens
     result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
     let nestSafety = 0;
     while(nestSafety < 10){
@@ -137,7 +140,6 @@ const HBVS = (() => {
     return {text, wordcount};
   };
 
-  // [TEMP DISABLED v7846] Preface renderer removed to test boot
   const renderPrefaceBlock = (versesArray, mode, bkorder) => {
     return `<div class="hbvs-output">Preface renderer disabled for boot test</div>`;
   }
