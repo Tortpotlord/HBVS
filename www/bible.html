@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HBVS Bible Reader v7.8.45</title>
+<title>HBVS Bible Reader v7.8.64</title> <!-- [v7864] -->
 
 <script>
   window.Capacitor = window.Capacitor || {};
@@ -30,14 +30,14 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 };
 </script>
 
-<link rel="stylesheet" href="css/global.css?v=7845">
-<link rel="stylesheet" href="css/style.css?v=7845">
-<link rel="stylesheet" href="css/mathkjv.css?v=7845">
-<link rel="stylesheet" href="css/superscript.css?v=7845">
-<link rel="stylesheet" href="css/preface.css?v=7845">
+<link rel="stylesheet" href="css/global.css?v=7864"> <!-- [v7864] -->
+<link rel="stylesheet" href="css/style.css?v=7864"> <!-- [v7864] -->
+<link rel="stylesheet" href="css/mathkjv.css?v=7864"> <!-- [v7864] -->
+<link rel="stylesheet" href="css/superscript.css?v=7864"> <!-- [v7864] -->
+<link rel="stylesheet" href="css/preface.css?v=7864"> <!-- [v7864] -->
 
 <style>
-/* [v7845] Settings Tab Styles */
+/* [v7846] Settings Tab Styles */
 #settingsTab.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
 #settingsTab label{font-weight:bold;}
 #settingsTab select, #settingsTab input[type="range"]{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);color:var(--text);}
@@ -65,8 +65,8 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=7845" alt="Splash Logo"/>
-  <p id="splash-text">Loading Reader v7.8.45...</p>
+  <img src="assets/IGoToTheFather.png?v=7864" alt="Splash Logo"/> <!-- [v7864] -->
+  <p id="splash-text">Loading Reader v7.8.64...</p> <!-- [v7864] -->
 </div>
 <div id="overlay"></div>
 <div id="app" class="hidden">
@@ -126,7 +126,7 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
       <div id="searchResults"></div>
     </div>
 
-    <!-- [v7845] NEW SETTINGS TAB -->
+    <!-- [v7846] NEW SETTINGS TAB -->
     <div id="settingsTab" class="hidden">
       <div class="section-label">SETTINGS</div>
       <div class="setting-row">
@@ -160,14 +160,14 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
   </main>
 </div>
 
-<!-- [v7.8.65] SHARED LAYOUT -->
-<script src="js/layout.js?v=7845"></script>
+<!-- [v7.8.64] SHARED LAYOUT -->
+<script src="js/layout.js?v=7864"></script> <!-- [v7864] -->
 
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=7845"></script>
-<script src="js/search_glass.js?v=7845"></script>
-<script src="js/highlight_copy.js?v=7845"></script>
-<script src="js/bible.js?v=7845"></script>
+<script src="js/hbvs_engine.js?v=7864"></script> <!-- [v7864] -->
+<script src="js/search_glass.js?v=7864"></script> <!-- [v7864] -->
+<script src="js/highlight_copy.js?v=7864"></script> <!-- [v7864] -->
+<script src="js/bible.js?v=7864"></script> <!-- [v7864] -->
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const btnSearch = document.getElementById('btn-tab-search');
   const readerTab = document.getElementById('readerTab');
   const searchTab = document.getElementById('searchTab');
-  const settingsTab = document.getElementById('settingsTab'); // [v7845]
+  const settingsTab = document.getElementById('settingsTab'); // [v7864]
 
   function setActiveTab(tab){
     [readerTab, searchTab, settingsTab].forEach(t=>t.classList.add('hidden'));

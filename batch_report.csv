@@ -1,0 +1,5 @@
+Ref,Old_WC,New_WC,Words_Removed,Parens_Added,Old_End,New_End,Delta,Status,Rendered
+Gen6:15:1-34,19,19,0,0,34,34,0,PASS,And this = the fashion which thou ↦ make it of: The length(the ark) ↦ be three hundred cubits
+Num26:5:1-26,11,11,0,0,26,26,0,PASS,"Reuben, the eldest son of Israel: the children of Reuben; Hanoch,"
+Num26:6:1-14,14,7,7,2,14,7,0,PASS,"<span class='paren'>(</span>Hezron, the family (the) Hezronites: <span class='paren'>(</span>Carmi, the family (the) Carmites."
+Gen3:1:1-38,6,3,3,1,38,35,0,PASS,<span class='paren'>(</span>every tree (the) garden

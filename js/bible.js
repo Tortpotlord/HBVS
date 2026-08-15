@@ -1,4 +1,4 @@
-console.log("HBVS BIBLE.JS v7.8.45 LOADED"); // [v7845]
+console.log("HBVS BIBLE.JS v7.8.64 LOADED"); // [v7864]
 const BIBLES = [
   {id:"akjv", name:"AKJV 1611 PCE circa 1900"},
   {id:"asv", name:"American Standard Version"},
@@ -25,7 +25,7 @@ let cherryBuffer = [];
 
 let searchResultsCache = [];
 
-// [v7845] SETTINGS MODULE
+// [v7846] SETTINGS MODULE
 const SETTINGS = {
   theme: localStorage.getItem('hbvs_theme') || 'light',
   font: localStorage.getItem('hbvs_font') || 'serif',
@@ -173,7 +173,7 @@ function jumpToLocation(locStr){
   }, 200);
 }
 
-// === CHERRY PICK + COPY MODULE v7.8.44 ===
+// === CHERRY PICK + COPY MODULE v7.8.64 ===
 function getRefsFromSelection(sel, verseBlock){
   let range = sel.getRangeAt(0);
   let walker = document.createTreeWalker(verseBlock, NodeFilter.SHOW_TEXT, null);
@@ -309,13 +309,13 @@ function compressRanges(arr){
   return ranges.join(',');
 }
 
-// [v7845] PATCHED: Hide Epilogue if toggle is OFF
+// [v7846] PATCHED: Hide Epilogue if toggle is OFF
 function buildBookGrid(filter=""){
   const grid = document.getElementById('bookGrid');
   if(!grid) return;
   grid.innerHTML = '';
   let booksToShow = bookArray.filter(b=>{
-    if(b.BKORDER == 67 &&!SETTINGS.epilogueOn) return false; // [v7845]
+    if(b.BKORDER == 67 &&!SETTINGS.epilogueOn) return false; // [v7864]
     return b.BOOKS.toLowerCase().includes(filter.toLowerCase());
   });
   booksToShow.forEach(b=>{
@@ -405,7 +405,7 @@ function showReader(){
   else renderCardView();
 }
 
-// [v7845] PATCHED: Epilogue override from localStorage
+// [v7846] PATCHED: Epilogue override from localStorage
 function renderCardView(){
   const readerView = document.getElementById('readerView');
   const readerTitle = document.getElementById('readerTitle');
@@ -417,7 +417,7 @@ function renderCardView(){
   let rangeStr = compressRanges(selectedVerses);
   readerTitle.innerText = `${uiCode}${dbChap}:${rangeStr}`;
 
-  // [v7845] If Epilogue and override exists, use it
+  // [v7846] If Epilogue and override exists, use it
   if(currentRef.bkorder == 67 && SETTINGS.epilogueOn){
     const override = localStorage.getItem('hbvs_epilogueOverride');
     if(override){
@@ -428,7 +428,7 @@ function renderCardView(){
     }
   }
 
-  // [v7844] If Preface bkorder=0 or Epilogue bkorder=67, render all as WYSIWYG block
+  // [v7846] If Preface bkorder=0 or Epilogue bkorder=67, render all as WYSIWYG block
   if(currentRef.bkorder == 0 || currentRef.bkorder == 67){
     let stmt = db.prepare(`SELECT CHAPTER, VERSE, text, WORDCOUNT FROM Verses WHERE BKORDER=? ORDER BY CHAPTER ASC, VERSE ASC`);
     stmt.bind([currentRef.bkorder]);
@@ -493,11 +493,11 @@ function toggleView(){
 async function loadDB() {
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7845&${Date.now()}`); // [v7845]
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7864&${Date.now()}`); // [v7864]
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB_INSTANCE = db;
-    if(window.HBVS){ window.HBVS.loadHBVSData(db); console.log("HBVS Engine Loaded v7.8.45"); } // [v7845]
+    if(window.HBVS){ window.HBVS.loadHBVSData(db); console.log("HBVS Engine Loaded v7.8.64"); } // [v7864]
     else { console.error("HBVS Engine not found. Did you load hbvs_engine.js?"); }
 
     let stmtBooks = db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
@@ -564,8 +564,8 @@ async function loadDB() {
       else { alert('Audio not supported on this browser'); }
     });
 
-    applySettings(); // [v7845]
-    initSettingsUI(); // [v7845]
+    applySettings(); // [v7864]
+    initSettingsUI(); // [v7864]
 
     document.getElementById('splash').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
