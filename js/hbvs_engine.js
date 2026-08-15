@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.46 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX + RULES 2c-2d-2e");
+console.log("HBVS ENGINE v7.8.66a MERGED - BASE v7.8.46 + P/S CASE MEMORY + WORDCOUNT AFTER WRAPPERS");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -9,6 +9,7 @@ const HBVS = (() => {
   const WFF_CLOSE = '##HBVS_WFF_CLOSE##';
   const INH_OPEN = '##HBVS_INH_OPEN##';
   const INH_CLOSE = '##HBVS_INH_CLOSE##';
+  const CASE_TAG = '##HBVS_CASE_'; // ADDED
 
   const normalizeLoosePreserveCase = (s) => s.replace(/<\/?i>/g, '').replace(/\s+/g,' ').replace(/\u00A0/g,' ').trim();
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -30,7 +31,7 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.46 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.66a MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
     SafeNotify('hbvsEngineLoaded');
   };
 
@@ -42,21 +43,8 @@ const HBVS = (() => {
     let result = input.replace(/<\/?i>/g, '');
     result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
     let working = result;
-    
-    // RULE 2c, 2d, 2e: Handle "of" standalone. ONLY for T mode
-    if(mode === 'T'){
-      // 2c: "of" before punctuation -> ()
-      working = working.replace(/\bof\s*([.,:;!?])/gi, `()<span class="sym" style="color:${color}">$1</span>`);
-      
-      // 2e: "of" at start of verse -> (noun group)
-      working = working.replace(/^\s*of\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/gi,
-        `<span class="sym" style="color:${color}">(</span>$1<span class="sym" style="color:${color}">)</span>`);
-      
-      // 2d: "of" after punctuation -> (noun group)
-      working = working.replace(/([.,:;!?])\s*of\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/gi, 
-        `$1 <span class="sym" style="color:${color}">(</span>$2<span class="sym" style="color:${color}">)</span>`);
-    }
 
+    // [v7866a ADD] STEP 1: Run DB wrappers with Case Tag
     const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
     let changed = true;
     let safety = 0;
@@ -66,16 +54,36 @@ const HBVS = (() => {
       for(const key of keys){
         let replacement = wrapperMap.get(key);
         replacement = replacement.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
+        // ADDED: TAG THE CASE
+        const caseFlag = key.startsWith('Of ')? '1' : '0';
+        replacement = `${CASE_TAG}${caseFlag}##` + replacement;
         const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'gi');
         const before = working;
-        working = working.replace(rx, () => {
-          changed = true;
-          return replacement;
-        });
+        working = working.replace(rx, () => { changed = true; return replacement; });
         if(before!== working) changed = true;
       }
     }
+
+    // [v7866a ADD] STEP 1.5: P/S Unwrap for 2d/2e
+    if(mode === 'P' || mode === 'S'){
+      working = working.replace(/([.,:;!?])\s*##HBVS_CASE_(\d)##\(([^)]+)\)/g, (m, punct, flag, word) => {
+        return `${punct} ${flag === '1'? 'Of' : 'of'} ${word}`;
+      });
+      working = working.replace(/^##HBVS_CASE_(\d)##\(([^)]+)\)/, (m, flag, word) => {
+        return `${flag === '1'? 'Of' : 'of'} ${word}`;
+      });
+    }
+
+    // [v7866a ADD] STEP 2: T Rule 2c
+    if(mode === 'T'){
+      working = working.replace(/##HBVS_CASE_\d##/g, '');
+      working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`);
+    }
+    working = working.replace(/##HBVS_CASE_\d##/g, '');
+
     result = working;
+
+    // FROM HERE DOWN IS 100% v7.8.46. DO NOT TOUCH
     result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
     let nestSafety = 0;
     while(nestSafety < 10){
@@ -92,6 +100,7 @@ const HBVS = (() => {
     }
     result = result.replace(new RegExp(WFF_OPEN, 'g'), `<span class="sym" style="color:${color}">(</span>`);
     result = result.replace(new RegExp(WFF_CLOSE, 'g'), `<span class="sym" style="color:${color}">)</span>`);
+    // INH RESTORE LAST - THIS IS WHAT MAKES 2F WORK
     result = result.replace(new RegExp(INH_OPEN, 'g'), `(`);
     result = result.replace(new RegExp(INH_CLOSE, 'g'), `)`);
     return result;
@@ -123,29 +132,22 @@ const HBVS = (() => {
   const renderVerse = (verseObj, mode) => {
     if(!verseObj) return {text: "", wordcount: 0};
     let rawText = (verseObj.TEXT || "");
-    const wordcount = rawText.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
-    if(mode === 'superscript') { let c=0; let text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`); return {text, wordcount}; }
-    if(mode === 'akjv') return {text: rawText, wordcount};
-
     let text = rawText;
     text = applyWrappers(text, mode);
     text = replaceFunctionWords(text, mode);
-
+    // [v7866a FIX] COUNT AFTER WRAPPERS
+    const wordcount = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
+    if(mode === 'superscript') { let c=0; let text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`); return {text, wordcount}; }
+    if(mode === 'akjv') return {text: rawText, wordcount};
     if(window.SearchGlass && window.SearchGlass.postProcess) text = window.SearchGlass.postProcess(text);
     if(window.HighlightCopy && window.HighlightCopy.postProcess) text = window.HighlightCopy.postProcess(text);
-
     return {text, wordcount};
   };
 
-  // [TEMP DISABLED v7846] Preface renderer removed to test boot
   const renderPrefaceBlock = (versesArray, mode, bkorder) => {
     return `<div class="hbvs-output">Preface renderer disabled for boot test</div>`;
   }
-
   return { loadHBVSData, renderVerse, renderPrefaceBlock };
 })();
 window.HBVS = HBVS;
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(window.Capacitor) SafeNotify('hbvsScriptLoaded');
-});
+document.addEventListener('DOMContentLoaded', ()=>{ if(window.Capacitor) SafeNotify('hbvsScriptLoaded'); });
