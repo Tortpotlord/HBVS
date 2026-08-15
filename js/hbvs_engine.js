@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.59 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX + RULES 2c-2d-2e + T-CUMULATIVE");
+console.log("HBVS ENGINE v7.8.64 MERGED - DB=T DEFAULT + P/S CASE MEMORY + START/END FIX + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX + RULES 2c + T-CUMULATIVE");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -9,6 +9,7 @@ const HBVS = (() => {
   const WFF_CLOSE = '##HBVS_WFF_CLOSE##';
   const INH_OPEN = '##HBVS_INH_OPEN##';
   const INH_CLOSE = '##HBVS_INH_CLOSE##';
+  const CASE_TAG = '##HBVS_CASE_'; // new
 
   const normalizeLoosePreserveCase = (s) => s.replace(/<\/?i>/g, '').replace(/\s+/g,' ').replace(/\u00A0/g,' ').trim();
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -30,7 +31,7 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.59 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.64 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
     SafeNotify('hbvsEngineLoaded');
   };
 
@@ -43,7 +44,7 @@ const HBVS = (() => {
     result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
     let working = result;
 
-    // [v7859 STEP 1] ALL MODES: Run DB wrappers CASE-SENSITIVE. 'g' only
+    // [v7864 STEP 1] ALL MODES: Run DB wrappers CASE-SENSITIVE. TAG CASE
     const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
     let changed = true;
     let safety = 0;
@@ -53,6 +54,9 @@ const HBVS = (() => {
       for(const key of keys){
         let replacement = wrapperMap.get(key);
         replacement = replacement.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
+        // TAG THE CASE: Of=1, of=0
+        const caseFlag = key.startsWith('Of ')? '1' : '0';
+        replacement = `${CASE_TAG}${caseFlag}##` + replacement;
         const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'g');
         const before = working;
         working = working.replace(rx, () => {
@@ -63,22 +67,33 @@ const HBVS = (() => {
       }
     }
 
-    // [v7859 STEP 2] T MODE ONLY: Rule 2c on PLAIN TEXT before WFF tokenizing
-    if(mode === 'T'){
-      // 2c: of: -> () CASE-INSENSITIVE. Runs on plain text
-      working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`);
-
-      // 2d: () (noun group) after punctuation
-      working = working.replace(/([.,:;!?])\s*\(\)\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/i,
-        `$1 ($2)`);
-
-      // 2e: () (noun group) at start
-      working = working.replace(/^\(\)\s+([A-Za-z]+(?:\s+(?:the|a|an|thy|his|my|our|your)?\s*[A-Za-z]+){0,3})/i,
-        `($1)`);
+    // [v7864 STEP 1.5] P/S ONLY: Unwrap DB for 2d/2e exceptions. READ TAG
+    if(mode === 'P' || mode === 'S'){
+      // 2d: : ##CASE##(Word) -> : of/Of Word
+      working = working.replace(/([.,:;!?])\s*##HBVS_CASE_(\d)##\(([^)]+)\)/g, (m, punct, flag, word) => {
+        const ofWord = flag === '1'? 'Of' : 'of';
+        return `${punct} ${ofWord} ${word}`;
+      });
+      // 2e: ^##CASE##(Word) -> Of/of Word
+      working = working.replace(/^##HBVS_CASE_(\d)##\(([^)]+)\)/, (m, flag, word) => {
+        const ofWord = flag === '1'? 'Of' : 'of';
+        return `${ofWord} ${word}`;
+      });
     }
 
+    // [v7864 STEP 2] T MODE ONLY: Rule 2c. T:2c=YES
+    if(mode === 'T'){
+      // strip case tags for T
+      working = working.replace(/##HBVS_CASE_\d##/g, '');
+      // 2c: of before punct -> () empty parens
+      working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`);
+    }
+
+    // strip any leftover tags for P/S if no match
+    working = working.replace(/##HBVS_CASE_\d##/g, '');
+
     result = working;
-    // [v7859] NOW tokenize and color parens
+    // [v7864] NOW tokenize and color parens
     result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
     let nestSafety = 0;
     while(nestSafety < 10){
@@ -126,13 +141,16 @@ const HBVS = (() => {
   const renderVerse = (verseObj, mode) => {
     if(!verseObj) return {text: "", wordcount: 0};
     let rawText = (verseObj.TEXT || "");
-    const wordcount = rawText.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
-    if(mode === 'superscript') { let c=0; let text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`); return {text, wordcount}; }
-    if(mode === 'akjv') return {text: rawText, wordcount};
 
     let text = rawText;
-    text = applyWrappers(text, mode);
-    text = replaceFunctionWords(text, mode);
+    text = applyWrappers(text, mode); // <-- STEP 1: Wrappers first
+    text = replaceFunctionWords(text, mode); // <-- STEP 2: FW second
+
+    // [v7864 FIX] Count AFTER wrappers so Location Book:Chap:Verse:Start-End is correct
+    const wordcount = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
+
+    if(mode === 'superscript') { let c=0; let text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`); return {text, wordcount}; }
+    if(mode === 'akjv') return {text: rawText, wordcount};
 
     if(window.SearchGlass && window.SearchGlass.postProcess) text = window.SearchGlass.postProcess(text);
     if(window.HighlightCopy && window.HighlightCopy.postProcess) text = window.HighlightCopy.postProcess(text);
