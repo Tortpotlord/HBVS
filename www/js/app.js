@@ -71,7 +71,7 @@ function render5Cards(row){
   rawText = rawText.replace(/([^\.,:;!?])\n([A-Za-z])/g, '$1<span class="eol-space"></span>\n$2');
   rawText = rawText.replace(/<span class="old-sym[^>]*>.*?<\/span>/g, '');
 
-  const isPreface = (currentRef.bkorder == 0 || currentRef.bkorder == 67); // [v7845] includes Epilogue
+  const isPreface = (currentRef.bkorder == 0 || currentRef.bkorder == 67); // [v7871] includes Epilogue
   let bookCode = uiCode.toLowerCase();
 
   let allCardsHTML = '';
@@ -171,15 +171,15 @@ async function loadRandomVerse(){
   stmt.free();
 }
 
-// [KEY FIX] Wait for Capacitor before running anything - v7.8.45
+// [KEY FIX] Wait for Capacitor before running anything - v7.8.71
 document.addEventListener('DOMContentLoaded', async () => {
   if(window.Capacitor) await Capacitor.whenReady(); // stops triggerEvent error
 
-  applyGlobalSettings(); // [v7845] Apply theme before splash hides
+  applyGlobalSettings(); // [v7871] Apply theme before splash hides
 
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7845&${Date.now()}`); // [UPDATED]
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7871&${Date.now()}`); // [UPDATED]
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB = db;
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         db.run("DELETE FROM Verses WHERE BKORDER=67");
         let stmt = db.prepare("INSERT INTO Verses (BKORDER, CHAPTER, VERSE, text, WORDCOUNT) VALUES (?,?,?,?,?)");
         verses.forEach(v=>{
-          stmt.bind([v.BKORDER, v.CHAPTER, v.VERSE, v.text, v.WORDCOUNT]); // [v7845] Full text
+          stmt.bind([v.BKORDER, v.CHAPTER, v.VERSE, v.text, v.WORDCOUNT]); // [v7871] Full text
           stmt.step(); stmt.reset();
         });
         stmt.free();

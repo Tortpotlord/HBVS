@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.45 MERGED - VERSION-GOOD WRAPPERS + STABLE LOGIC + CAPACITOR GUARD + WHITESPACE FIX");
+console.log("HBVS ENGINE v7.8.71 CERTAIN - BASE d1b3b84 + P/S CASE MEMORY + T DEFAULT");
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -30,7 +30,7 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.45 MERGED. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.71 CERTAIN. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
     SafeNotify('hbvsEngineLoaded');
   };
 
@@ -42,6 +42,8 @@ const HBVS = (() => {
     let result = input.replace(/<\/?i>/g, '');
     result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
     let working = result;
+
+    // STEP 1: Run DB wrappers 100% normal. No tags
     const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
     let changed = true;
     let safety = 0;
@@ -51,16 +53,29 @@ const HBVS = (() => {
       for(const key of keys){
         let replacement = wrapperMap.get(key);
         replacement = replacement.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
-        const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'gi');
+        const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'g');
         const before = working;
-        working = working.replace(rx, () => {
-          changed = true;
-          return replacement;
-        });
+        working = working.replace(rx, () => { changed = true; return replacement; });
         if(before!== working) changed = true;
       }
     }
+
+    // [v7871 FINAL] STEP 2: POST-PROCESS "of" AFTER ALL WRAPPERS
+    if(mode === 'T'){
+      // Rule 2c DEFAULT: of: → () and of the → the
+      working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`);
+      working = working.replace(/\bof\b\s+the/gi, `the`); // of the → the
+    } else if(mode === 'P' || mode === 'S'){
+      // Rule 2d/2e EXCEPTION: Keep "of" but fix case. Do NOT delete
+      // 1. Start of verse
+      working = working.replace(/^of /i, 'Of ');
+      // 2. After punctuation :., ;!?
+      working = working.replace(/([.,:;!?])\s+of /gi, `$1 Of `);
+    }
+
     result = working;
+
+    // STEP 3: 100% d1b3b84 nesting logic. UNTOUCHED
     result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
     let nestSafety = 0;
     while(nestSafety < 10){
@@ -108,29 +123,21 @@ const HBVS = (() => {
   const renderVerse = (verseObj, mode) => {
     if(!verseObj) return {text: "", wordcount: 0};
     let rawText = (verseObj.TEXT || "");
-    const wordcount = rawText.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
-    if(mode === 'superscript') { let c=0; let text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`); return {text, wordcount}; }
-    if(mode === 'akjv') return {text: rawText, wordcount};
-
     let text = rawText;
     text = applyWrappers(text, mode);
     text = replaceFunctionWords(text, mode);
-
+    const wordcount = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
+    if(mode === 'superscript') { let c=0; let text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`); return {text, wordcount}; }
+    if(mode === 'akjv') return {text: rawText, wordcount};
     if(window.SearchGlass && window.SearchGlass.postProcess) text = window.SearchGlass.postProcess(text);
     if(window.HighlightCopy && window.HighlightCopy.postProcess) text = window.HighlightCopy.postProcess(text);
-
     return {text, wordcount};
   };
 
-  // [TEMP DISABLED v7845] Preface renderer removed to test boot
   const renderPrefaceBlock = (versesArray, mode, bkorder) => {
     return `<div class="hbvs-output">Preface renderer disabled for boot test</div>`;
   }
-
   return { loadHBVSData, renderVerse, renderPrefaceBlock };
 })();
 window.HBVS = HBVS;
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(window.Capacitor) SafeNotify('hbvsScriptLoaded');
-});
+document.addEventListener('DOMContentLoaded', ()=>{ if(window.Capacitor) SafeNotify('hbvsScriptLoaded'); });

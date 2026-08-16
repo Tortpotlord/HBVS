@@ -1,4 +1,4 @@
-console.log("HBVS BIBLE.JS v7.8.45 LOADED"); // [v7845]
+console.log("HBVS BIBLE.JS v7.8.71 LOADED"); // [v7871]
 const BIBLES = [
   {id:"akjv", name:"AKJV 1611 PCE circa 1900"},
   {id:"asv", name:"American Standard Version"},
@@ -173,7 +173,7 @@ function jumpToLocation(locStr){
   }, 200);
 }
 
-// === CHERRY PICK + COPY MODULE v7.8.44 ===
+// === CHERRY PICK + COPY MODULE v7.8.71 ===
 function getRefsFromSelection(sel, verseBlock){
   let range = sel.getRangeAt(0);
   let walker = document.createTreeWalker(verseBlock, NodeFilter.SHOW_TEXT, null);
@@ -315,7 +315,7 @@ function buildBookGrid(filter=""){
   if(!grid) return;
   grid.innerHTML = '';
   let booksToShow = bookArray.filter(b=>{
-    if(b.BKORDER == 67 &&!SETTINGS.epilogueOn) return false; // [v7845]
+    if(b.BKORDER == 67 &&!SETTINGS.epilogueOn) return false; // [v7871]
     return b.BOOKS.toLowerCase().includes(filter.toLowerCase());
   });
   booksToShow.forEach(b=>{
@@ -493,11 +493,11 @@ function toggleView(){
 async function loadDB() {
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7845&${Date.now()}`); // [v7845]
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=7871&${Date.now()}`); // [v7871]
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB_INSTANCE = db;
-    if(window.HBVS){ window.HBVS.loadHBVSData(db); console.log("HBVS Engine Loaded v7.8.45"); } // [v7845]
+    if(window.HBVS){ window.HBVS.loadHBVSData(db); console.log("HBVS Engine Loaded v7.8.71"); } // [v7845]
     else { console.error("HBVS Engine not found. Did you load hbvs_engine.js?"); }
 
     let stmtBooks = db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
@@ -564,8 +564,8 @@ async function loadDB() {
       else { alert('Audio not supported on this browser'); }
     });
 
-    applySettings(); // [v7845]
-    initSettingsUI(); // [v7845]
+    applySettings(); // [v7871]
+    initSettingsUI(); // [v7871]
 
     document.getElementById('splash').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
