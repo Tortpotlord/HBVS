@@ -1,6 +1,6 @@
 /* PREFACE CARD - Background + Tight Layout */
 .card.preface {
-  background: #f8f4e8 url('../assets/parchment.jpg') repeat;
+  background: #f8f4e8; /* [v7895] removed parchment.jpg */
   border: 1px solid #d4c8a8;
   border-radius: 10px;
   font-style: italic;
@@ -19,21 +19,27 @@
   text-transform: uppercase;
 }
 
-.card.preface .card-question {
+.card.preface.card-question {
   margin: 0 0 4px 0; /* Reduced from 6px */
   font-size: 11px;
   opacity: 0.7;
 }
 
-.card.preface .verse-header {
+.card.preface.verse-header {
   margin: 0 0 6px 0; /* Reduced from 10px */
   font-size: 12px;
   font-weight: bold;
   color: #5a4a2e;
 }
 
-.card.preface .verse-text {
+.card.preface.verse-text {
   margin: 0;
   font-size: 15px;
   color: #2f2718;
+}
+
+/* [v7895] Ensure symbols show in preface cards */
+.card.preface.sym {
+  font-weight: 700;
+  font-style: normal; /* symbols not italic */
 }

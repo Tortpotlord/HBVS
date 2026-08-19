@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v7.8.45</title> <!-- [v7845] -->
+<title>Holy Bible Vector Space v7.8.111</title> <!-- [v78111] -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -36,17 +36,18 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 };
 </script>
 
-<link rel="stylesheet" href="css/global.css?v=7845"> <!-- [v7845] -->
-<link rel="stylesheet" href="css/style.css?v=7845"> <!-- [v7845] -->
-<link rel="stylesheet" href="css/preface.css?v=7845"> <!-- [v7845] -->
-<link rel="stylesheet" href="css/superscript.css?v=7845"> <!-- [v7845] -->
-<link rel="stylesheet" href="css/mathkjv.css?v=7845"> <!-- [v7845] -->
+<link rel="stylesheet" href="css/global.css?v=78111"> <!-- [v78111] -->
+<link rel="stylesheet" href="css/style.css?v=78111"> <!-- [v78111] -->
+<link rel="stylesheet" href="css/preface.css?v=78111"> <!-- [v78111] Card View -->
+<link rel="stylesheet" href="css/preface-reader.css?v=78111"> <!-- [v78111 NEW] Table View PDF Style - FORCED CENTER -->
+<link rel="stylesheet" href="css/superscript.css?v=78111"> <!-- [v78111] -->
+<link rel="stylesheet" href="css/mathkjv.css?v=78111"> <!-- [v78111] -->
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=7845" alt="I Go To The Father"/> <!-- [v7845] -->
+  <img src="assets/IGoToTheFather.png?v=78111" alt="I Go To The Father"/> <!-- [v78111] -->
   <div style="font-size:18px; font-weight:bold; color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
-  <p id="splash-text">Initializing HBVS v7.8.45 - 68 Books + 7618 Wrappers</p> <!-- [v7845] -->
+  <p id="splash-text">Initializing HBVS v7.8.111 - 68 Books + 7618 Wrappers</p> <!-- [v78111] -->
   <div id="sub-splash">Phrase(Location) Engine Active</div>
 </div>
 
@@ -54,9 +55,9 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 <div id="sidemenu">
   <h4>Menu</h4>
   <p><a href="index.html">Home</a></p>
-  <p><a href="bible.html">Bible</a></p> <!-- [v7845] fixed link -->
-  <p><a href="studyhub.html">StudyHub</a></p> <!-- [v7845] -->
-  <p><a href="settings.html">Settings</a></p> <!-- [v7845] NEW -->
+  <p><a href="bible.html">Bible</a></p> <!-- [v78111] fixed link -->
+  <p><a href="studyhub.html">StudyHub</a></p> <!-- [v78111] -->
+  <p><a href="settings.html">Settings</a></p> <!-- [v78111] NEW -->
 </div>
 
 <div id="verse-modal" class="modal hidden">
@@ -77,7 +78,7 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
       <div class="logo-title">
-        <img src="assets/IGoToTheFather.png?v=7845" alt="Logo"/> <!-- [v7845] -->
+        <img src="assets/IGoToTheFather.png?v=78111" alt="Logo"/> <!-- [v78111] -->
         <div class="app-title">Holy Bible Vector Space</div>
       </div>
       <div class="topbar-icons header-icons">
@@ -114,21 +115,22 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
       <h2 class="current-ref" id="current-ref">Gen1:4</h2>
       <p class="change-verse" id="btn-change-verse">Change Verse</p>
       <div id="home-cards" class="cards-vertical"></div>
+      <div id="reader-view" class="hidden"></div> <!-- [v78111 NEW] For Preface/Epilogue Table View -->
     </section>
   </main>
 
   <nav id="bottombar">
     <div class="active">🏠<br>Home</div>
     <div onclick="location.href='bible.html'">📖<br>Bible</div>
-    <div onclick="location.href='studyhub.html'">🔍<br>StudyHub</div> <!-- [v7845] -->
-    <div onclick="location.href='settings.html'">⚙️<br>Settings</div> <!-- [v7845] NEW -->
+    <div onclick="location.href='studyhub.html'">🔍<br>StudyHub</div> <!-- [v78111] -->
+    <div onclick="location.href='settings.html'">⚙️<br>Settings</div> <!-- [v78111] NEW -->
   </nav>
 </div>
 
 <!-- SCRIPT LOAD ORDER: SQL -> ENGINE -> APP. All deferred -->
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js" defer></script>
-<script src="js/hbvs_engine.js?v=7845" defer></script> <!-- [v7845] -->
-<script src="js/app.js?v=7845" defer></script> <!-- [v7845] -->
+<script src="js/hbvs_engine.js?v=78110" defer></script> <!-- [v78110] -->
+<script src="js/app.js?v=78111" defer></script> <!-- [v78111] -->
 
 <script>
 // [FIX] Wait for Capacitor + DOM before exposing splash callback

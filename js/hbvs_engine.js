@@ -1,4 +1,4 @@
-console.log("HBVS ENGINE v7.8.71 CERTAIN - BASE d1b3b84 + P/S CASE MEMORY + T DEFAULT");
+console.log("HBVS ENGINE v7.8.127 AKJV WYSIWYG + PDF LAYOUT CENTER"); // [v78113]
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -12,7 +12,7 @@ const HBVS = (() => {
 
   const normalizeLoosePreserveCase = (s) => s.replace(/<\/?i>/g, '').replace(/\s+/g,' ').replace(/\u00A0/g,' ').trim();
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const getModeColor = (mode) => mode === 'P'? 'var(--burgundy)' : mode === 'S'? 'var(--tomato)' : mode === 'T'? 'var(--gold)' : 'var(--accent)';
+  const getModeColor = (mode) => mode === 'P'? 'var(--burgundy)' : mode === 'S'? 'var(--tomato)' : mode === 'T'? 'var(--gold)' : 'var(--burgundy)';
 
   const SafeApp = window.Capacitor?.Plugins?.App || { triggerEvent: ()=>{ console.log("Capacitor not ready, skipped triggerEvent") } };
   const SafeNotify = (event) => { if(window.Capacitor) SafeApp.triggerEvent(event); }
@@ -30,7 +30,7 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.71 CERTAIN. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    console.log(`HBVS v7.8.113 CERTAIN. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`); // [v78113]
     SafeNotify('hbvsEngineLoaded');
   };
 
@@ -42,58 +42,28 @@ const HBVS = (() => {
     let result = input.replace(/<\/?i>/g, '');
     result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
     let working = result;
-
-    // STEP 1: Run DB wrappers 100% normal. No tags
     const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
-    let changed = true;
-    let safety = 0;
-    while(changed && safety < 10){
-      changed = false;
-      safety++;
+    let changed = true; let safety = 0;
+    while(changed && safety < 10){ changed = false; safety++;
       for(const key of keys){
         let replacement = wrapperMap.get(key);
         replacement = replacement.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
         const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'g');
-        const before = working;
-        working = working.replace(rx, () => { changed = true; return replacement; });
+        const before = working; working = working.replace(rx, () => { changed = true; return replacement; });
         if(before!== working) changed = true;
       }
     }
-
-    // [v7871 FINAL] STEP 2: POST-PROCESS "of" AFTER ALL WRAPPERS
-    if(mode === 'T'){
-      // Rule 2c DEFAULT: of: → () and of the → the
-      working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`);
-      working = working.replace(/\bof\b\s+the/gi, `the`); // of the → the
-    } else if(mode === 'P' || mode === 'S'){
-      // Rule 2d/2e EXCEPTION: Keep "of" but fix case. Do NOT delete
-      // 1. Start of verse
-      working = working.replace(/^of /i, 'Of ');
-      // 2. After punctuation :., ;!?
-      working = working.replace(/([.,:;!?])\s+of /gi, `$1 Of `);
-    }
-
+    if(mode === 'T'){ working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`); working = working.replace(/\bof\b\s+the/gi, `the`);
+    } else if(mode === 'P' || mode === 'S'){ working = working.replace(/^of /i, 'Of '); working = working.replace(/([.,:;!?])\s+of /gi, `$1 Of `); }
     result = working;
-
-    // STEP 3: 100% d1b3b84 nesting logic. UNTOUCHED
     result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
-    let nestSafety = 0;
-    while(nestSafety < 10){
-      const before = result;
-      result = result.replace(new RegExp(`${WFF_CLOSE}\\s*${WFF_OPEN}`, 'g'), "");
-      if(before === result) break;
-      nestSafety++;
-    }
+    let nestSafety = 0; while(nestSafety < 10){ const before = result; result = result.replace(new RegExp(`${WFF_CLOSE}\\s*${WFF_OPEN}`, 'g'), ""); if(before === result) break; nestSafety++; }
     result = result.replace(/(\S)\s*##HBVS_WFF_OPEN##/g, `$1##HBVS_WFF_OPEN##`);
-    let openCount = (result.match(new RegExp(WFF_OPEN, 'g')) || []).length;
-    let closeCount = (result.match(new RegExp(WFF_CLOSE, 'g')) || []).length;
-    if(openCount > closeCount){
-      result += WFF_CLOSE.repeat(openCount - closeCount);
-    }
+    let openCount = (result.match(new RegExp(WFF_OPEN, 'g')) || []).length; let closeCount = (result.match(new RegExp(WFF_CLOSE, 'g')) || []).length;
+    if(openCount > closeCount){ result += WFF_CLOSE.repeat(openCount - closeCount); }
     result = result.replace(new RegExp(WFF_OPEN, 'g'), `<span class="sym" style="color:${color}">(</span>`);
     result = result.replace(new RegExp(WFF_CLOSE, 'g'), `<span class="sym" style="color:${color}">)</span>`);
-    result = result.replace(new RegExp(INH_OPEN, 'g'), `(`);
-    result = result.replace(new RegExp(INH_CLOSE, 'g'), `)`);
+    result = result.replace(new RegExp(INH_OPEN, 'g'), `(`); result = result.replace(new RegExp(INH_CLOSE, 'g'), `)`);
     return result;
   }
 
@@ -122,22 +92,174 @@ const HBVS = (() => {
 
   const renderVerse = (verseObj, mode) => {
     if(!verseObj) return {text: "", wordcount: 0};
-    let rawText = (verseObj.TEXT || "");
+    let rawText = (verseObj.TEXT || verseObj.text || "");
+
+    if(mode === 'akjv') {
+      const color = getModeColor('P');
+      let text = rawText;
+      text = text.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
+      text = text.replace(/\(/g, `<span class="sym" style="color:${color}">(</span>`);
+      text = text.replace(/\)/g, `<span class="sym" style="color:${color}">)</span>`);
+      const wordcount = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
+      return {text, wordcount};
+    }
+
     let text = rawText;
     text = applyWrappers(text, mode);
     text = replaceFunctionWords(text, mode);
     const wordcount = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
-    if(mode === 'superscript') { let c=0; let text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`); return {text, wordcount}; }
-    if(mode === 'akjv') return {text: rawText, wordcount};
-    if(window.SearchGlass && window.SearchGlass.postProcess) text = window.SearchGlass.postProcess(text);
-    if(window.HighlightCopy && window.HighlightCopy.postProcess) text = window.HighlightCopy.postProcess(text);
+    if(mode === 'superscript') {
+      let c=0;
+      text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`);
+      return {text, wordcount};
+    }
     return {text, wordcount};
   };
 
-  const renderPrefaceBlock = (versesArray, mode, bkorder) => {
-    return `<div class="hbvs-output">Preface renderer disabled for boot test</div>`;
+  // [v78113] TABLE VIEW RENDERER FOR PREFACE/EPILOGUE WITH CENTERED S1 - CONFIRMED WORKING
+  const renderPrefaceTable = (versesArray, mode, type) => {
+    if(!versesArray || versesArray.length === 0) return `<tbody><tr><td>No data</td></tr></tbody>`;
+
+    let html = `<tbody>`;
+    let buffer = [];
+    let currentSection = '';
+
+    versesArray.forEach((v, idx) => {
+      const chapter = v.CHAPTER?? v.chapter;
+      const verse = v.VERSE?? v.verse;
+      const rawText = v.text || v.TEXT || '';
+      if(chapter === undefined || verse === undefined) return;
+
+      let secClass = '';
+      if(chapter === 0) secClass = 's1';
+      else if(chapter === 1) secClass = 's2';
+      else if(chapter >= 2 && chapter <= 16) secClass = 's3';
+      else if(chapter === 17) secClass = 's4';
+
+      if(verse === 0){
+        if(buffer.length > 0){
+          html += `<tr class="${currentSection}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
+          buffer = [];
+        }
+        let headerText = rawText.replace(/¶/g,'').trim();
+        if(type === 'preface' && chapter === 1) headerText = 'EPISTLE DEDICATORY';
+        if(type === 'preface' && chapter === 2) headerText = 'THE TRANSLATORS TO THE READER';
+        if(type === 'preface' && chapter >= 3 && chapter <= 16) headerText = `THE TRANSLATORS TO THE READER - PART ${chapter-1}`;
+        if(type === 'preface' && chapter === 17) headerText = 'CONCLUSION';
+        html += `<tr class="${secClass}"><td colspan="2" class="sec-title">${headerText}</td></tr>`;
+        if(chapter === 2) html += `<tr class="${secClass}"><td colspan="2" class="title-line">${rawText.replace(/¶/g,'').trim()}</td></tr>`;
+        currentSection = secClass;
+        return;
+      }
+
+      const noConcat = (chapter === 17 && verse >= 6);
+      const isParagraphEnd = rawText.includes('¶') || noConcat;
+      let cleanText = rawText.replace(/¶/g,'').trim();
+      let processed = renderVerse({TEXT: cleanText}, mode).text;
+      let styleClass = '';
+      if(chapter === 1) styleClass = (verse >= 1 && verse <= 7)? 'style1' : 'style2';
+
+      // [v78113] SECTION 1: WRAP EACH LINE IN SPAN FOR CSS TO TARGET - THIS IS CORRECT
+      if(secClass === 's1') {
+        let lineClass = 'verse-text';
+        if(verse === 0) lineClass = 'sec-title';
+        else if(cleanText.toUpperCase() === 'THE') lineClass = 'line-the';
+        else if(cleanText.toUpperCase().includes('HOLY BIBLE')) lineClass = 'line-holy-bible';
+        else if(cleanText.includes('Appointed')) lineClass = 'line-italic';
+
+        html += `<tr class="s1"><td colspan="2"><span class="${lineClass}">${processed}</span></td></tr>`;
+        return;
+      }
+
+      if(noConcat){
+        if(buffer.length > 0){
+          html += `<tr class="${currentSection} ${styleClass}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
+          buffer = [];
+        }
+        html += `<tr class="${secClass} ${styleClass}"><td class="col-ref">${chapter}:${verse}</td><td>${processed}</td></tr>`;
+      } else {
+        buffer.push(processed);
+        if(isParagraphEnd){
+          html += `<tr class="${currentSection} ${styleClass}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
+          buffer = [];
+        }
+      }
+      currentSection = secClass;
+    });
+
+    if(buffer.length > 0){
+      html += `<tr class="${currentSection}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
+    }
+    html += `</tbody>`;
+    return html;
   }
-  return { loadHBVSData, renderVerse, renderPrefaceBlock };
+
+  const renderPrefaceBlock = (versesArray, mode, view = 'table') => {
+    if(view === 'table'){
+      const table = document.getElementById('table-view');
+      table?.classList.add('preface-mode');
+      table?.classList.remove('epilogue-mode');
+      return renderPrefaceTable(versesArray, mode, 'preface');
+    }
+    return renderSpecialSection(versesArray, mode, 'preface-reader', 'preface');
+  }
+
+  const renderEpilogueBlock = (versesArray, mode, view = 'table') => {
+    if(view === 'table'){
+      const table = document.getElementById('table-view');
+      table?.classList.add('epilogue-mode');
+      table?.classList.remove('preface-mode');
+      return renderPrefaceTable(versesArray, mode, 'epilogue');
+    }
+    return renderSpecialSection(versesArray, mode, 'epilogue-reader', 'epilogue');
+  }
+
+  const renderSpecialSection = (versesArray, mode, cssClass, type) => {
+    if(!versesArray || versesArray.length === 0) return `<div class="${cssClass}">No data</div>`;
+    let html = `<div class="${cssClass}">`;
+    let buffer = '';
+    versesArray.forEach((v, idx) => {
+      const chapter = v.CHAPTER?? v.chapter;
+      const verse = v.VERSE?? v.verse;
+      const rawText = v.text || v.TEXT || '';
+      if(chapter === undefined || verse === undefined) return;
+      if(idx === 0){
+        if(chapter === 0) html += `<div class="section-1 chap-0">`;
+        else if(chapter === 1) html += `<div class="section-2">`;
+        else if(chapter >= 2 && chapter <= 16) html += `<div class="section-3">`;
+        else if(chapter === 17) html += `<div class="section-4">`;
+        else html += `<div>`;
+      }
+      if(verse === 0){
+        let headerText = rawText.replace(/¶/g,'').trim();
+        if(type === 'preface' && chapter === 1) headerText = 'EPISTLE DEDICATORY';
+        html += `<div class="section-header">${headerText}</div>`;
+        return;
+      }
+      const noConcat = (chapter === 17 && verse >= 6);
+      const isParagraphEnd = rawText.includes('¶') || noConcat;
+      let cleanText = rawText.replace(/¶/g,'').trim();
+      let processed = renderVerse({TEXT: cleanText}, mode).text;
+      let styleClass = '';
+      if(chapter === 1){ styleClass = (verse >= 1 && verse <= 7)? 'style1' : 'style2'; }
+      if(chapter === 2 && verse === 1) styleClass = 'title-line';
+      if(noConcat){
+        if(buffer) { html += `<p>${buffer}</p>`; buffer = ''; }
+        html += `<p><span class="verse-number-inline">${verse}</span> ${processed}</p>`;
+      } else {
+        buffer += (buffer? ' ' : '') + processed; // [FIXED TYPO]
+        if(isParagraphEnd){
+          html += `<p class="${styleClass}">${buffer}<span class="paragraph-end"></span></p>`;
+          buffer = '';
+        }
+      }
+    });
+    if(buffer) html += `<p>${buffer}</p>`;
+    html += `</div></div>`;
+    return html;
+  }
+
+  return { loadHBVSData, renderVerse, renderPrefaceBlock, renderEpilogueBlock };
 })();
 window.HBVS = HBVS;
 document.addEventListener('DOMContentLoaded', ()=>{ if(window.Capacitor) SafeNotify('hbvsScriptLoaded'); });

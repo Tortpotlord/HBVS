@@ -20,7 +20,7 @@ let selectedBible = "akjv";
 let selectedMath = "akjv";
 let isModalFilling = false;
 
-// [v7845] Load settings from localStorage
+// [v78113] Load settings from localStorage
 const SETTINGS = {
   theme: localStorage.getItem('hbvs_theme') || 'light',
   font: localStorage.getItem('hbvs_font') || 'serif',
@@ -48,16 +48,52 @@ function getCardClasses(mathClass){
   return "card";
 }
 
-function applyGlobalSettings(){ // [v7845] Apply theme/font/size on load
+function applyGlobalSettings(){
   document.documentElement.setAttribute('data-theme', SETTINGS.theme);
   document.documentElement.setAttribute('data-font', SETTINGS.font);
   document.documentElement.style.setProperty('--font-size', SETTINGS.fontSize + 'px');
 }
 
+// [v78113] RENDER TABLE VIEW FOR PREFACE/EPILOGUE FROM VERSES TABLE
+async function renderTableView(){
+  const container = document.getElementById('reader-view');
+  const cards = document.getElementById('home-cards');
+  if(!container) return;
+
+  cards.classList.add('hidden');
+  container.classList.remove('hidden');
+
+  const isPreface = currentRef.bkorder === 0;
+  const isEpilogue = currentRef.bkorder === 67;
+  const mode = modeFromClass(selectedMath);
+
+  // Query VERSES table for both 0 and 67
+  const stmt = db.prepare("SELECT BKCHAPVERSE, text FROM Verses WHERE BKORDER=? AND CHAPTER=? ORDER BY VERSE ASC");
+  stmt.bind([currentRef.bkorder, currentRef.chap]);
+  let rows = [];
+  while(stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+
+  if(rows.length === 0){
+    container.innerHTML = `<div class="preface-reader">No data for ${isPreface?'Preface':'Epilogue'} Chapter ${currentRef.chap}</div>`;
+    return;
+  }
+
+  if(isPreface){
+    container.innerHTML = window.HBVS.renderPrefaceBlock(rows, mode, 'table');
+  } else if(isEpilogue){
+    container.innerHTML = window.HBVS.renderEpilogueBlock(rows, mode, 'table');
+  }
+}
+
 function render5Cards(row){
   const container = document.getElementById('home-cards');
+  const reader = document.getElementById('reader-view');
   if(!container) return;
+  container.classList.remove('hidden');
+  reader.classList.add('hidden');
   container.innerHTML = '';
+
   let uiCode = getCode(currentRef.book);
   let dbChap = currentRef.chap;
   if(ONE_CHAP_BKORDERS.includes(currentRef.bkorder) && currentRef.chap > 1) dbChap = 1;
@@ -71,7 +107,7 @@ function render5Cards(row){
   rawText = rawText.replace(/([^\.,:;!?])\n([A-Za-z])/g, '$1<span class="eol-space"></span>\n$2');
   rawText = rawText.replace(/<span class="old-sym[^>]*>.*?<\/span>/g, '');
 
-  const isPreface = (currentRef.bkorder == 0 || currentRef.bkorder == 67); // [v7871] includes Epilogue
+  const isPreface = (currentRef.bkorder == 0 || currentRef.bkorder == 67);
   let bookCode = uiCode.toLowerCase();
 
   let allCardsHTML = '';
@@ -95,7 +131,7 @@ function render5Cards(row){
 
   MATHS.forEach((math) => {
     const mode = modeFromClass(math.class);
-    if(!window.HBVS) return; // [FIX] safety
+    if(!window.HBVS) return;
     const {text: processedText} = window.HBVS.renderVerse({TEXT: rawText, BIBLE: selectedBible}, mode);
     const targetTd = container.querySelector(`.verse-text[data-mode="${mode}"]`);
     if(targetTd) targetTd.innerHTML = processedText;
@@ -124,7 +160,7 @@ async function fillModal(){
   const bookSel = document.getElementById('modal-book');
   const chapSel = document.getElementById('modal-chap');
   const verseSel = document.getElementById('modal-verse');
-  if(!bookSel) { isModalFilling = false; return; } // [FIX] safety
+  if(!bookSel) { isModalFilling = false; return; }
 
   bookSel.innerHTML = bookArray.map(b=>`<option value="${b.BKORDER}">${b.BKORDER}. ${b.BOOKS}</option>`).join('');
   bookSel.value = currentRef.bkorder;
@@ -171,15 +207,15 @@ async function loadRandomVerse(){
   stmt.free();
 }
 
-// [KEY FIX] Wait for Capacitor before running anything - v7.8.71
+// [KEY FIX] Wait for Capacitor before running anything - v7.8.127
 document.addEventListener('DOMContentLoaded', async () => {
-  if(window.Capacitor) await Capacitor.whenReady(); // stops triggerEvent error
+  if(window.Capacitor) await Capacitor.whenReady();
 
-  applyGlobalSettings(); // [v7871] Apply theme before splash hides
+  applyGlobalSettings();
 
   try {
     SQL = await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse = await fetch(`hbvs_data_v2.db?v=7871&${Date.now()}`); // [UPDATED]
+    const dbResponse = await fetch(`hbvs_data_v2.db?v=78127&${Date.now()}`); // [v78127] BUMPED CACHE BUST
     const dbBinary = new Uint8Array(await dbResponse.arrayBuffer());
     db = new SQL.Database(dbBinary);
     window.DB = db;
@@ -192,7 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     while(stmtBooks.step()) bookArray.push(stmtBooks.getAsObject());
     stmtBooks.free();
 
-    // [v7845] INJECT EPILOGUE AS DYNAMIC BOOK 67 FROM JSON
+    // [v78127] INJECT EPILOGUE AS DYNAMIC BOOK 67 FROM JSON
     if(SETTINGS.epilogueOn){
       let epilogueJSON = localStorage.getItem('hbvs_epilogueJSON');
       if(epilogueJSON){
@@ -200,11 +236,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(!bookArray.find(b=>b.BKORDER==67)){
           bookArray.push({BOOKS: "Epilogue", BKORDER: 67});
         }
-        // Wipe old epilogue verses then insert new ones
         db.run("DELETE FROM Verses WHERE BKORDER=67");
         let stmt = db.prepare("INSERT INTO Verses (BKORDER, CHAPTER, VERSE, text, WORDCOUNT) VALUES (?,?,?,?,?)");
         verses.forEach(v=>{
-          stmt.bind([v.BKORDER, v.CHAPTER, v.VERSE, v.text, v.WORDCOUNT]); // [v7871] Full text
+          stmt.bind([v.BKORDER, v.CHAPTER, v.VERSE, v.text, v.WORDCOUNT]);
           stmt.step(); stmt.reset();
         });
         stmt.free();
@@ -240,7 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('overlay')?.addEventListener('click', () => { document.getElementById('sidemenu').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); });
     document.getElementById('btn-refresh')?.addEventListener('click', () => { renderHomeVerse(); });
     document.getElementById('btn-random')?.addEventListener('click', () => { loadRandomVerse(); });
-    document.getElementById('btn-search')?.addEventListener('click', () => { location.href='bible.html'; }); // [FIX] go to bible tab
+    document.getElementById('btn-search')?.addEventListener('click', () => { location.href='bible.html'; });
 
     fillModal();
     renderHomeVerse();

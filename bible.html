@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HBVS Bible Reader v7.8.71</title>
+<title>HBVS Bible Reader v7.8.128</title> <!-- [v78128] -->
 
 <script>
   window.Capacitor = window.Capacitor || {};
@@ -30,14 +30,16 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 };
 </script>
 
-<link rel="stylesheet" href="css/global.css?v=7871">
-<link rel="stylesheet" href="css/style.css?v=7871">
-<link rel="stylesheet" href="css/mathkjv.css?v=7871">
-<link rel="stylesheet" href="css/superscript.css?v=7871">
-<link rel="stylesheet" href="css/preface.css?v=7871">
+<!-- [v78128] ALL CSS BUMPED -->
+<link rel="stylesheet" href="css/global.css?v=78128">
+<link rel="stylesheet" href="css/style.css?v=78128">
+<link rel="stylesheet" href="css/mathkjv.css?v=78128">
+<link rel="stylesheet" href="css/superscript.css?v=78128">
+<link rel="stylesheet" href="css/preface.css?v=78128">
+<link rel="stylesheet" href="css/preface-reader.css?v=78128"> <!-- NUCLEAR CENTER FIX -->
 
 <style>
-/* [v7871] Settings Tab Styles */
+/* [v78128] Settings Tab Styles */
 #settingsTab.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
 #settingsTab label{font-weight:bold;}
 #settingsTab select, #settingsTab input[type="range"]{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);color:var(--text);}
@@ -65,8 +67,8 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=7871" alt="Splash Logo"/>
-  <p id="splash-text">Loading Reader v7.8.71...</p>
+  <img src="assets/IGoToTheFather.png?v=78128" alt="Splash Logo"/>
+  <p id="splash-text">Loading Reader v7.8.128...</p> <!-- [v78128] -->
 </div>
 <div id="overlay"></div>
 <div id="app" class="hidden">
@@ -77,7 +79,6 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
       <div class="topbar-icons">
         <button id="btn-tab-reader" title="Reader">📖</button>
         <button id="btn-tab-search" title="Search">🔍</button>
-        <!-- REMOVED: Duplicate Settings icon was here. Settings is now only in bottom bar -->
         <button id="btn-view-toggle" title="Toggle Card/Table View">📋</button>
       </div>
     </div>
@@ -126,7 +127,6 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
       <div id="searchResults"></div>
     </div>
 
-    <!-- [v7871] NEW SETTINGS TAB -->
     <div id="settingsTab" class="hidden">
       <div class="section-label">SETTINGS</div>
       <div class="setting-row">
@@ -160,14 +160,13 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
   </main>
 </div>
 
-<!-- [v7.8.65] SHARED LAYOUT -->
-<script src="js/layout.js?v=7871"></script>
-
+<!-- [v78128] ALL JS BUMPED -->
+<script src="js/layout.js?v=78128"></script>
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=7871"></script>
-<script src="js/search_glass.js?v=7871"></script>
-<script src="js/highlight_copy.js?v=7871"></script>
-<script src="js/bible.js?v=7871"></script>
+<script src="js/hbvs_engine.js?v=78128"></script>
+<script src="js/search_glass.js?v=78128"></script>
+<script src="js/highlight_copy.js?v=78128"></script>
+<script src="js/bible.js?v=78128"></script> <!-- Ready for you to update -->
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -176,16 +175,26 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   const btnReader = document.getElementById('btn-tab-reader');
   const btnSearch = document.getElementById('btn-tab-search');
+  const btnViewToggle = document.getElementById('btn-view-toggle');
   const readerTab = document.getElementById('readerTab');
   const searchTab = document.getElementById('searchTab');
-  const settingsTab = document.getElementById('settingsTab'); // [v7871]
+  const settingsTab = document.getElementById('settingsTab');
 
   function setActiveTab(tab){
     [readerTab, searchTab, settingsTab].forEach(t=>t.classList.add('hidden'));
     [btnReader, btnSearch].forEach(b=>b.style.opacity = '0.5');
     if(tab === 'reader'){ readerTab.classList.remove('hidden'); btnReader.style.opacity = '1'; }
     if(tab === 'search'){ searchTab.classList.remove('hidden'); btnSearch.style.opacity = '1'; }
-    if(tab === 'settings'){ settingsTab.classList.remove('hidden'); } // Settings now only via bottom bar
+    if(tab === 'settings'){ settingsTab.classList.remove('hidden'); }
+  }
+
+  // [v78127] VIEW TOGGLE: Card -> Table for Preface/Epilogue
+  btnViewToggle.onclick = () => {
+    if(window.bibleApp && typeof window.bibleApp.toggleView === 'function'){
+      window.bibleApp.toggleView();
+    } else {
+      SafeNotify("bible.js not loaded yet", "warn");
+    }
   }
 
   btnReader.onclick = () => setActiveTab('reader');
