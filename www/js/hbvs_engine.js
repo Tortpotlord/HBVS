@@ -1,4 +1,6 @@
-console.log("HBVS ENGINE v7.8.127 AKJV WYSIWYG + PDF LAYOUT CENTER"); // [v78113]
+window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS]",msg); };
+console.log("HBVS ENGINE v7.8.138 DNA AKJV WYSIWYG + PDF LAYOUT CENTER"); // [v78138]
+
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
@@ -14,8 +16,15 @@ const HBVS = (() => {
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const getModeColor = (mode) => mode === 'P'? 'var(--burgundy)' : mode === 'S'? 'var(--tomato)' : mode === 'T'? 'var(--gold)' : 'var(--burgundy)';
 
-  const SafeApp = window.Capacitor?.Plugins?.App || { triggerEvent: ()=>{ console.log("Capacitor not ready, skipped triggerEvent") } };
-  const SafeNotify = (event) => { if(window.Capacitor) SafeApp.triggerEvent(event); }
+  // [FIX138] Safe trigger - no crash if Capacitor App plugin missing
+  const safeTrigger = (event) => {
+    try{
+      if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App){
+        window.Capacitor.Plugins.App.triggerEvent && window.Capacitor.Plugins.App.triggerEvent(event);
+      }
+      if(window.SafeNotify) window.SafeNotify(event);
+    }catch(e){ console.log("[HBVS] trigger skip", event, e.message); }
+  };
 
   const loadHBVSData = (db) => {
     fwMap.clear(); wrapperMap.clear();
@@ -30,8 +39,8 @@ const HBVS = (() => {
       }
       stmtW.free();
     } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.113 CERTAIN. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`); // [v78113]
-    SafeNotify('hbvsEngineLoaded');
+    console.log(`HBVS v7.8.138 DNA CERTAIN. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+    safeTrigger('hbvsEngineLoaded');
   };
 
   const isFW = (w) => w && fwMap.has(w.toLowerCase());
@@ -93,7 +102,6 @@ const HBVS = (() => {
   const renderVerse = (verseObj, mode) => {
     if(!verseObj) return {text: "", wordcount: 0};
     let rawText = (verseObj.TEXT || verseObj.text || "");
-
     if(mode === 'akjv') {
       const color = getModeColor('P');
       let text = rawText;
@@ -103,7 +111,6 @@ const HBVS = (() => {
       const wordcount = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
       return {text, wordcount};
     }
-
     let text = rawText;
     text = applyWrappers(text, mode);
     text = replaceFunctionWords(text, mode);
@@ -116,26 +123,21 @@ const HBVS = (() => {
     return {text, wordcount};
   };
 
-  // [v78113] TABLE VIEW RENDERER FOR PREFACE/EPILOGUE WITH CENTERED S1 - CONFIRMED WORKING
   const renderPrefaceTable = (versesArray, mode, type) => {
     if(!versesArray || versesArray.length === 0) return `<tbody><tr><td>No data</td></tr></tbody>`;
-
     let html = `<tbody>`;
     let buffer = [];
     let currentSection = '';
-
     versesArray.forEach((v, idx) => {
       const chapter = v.CHAPTER?? v.chapter;
       const verse = v.VERSE?? v.verse;
       const rawText = v.text || v.TEXT || '';
       if(chapter === undefined || verse === undefined) return;
-
       let secClass = '';
       if(chapter === 0) secClass = 's1';
       else if(chapter === 1) secClass = 's2';
       else if(chapter >= 2 && chapter <= 16) secClass = 's3';
       else if(chapter === 17) secClass = 's4';
-
       if(verse === 0){
         if(buffer.length > 0){
           html += `<tr class="${currentSection}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
@@ -151,26 +153,21 @@ const HBVS = (() => {
         currentSection = secClass;
         return;
       }
-
       const noConcat = (chapter === 17 && verse >= 6);
       const isParagraphEnd = rawText.includes('¶') || noConcat;
       let cleanText = rawText.replace(/¶/g,'').trim();
       let processed = renderVerse({TEXT: cleanText}, mode).text;
       let styleClass = '';
       if(chapter === 1) styleClass = (verse >= 1 && verse <= 7)? 'style1' : 'style2';
-
-      // [v78113] SECTION 1: WRAP EACH LINE IN SPAN FOR CSS TO TARGET - THIS IS CORRECT
       if(secClass === 's1') {
         let lineClass = 'verse-text';
         if(verse === 0) lineClass = 'sec-title';
         else if(cleanText.toUpperCase() === 'THE') lineClass = 'line-the';
         else if(cleanText.toUpperCase().includes('HOLY BIBLE')) lineClass = 'line-holy-bible';
         else if(cleanText.includes('Appointed')) lineClass = 'line-italic';
-
         html += `<tr class="s1"><td colspan="2"><span class="${lineClass}">${processed}</span></td></tr>`;
         return;
       }
-
       if(noConcat){
         if(buffer.length > 0){
           html += `<tr class="${currentSection} ${styleClass}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
@@ -186,7 +183,6 @@ const HBVS = (() => {
       }
       currentSection = secClass;
     });
-
     if(buffer.length > 0){
       html += `<tr class="${currentSection}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
     }
@@ -247,7 +243,7 @@ const HBVS = (() => {
         if(buffer) { html += `<p>${buffer}</p>`; buffer = ''; }
         html += `<p><span class="verse-number-inline">${verse}</span> ${processed}</p>`;
       } else {
-        buffer += (buffer? ' ' : '') + processed; // [FIXED TYPO]
+        buffer += (buffer? ' ' : '') + processed;
         if(isParagraphEnd){
           html += `<p class="${styleClass}">${buffer}<span class="paragraph-end"></span></p>`;
           buffer = '';
@@ -262,4 +258,11 @@ const HBVS = (() => {
   return { loadHBVSData, renderVerse, renderPrefaceBlock, renderEpilogueBlock };
 })();
 window.HBVS = HBVS;
-document.addEventListener('DOMContentLoaded', ()=>{ if(window.Capacitor) SafeNotify('hbvsScriptLoaded'); });
+
+// [FIX138] Safe DOM ready - no ReferenceError
+document.addEventListener('DOMContentLoaded', ()=>{
+  try{
+    console.log("HBVS DOM Ready - Engine Active");
+    if(window.SafeNotify) window.SafeNotify("HBVS Ready");
+  }catch(e){ console.log("HBVS Ready", e.message); }
+});

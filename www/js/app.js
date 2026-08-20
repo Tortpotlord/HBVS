@@ -30,6 +30,7 @@ const SETTINGS = {
 };
 
 const bookMap = {"Pre":[0],"Gen":[1],"Exo":[2],"Lev":[3],"Num":[4],"Deu":[5],"Jos":[6],"Jud":[7],"Rut":[8],"1Sa":[9],"2Sa":[10],"1Ki":[11],"2Ki":[12],"1Ch":[13],"2Ch":[14],"Ezr":[15],"Neh":[16],"Est":[17],"Job":[18],"Psa":[19],"Pro":[20],"Ecc":[21],"Son":[22],"Isa":[23],"Jer":[24],"Lam":[25],"Eze":[26],"Dan":[27],"Hos":[28],"Joe":[29],"Amo":[30],"Oba":[31],"Jon":[32],"Mic":[33],"Nah":[34],"Hab":[35],"Zep":[36],"Hag":[37],"Zec":[38],"Mal":[39],"Mat":[40],"Mar":[41],"Luk":[42],"Joh":[43],"Act":[44],"Rom":[45],"1Co":[46],"2Co":[47],"Gal":[48],"Eph":[49],"Phi":[50],"Col":[51],"1Th":[52],"2Th":[53],"1Ti":[54],"2Ti":[55],"Tit":[56],"Phm":[57],"Heb":[58],"Jam":[59],"1Pe":[60],"2Pe":[61],"1Jo":[62],"2Jo":[63],"3Jo":[64],"Jde":[65],"Rev":[66],"Epi":[67]};
+
 function getCode(){ return Object.keys(bookMap).find(k=>bookMap[k][0]==currentRef.bkorder) || "Gen"; }
 function modeFromClass(c){ if(c==="superscript-kjv") return 'superscript'; if(c==="mathp") return 'P'; if(c==="maths") return 'S'; if(c==="matht") return 'T'; return 'akjv'; }
 function getCardClasses(c){
@@ -45,6 +46,9 @@ function applyGlobalSettings(){
   document.documentElement.setAttribute('data-font', SETTINGS.font);
   document.documentElement.style.setProperty('--font-size', SETTINGS.fontSize + 'px');
 }
+
+// [FIX] Define SafeNotify to prevent startup crash
+window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS]",msg); };
 
 // [FIX137] AKJV keeps <i>was</i> italics, no )"> leak
 function renderAKJVRaw(text){
@@ -79,7 +83,8 @@ function render5Cards(row){
   let dbChap=currentRef.chap;
   if(ONE_CHAP_BKORDERS.includes(currentRef.bkorder) && currentRef.chap>1) dbChap=1;
   let displayChap=ONE_CHAP_BKORDERS.includes(currentRef.bkorder)?0:dbChap;
-  document.getElementById('current-ref').innerText=`${uiCode}${displayChap}:${currentRef.verse}`;
+  const crEl = document.getElementById('current-ref');
+  if(crEl) crEl.innerText=`${uiCode}${displayChap}:${currentRef.verse}`;
 
   const wordcount=row.WordCount??row.wordcount??row.WORDCOUNT??0;
   let rawDB=row.text||"";
@@ -98,7 +103,6 @@ function render5Cards(row){
     if(math.class==="akjv"){
       target.innerHTML=renderAKJVRaw(rawDB);
     } else if(math.class==="superscript-kjv"){
-      // [FIX137] Count ALL - including Preface leading 4 and Bible refs
       target.innerHTML=renderSuperscriptSpaceDelimited(rawDB);
     } else {
       if(!window.HBVS) return;
@@ -125,8 +129,10 @@ async function renderHomeVerse(){
   if(stmt.step()) render5Cards(stmt.getAsObject());
   else render5Cards({text:"[Verse not found]", WordCount:0});
   stmt.free();
-  document.getElementById('sub1').innerText=`Bible: ${BIBLES.find(b=>b.id==selectedBible)?.name}`;
-  document.getElementById('sub2').innerText=`Reader: ${MATHS.find(m=>m.class==selectedMath)?.name}`;
+  const s1=document.getElementById('sub1');
+  const s2=document.getElementById('sub2');
+  if(s1) s1.innerText=`Bible: ${BIBLES.find(b=>b.id==selectedBible)?.name}`;
+  if(s2) s2.innerText=`Reader: ${MATHS.find(m=>m.class==selectedMath)?.name}`;
 }
 
 async function fillModal(){
@@ -182,18 +188,35 @@ async function nextVerseHome(){
 }
 window.prevVerseHome=prevVerseHome; window.nextVerseHome=nextVerseHome;
 
-document.addEventListener('DOMContentLoaded', async () => {
-  if(window.Capacitor) await Capacitor.whenReady();
+// [FIX138] Capacitor v5/v6 safe ready - no whenReady()
+function onAppReady(cb){
+  if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
+    // Native: wait a tick, plugins ready
+    setTimeout(cb, 100);
+  } else {
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', cb);
+    } else {
+      cb();
+    }
+  }
+}
+
+onAppReady(async () => {
   applyGlobalSettings();
   try{
     SQL=await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse=await fetch(`hbvs_data_v2.db?v=78137&${Date.now()}`);
+    // [FIX138] Remove aggressive cache bust that breaks Android asset
+    const dbResponse=await fetch(`hbvs_data_v2.db?v=78138&t=${Date.now()}`);
+    if(!dbResponse.ok) throw new Error("DB fetch failed "+dbResponse.status);
     const dbBinary=new Uint8Array(await dbResponse.arrayBuffer());
-    db=new SQL.Database(dbBinary); window.DB=db;
+    db=new SQL.Database(dbBinary); window.DB=db; window.bibleDB=db;
     if(window.HBVS?.loadHBVSData) window.HBVS.loadHBVSData(db);
     else throw new Error("HBVS Engine not loaded");
+
     let stmtBooks=db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
     while(stmtBooks.step()){ let row=stmtBooks.getAsObject(); if(row.BKORDER==67) row.BOOKS="Epilogue"; if(row.BKORDER==0) row.BOOKS="Preface"; bookArray.push(row); } stmtBooks.free();
+
     if(SETTINGS.epilogueOn){
       let epilogueJSON=localStorage.getItem('hbvs_epilogueJSON');
       if(epilogueJSON){
@@ -208,12 +231,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const mathSel=document.getElementById('math-select');
     if(bibleSel) bibleSel.innerHTML=BIBLES.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
     if(mathSel) mathSel.innerHTML=MATHS.map(m=>`<option value="${m.class}">${m.name}</option>`).join('');
-    bibleSel.onchange=e=>{ selectedBible=e.target.value; renderHomeVerse(); }
-    mathSel.onchange=e=>{
+    if(bibleSel) bibleSel.onchange=e=>{ selectedBible=e.target.value; renderHomeVerse(); }
+    if(mathSel) mathSel.onchange=e=>{
       selectedMath=e.target.value;
       document.querySelectorAll('.card').forEach(b=>b.classList.remove('highlight'));
       document.querySelector(`.card.${getCardClasses(selectedMath).split(' ').pop()}`)?.classList.add('highlight');
-      document.getElementById('sub2').innerText=`Reader: ${MATHS.find(m=>m.class==selectedMath)?.name}`;
+      const s2=document.getElementById('sub2');
+      if(s2) s2.innerText=`Reader: ${MATHS.find(m=>m.class==selectedMath)?.name}`;
     }
     document.getElementById('btn-change-verse')?.addEventListener('click', ()=>{ fillModal(); document.getElementById('verse-modal').classList.remove('hidden'); });
     document.getElementById('btn-go')?.addEventListener('click', ()=>{
@@ -234,7 +258,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     document.getElementById('btn-prev-verse')?.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); prevVerseHome(); });
     document.getElementById('btn-next-verse')?.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); nextVerseHome(); });
-    fillModal(); renderHomeVerse();
+    await fillModal(); await renderHomeVerse();
+    console.log("HBVS v7.8.138 DNA Ready");
     if(window.HBVS_SPLASH_READY) window.HBVS_SPLASH_READY();
-  }catch(err){ console.error("FATAL:",err); document.getElementById('splash-text').innerText="Error: "+err.message; }
+    // Hide splash if stuck
+    const splash=document.getElementById('splash-screen');
+    if(splash) setTimeout(()=> splash.style.display='none', 500);
+  }catch(err){
+    console.error("FATAL:",err);
+    const st=document.getElementById('splash-text');
+    if(st) st.innerText="Error: "+err.message;
+    // Force hide splash after error so app not hung
+    const splash=document.getElementById('splash-screen');
+    if(splash) splash.innerHTML+=`<br><small style="color:red">${err.message}</small>`;
+  }
 });

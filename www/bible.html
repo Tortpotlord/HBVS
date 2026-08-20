@@ -3,19 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HBVS Bible Reader v7.8.128</title> <!-- [v78128] -->
+<title>HBVS Bible Reader v7.8.138</title> <!-- [v78138] -->
 
 <script>
-  window.Capacitor = window.Capacitor || {};
-  window.Capacitor.Plugins = window.Capacitor.Plugins || {};
-  window.Capacitor.Plugins.App = window.Capacitor.Plugins.App || {
+// [FIX138] DO NOT override real Capacitor on Android. Only polyfill if missing (PC browser)
+window.Capacitor = window.Capacitor || {};
+window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+if(!window.Capacitor.Plugins.App){
+  window.Capacitor.Plugins.App = {
     triggerEvent: function(evt, data){ console.log("[CAP FAKE] triggerEvent:", evt); },
     addListener: function(){ return { remove: function(){} }; },
     removeAllListeners: function(){}
   };
-  window.Capacitor.isNativePlatform = function(){ return true; };
-  window.Capacitor.getPlatform = function(){ return 'android'; };
-  window.Capacitor.whenReady = async function(){ return Promise.resolve(); };
+}
+window.Capacitor.isNativePlatform = window.Capacitor.isNativePlatform || function(){ return false; };
+window.Capacitor.getPlatform = window.Capacitor.getPlatform || function(){ return 'web'; };
+// [FIX138] REMOVED whenReady - not exists in Capacitor v6
 </script>
 
 <script>
@@ -30,22 +33,19 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 };
 </script>
 
-<!-- [v78128] ALL CSS BUMPED -->
-<link rel="stylesheet" href="css/global.css?v=78128">
-<link rel="stylesheet" href="css/style.css?v=78128">
-<link rel="stylesheet" href="css/mathkjv.css?v=78128">
-<link rel="stylesheet" href="css/superscript.css?v=78128">
-<link rel="stylesheet" href="css/preface.css?v=78128">
-<link rel="stylesheet" href="css/preface-reader.css?v=78128"> <!-- NUCLEAR CENTER FIX -->
+<!-- [v78138] ALL CSS BUMPED -->
+<link rel="stylesheet" href="css/global.css?v=78138">
+<link rel="stylesheet" href="css/style.css?v=78138">
+<link rel="stylesheet" href="css/mathkjv.css?v=78138">
+<link rel="stylesheet" href="css/superscript.css?v=78138">
+<link rel="stylesheet" href="css/preface.css?v=78138">
+<link rel="stylesheet" href="css/preface-reader.css?v=78138">
 
 <style>
-/* [v78128] Settings Tab Styles */
 #settingsTab.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
 #settingsTab label{font-weight:bold;}
 #settingsTab select, #settingsTab input[type="range"]{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);color:var(--text);}
 #settingsTab.toggle{display:flex;gap:10px;}
-
-/* SEARCH GLASS STYLES */
 #searchTab.search-bar{display:flex;gap:8px;margin-bottom:12px;}
 #searchTab input{flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);}
 #searchTab button{padding:8px 12px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;}
@@ -67,8 +67,8 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=78128" alt="Splash Logo"/>
-  <p id="splash-text">Loading Reader v7.8.128...</p> <!-- [v78128] -->
+  <img src="assets/IGoToTheFather.png?v=78138" alt="Splash Logo"/>
+  <p id="splash-text">Loading Reader v7.8.138...</p>
 </div>
 <div id="overlay"></div>
 <div id="app" class="hidden">
@@ -160,48 +160,70 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
   </main>
 </div>
 
-<!-- [v78128] ALL JS BUMPED -->
-<script src="js/layout.js?v=78128"></script>
+<!-- [v78138] ALL JS BUMPED -->
+<script src="js/layout.js?v=78138"></script>
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=78128"></script>
-<script src="js/search_glass.js?v=78128"></script>
-<script src="js/highlight_copy.js?v=78128"></script>
-<script src="js/bible.js?v=78128"></script> <!-- Ready for you to update -->
+<script src="js/hbvs_engine.js?v=78138"></script>
+<script src="js/search_glass.js?v=78138"></script>
+<script src="js/highlight_copy.js?v=78138"></script>
+<script src="js/bible.js?v=78138"></script>
 
 <script>
+// [FIX138] Safe ready - no whenReady()
 document.addEventListener('DOMContentLoaded', ()=>{
-  if(window.SearchGlass) SearchGlass.init();
-  if(window.HighlightCopy) HighlightCopy.init();
+  function initTabs(){
+    if(window.SearchGlass) SearchGlass.init();
+    if(window.HighlightCopy) HighlightCopy.init();
 
-  const btnReader = document.getElementById('btn-tab-reader');
-  const btnSearch = document.getElementById('btn-tab-search');
-  const btnViewToggle = document.getElementById('btn-view-toggle');
-  const readerTab = document.getElementById('readerTab');
-  const searchTab = document.getElementById('searchTab');
-  const settingsTab = document.getElementById('settingsTab');
+    const btnReader = document.getElementById('btn-tab-reader');
+    const btnSearch = document.getElementById('btn-tab-search');
+    const btnViewToggle = document.getElementById('btn-view-toggle');
+    const readerTab = document.getElementById('readerTab');
+    const searchTab = document.getElementById('searchTab');
+    const settingsTab = document.getElementById('settingsTab');
 
-  function setActiveTab(tab){
-    [readerTab, searchTab, settingsTab].forEach(t=>t.classList.add('hidden'));
-    [btnReader, btnSearch].forEach(b=>b.style.opacity = '0.5');
-    if(tab === 'reader'){ readerTab.classList.remove('hidden'); btnReader.style.opacity = '1'; }
-    if(tab === 'search'){ searchTab.classList.remove('hidden'); btnSearch.style.opacity = '1'; }
-    if(tab === 'settings'){ settingsTab.classList.remove('hidden'); }
-  }
-
-  // [v78127] VIEW TOGGLE: Card -> Table for Preface/Epilogue
-  btnViewToggle.onclick = () => {
-    if(window.bibleApp && typeof window.bibleApp.toggleView === 'function'){
-      window.bibleApp.toggleView();
-    } else {
-      SafeNotify("bible.js not loaded yet", "warn");
+    function setActiveTab(tab){
+      [readerTab, searchTab, settingsTab].forEach(t=>t && t.classList.add('hidden'));
+      [btnReader, btnSearch].forEach(b=> b && (b.style.opacity = '0.5'));
+      if(tab === 'reader'){ readerTab && readerTab.classList.remove('hidden'); btnReader && (btnReader.style.opacity = '1'); }
+      if(tab === 'search'){ searchTab && searchTab.classList.remove('hidden'); btnSearch && (btnSearch.style.opacity = '1'); }
+      if(tab === 'settings'){ settingsTab && settingsTab.classList.remove('hidden'); }
     }
+
+    if(btnViewToggle) btnViewToggle.onclick = () => {
+      if(window.bibleApp && typeof window.bibleApp.toggleView === 'function'){
+        window.bibleApp.toggleView();
+      } else {
+        SafeNotify("bible.js not loaded yet", "warn");
+      }
+    }
+
+    if(btnReader) btnReader.onclick = () => setActiveTab('reader');
+    if(btnSearch) btnSearch.onclick = () => setActiveTab('search');
+    setActiveTab('reader');
+
+    // Open search if flagged from Home
+    if(localStorage.getItem('hbvs_openSearchInput')==='true'){
+      localStorage.removeItem('hbvs_openSearchInput');
+      setActiveTab('search');
+      setTimeout(()=> document.getElementById('searchInput')?.focus(), 300);
+    }
+
+    // Hide splash after engine ready
+    const splash=document.getElementById('splash');
+    const app=document.getElementById('app');
+    if(splash) splash.style.display='none';
+    if(app) app.classList.remove('hidden');
   }
 
-  btnReader.onclick = () => setActiveTab('reader');
-  btnSearch.onclick = () => setActiveTab('search');
-  setActiveTab('reader');
+  if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
+    setTimeout(initTabs, 200);
+  } else {
+    initTabs();
+  }
 });
 </script>
+<script src="js/epilogue.js?v=78138"></script>
 
 </body>
 </html>

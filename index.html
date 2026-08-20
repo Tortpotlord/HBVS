@@ -3,52 +3,49 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v7.8.127</title> <!-- [v78127] Bumped version -->
+<title>Holy Bible Vector Space v7.8.138</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
 
 <script>
-  window.Capacitor = window.Capacitor || {};
-  window.Capacitor.Plugins = window.Capacitor.Plugins || {};
-  window.Capacitor.Plugins.App = window.Capacitor.Plugins.App || {
-    triggerEvent: function(evt, data){ console.log("[CAP FAKE] triggerEvent:", evt); },
-    addListener: function(){ return { remove: function(){} }; },
-    removeAllListeners: function(){}
+// [FIX138] Safe polyfills - DO NOT override real Capacitor
+window.Capacitor = window.Capacitor || {};
+window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+if(!window.Capacitor.Plugins.App){
+  window.Capacitor.Plugins.App = {
+    triggerEvent: function(evt){ console.log("[CAP FAKE]", evt); },
+    addListener: function(){ return { remove: function(){} }; }
   };
-  window.Capacitor.isNativePlatform = function(){ return true; };
-  window.Capacitor.getPlatform = function(){ return 'android'; };
-  window.Capacitor.whenReady = async function(){ return Promise.resolve(); };
-</script>
+}
+window.Capacitor.isNativePlatform = window.Capacitor.isNativePlatform || function(){ return false; };
+window.Capacitor.getPlatform = window.Capacitor.getPlatform || function(){ return 'web'; };
 
-<script>
-window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
-  console.log(`[SafeNotify ${type}]`, msg);
-  const toast = document.createElement('div');
-  toast.textContent = msg;
-  toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:9999;opacity:0;transition:opacity 0.3s';
-  document.body.appendChild(toast);
-  setTimeout(()=>toast.style.opacity=1, 10);
-  setTimeout(()=>{toast.style.opacity=0; setTimeout(()=>toast.remove(),300)}, 2500);
+window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS]",msg); };
+window.HBVS_SPLASH_READY = function(){
+  const s=document.getElementById('splash');
+  const a=document.getElementById('app');
+  if(s) s.style.display='none';
+  if(a) a.classList.remove('hidden');
 };
 </script>
 
-<!-- [v78127] ALL CSS BUMPED TO FORCE RELOAD -->
-<link rel="stylesheet" href="css/global.css?v=78127">
-<link rel="stylesheet" href="css/style.css?v=78127">
-<link rel="stylesheet" href="css/preface.css?v=78127">
-<link rel="stylesheet" href="css/preface-reader.css?v=78127"> <!-- NUCLEAR CENTER FIX -->
-<link rel="stylesheet" href="css/superscript.css?v=78127">
-<link rel="stylesheet" href="css/mathkjv.css?v=78127">
+<link rel="stylesheet" href="css/global.css?v=78138">
+<link rel="stylesheet" href="css/style.css?v=78138">
+<link rel="stylesheet" href="css/preface.css?v=78138">
+<link rel="stylesheet" href="css/preface-reader.css?v=78138">
+<link rel="stylesheet" href="css/superscript.css?v=78138">
+<link rel="stylesheet" href="css/mathkjv.css?v=78138">
+<style>
+.change-verse-nav{display:flex;justify-content:center;align-items:center;gap:14px;margin:10px 0 6px 0;}
+.change-verse-nav button{padding:8px 16px;border:2px solid var(--border);background:var(--bg2);border-radius:8px;font-weight:900;font-size:18px;min-width:44px;cursor:pointer;}
+#btn-change-verse{font-weight:800;color:var(--accent);text-decoration:underline;margin:0;cursor:pointer;}
+</style>
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=78127" alt="I Go To The Father"/>
-  <div style="font-size:18px; font-weight:bold; color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
-  <p id="splash-text">Initializing HBVS v7.8.127 - 68 Books + 7618 Wrappers</p> <!-- [v78127] -->
-  <div id="sub-splash">Phrase(Location) Engine Active | Build: 78113</div> <!-- [v78127 DEBUG] -->
+  <img src="assets/IGoToTheFather.png?v=78138" alt="I Go To The Father"/>
+  <div style="font-size:18px;font-weight:bold;color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
+  <p id="splash-text">Initializing HBVS v7.8.138</p>
 </div>
-
 <div id="overlay"></div>
 <div id="sidemenu">
   <h4>Menu</h4>
@@ -57,52 +54,52 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
   <p><a href="studyhub.html">StudyHub</a></p>
   <p><a href="settings.html">Settings</a></p>
 </div>
-
 <div id="verse-modal" class="modal hidden">
   <div class="modal-content">
     <h3>Change Verse</h3>
     <div class="modal-row"><label>Book:</label><select id="modal-book"></select></div>
     <div class="modal-row"><label>Chapter:</label><select id="modal-chap"></select></div>
     <div class="modal-row"><label>Verse:</label><select id="modal-verse"></select></div>
-    <div class="modal-buttons">
-      <button id="btn-cancel">Cancel</button>
-      <button id="btn-go">Go</button>
-    </div>
+    <div class="modal-buttons"><button id="btn-cancel">Cancel</button><button id="btn-go">Go</button></div>
   </div>
 </div>
-
 <div id="app" class="hidden">
   <header id="topbar">
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
-      <div class="logo-title">
-        <img src="assets/IGoToTheFather.png?v=78127" alt="Logo"/>
-        <div class="app-title">Holy Bible Vector Space</div>
-      </div>
+      <div class="logo-title"><img src="assets/IGoToTheFather.png?v=78138" alt="Logo"/><div class="app-title">Holy Bible Vector Space</div></div>
       <div class="topbar-icons header-icons">
-        <button id="btn-random" class="icon-btn" title="Random Verse"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M16 3h5v5M4 20L20 4M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
-        <button id="btn-search" class="icon-btn" title="Search"><svg class="search-glass" viewBox="0 0 24 24" width="20" height="20"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/></svg></button>
-        <button id="btn-refresh" class="icon-btn" title="Refresh"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M17.65 6.35A8 8 0 1 0 19 12" stroke="currentColor" stroke-width="2" fill="none"/><path d="M19 2v4h-4" stroke="currentColor" stroke-width="2" fill="none"/></svg></button>
+        <button id="btn-random" class="icon-btn" title="Random Verse">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 3 21 8"></polyline>
+            <line x1="4" y1="20" x2="21" y2="3"></line>
+            <polyline points="21 16 21 21 16 21"></polyline>
+            <line x1="15" y1="15" x2="21" y2="21"></line>
+            <line x1="4" y1="4" x2="9" y2="9"></line>
+          </svg>
+        </button>
+        <button id="btn-search" class="icon-btn" title="Search Phrase / Location">
+          <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
       </div>
     </div>
     <div class="subtitle" id="sub1">Bible: AKJV 1611 PCE circa 1900</div>
     <div class="subtitle" id="sub2">Reader: MathKJVP</div>
-    <div class="topbar-row2">
-      <select id="bible-select"></select>
-      <select id="math-select"></select>
-    </div>
+    <div class="topbar-row2"><select id="bible-select"></select><select id="math-select"></select></div>
   </header>
-
   <main>
     <section id="tab-home">
       <p class="daily-bread">Daily Bread</p>
       <h2 class="current-ref" id="current-ref">Gen1:4</h2>
-      <p class="change-verse" id="btn-change-verse">Change Verse</p>
+      <div class="change-verse-nav">
+        <button id="btn-prev-verse" title="Previous Verse">&lt;</button>
+        <p class="change-verse" id="btn-change-verse">Change Verse</p>
+        <button id="btn-next-verse" title="Next Verse">&gt;</button>
+      </div>
       <div id="home-cards" class="cards-vertical"></div>
       <div id="reader-view" class="hidden"></div>
     </section>
   </main>
-
   <nav id="bottombar">
     <div class="active">🏠<br>Home</div>
     <div onclick="location.href='bible.html'">📖<br>Bible</div>
@@ -110,30 +107,8 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
     <div onclick="location.href='settings.html'">⚙️<br>Settings</div>
   </nav>
 </div>
-
-<!-- [v78113] ALL JS BUMPED TO FORCE RELOAD -->
-<script src="js/sql.js-1.8.0/dist/sql-wasm.js" defer></script>
-<script src="js/hbvs_engine.js?v=78127" defer></script>
-<script src="js/app.js?v=78127" defer></script>
-
-<script>
-window.addEventListener('DOMContentLoaded', async ()=>{
-  if(window.Capacitor && Capacitor.whenReady){ await Capacitor.whenReady(); }
-  function hideSplash(){
-    const s = document.getElementById('splash');
-    if(s){
-      s.style.opacity = 0;
-      setTimeout(()=>{ s.remove(); document.getElementById('app').classList.remove('hidden'); }, 500);
-    }
-  }
-  if(window.HBVS){
-    window.HBVS_SPLASH_READY = hideSplash;
-    console.log("[HBVS] index.html v7.8.127 loaded"); // [DEBUG]
-  }
-  else {
-    document.getElementById('splash-text').innerText = "ERROR: hbvs_engine.js v78127 not found in www/js/";
-  }
-});
-</script>
+<script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
+<script src="js/hbvs_engine.js?v=78138"></script>
+<script src="js/app.js?v=78138"></script>
 </body>
 </html>

@@ -43,3 +43,9 @@
   font-weight: 700;
   font-style: normal; /* symbols not italic */
 }
+.preface-article-header {
+  font-weight: bold;
+  color: #8B0000; /* Burgundy like Preface */
+  margin-top: 18px;
+  font-size: 1.1em;
+}
