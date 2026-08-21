@@ -1,73 +1,149 @@
-/* PREFACE v7.8.127 - FINAL COLOR FIX WITH SPACE DESCENDANT */
+/* HBVS PREFACE-READER.CSS v7.8.140 - PDF WYSIWYG + TITLE ISOLATION + EPI SPEC */
 :root{--burgundy:#8B0000;--tomato:#B22222;--gold:#B8860B;--accent:#2f2718;--font-serif:"Minion Pro","Times New Roman",serif;}
-.preface-reader,.epilogue-reader{font-family:var(--font-serif);font-size:11px;line-height:1.85;color:#2f2718;background:#fdfaf3;padding:24px 18px;max-width:800px;margin:0 auto;}
 
-/* S2 */
+.preface-reader,.epilogue-reader{
+  font-family:var(--font-serif);
+  font-size:11px;
+  line-height:1.85;
+  color:#2f2718;
+  background:#fdfaf3;
+  padding:24px 18px;
+  max-width:800px;
+  margin:0 auto;
+  display:block;
+}
+
+/* === S1 PAGE 1 - DEDICATION - CENTERED === */
+.s1-pdf{
+  background:white!important;
+  padding:60px 40px!important;
+  text-align:center!important;
+  max-width:700px!important;
+  margin:0 auto!important;
+  display:block!important;
+  width:100%!important;
+}
+.s1-h1{font-size:28px!important;font-weight:900!important;letter-spacing:3px!important;text-transform:uppercase!important;margin-bottom:18px!important;line-height:1.2!important;text-align:center!important;display:block;clear:both;}
+.s1-h2{font-size:16px!important;font-weight:400!important;margin-bottom:22px!important;text-align:center!important;display:block;clear:both;}
+.s1-h3{font-size:12px!important;line-height:1.6!important;margin-bottom:4px!important;text-align:center!important;display:block;}
+.s1-h4{font-size:11px!important;line-height:1.5!important;margin-top:12px!important;color:#555!important;text-align:center!important;display:block;}
+
+/* === S2 - TO THE MOST HIGH AND MIGHTY PRINCE - TITLE ISOLATED v140 === */
 .s2-pdf{padding:40px 60px!important;background:white!important;}
-.s2-title-block{text-align:center!important;margin:20px 0 36px 0!important;}
-.s2-l1{font-size:11px!important;letter-spacing:1.8px!important;text-transform:uppercase!important;margin-bottom:6px!important;}
-.s2-l2{font-size:32px!important;font-weight:700!important;letter-spacing:5px!important;line-height:1.1!important;margin:6px 0!important;text-transform:uppercase!important;}
-.s2-l3{font-size:12px!important;font-style:italic!important;text-transform:uppercase!important;margin-bottom:18px!important;}
-.s2-l4,.s2-l5{font-size:11.5px!important;text-transform:uppercase!important;letter-spacing:1px!important;line-height:1.4!important;}
-.s2-l6,.s2-l7{font-size:11px!important;text-align:center!important;}
+.s2-title-block{
+  text-align:center!important;
+  margin:20px 0 36px 0!important;
+  padding-bottom:18px!important;
+  border-bottom:2px double var(--burgundy)!important;
+  display:block!important;
+  clear:both!important;
+  page-break-after:avoid;
+}
+.s2-l1{font-size:11px!important;letter-spacing:1.8px!important;text-transform:uppercase!important;margin-bottom:6px!important;display:block;}
+.s2-l2{font-size:32px!important;font-weight:700!important;letter-spacing:5px!important;line-height:1.1!important;margin:6px 0!important;text-transform:uppercase!important;display:block;color:var(--burgundy)!important;}
+.s2-l3{font-size:12px!important;font-style:italic!important;text-transform:uppercase!important;margin-bottom:18px!important;display:block;}
+.s2-l4,.s2-l5{font-size:11.5px!important;text-transform:uppercase!important;letter-spacing:1px!important;line-height:1.4!important;display:block;}
+.s2-l6,.s2-l7{font-size:11px!important;text-align:center!important;display:block;}
 .s2-l7{margin-bottom:30px!important;}
-.s2-para{text-indent:1.5em!important;text-align:justify!important;margin:0 0 0.9em 0!important;line-height:1.85!important;}
-.s2-first-para::first-letter{font-size:34px!important;font-weight:700!important;float:left!important;margin:5px 7px 0 0!important;line-height:0.75!important;}
+.s2-para{
+  text-indent:1.5em!important;
+  text-align:justify!important;
+  margin:0 0 0.9em 0!important;
+  line-height:1.85!important;
+  display:block!important;
+  clear:both;
+}
 .s2-first-para{text-indent:0!important;}
+.s2-first-para::first-letter{
+  font-size:34px!important;
+  font-weight:700!important;
+  float:left!important;
+  margin:5px 7px 0 0!important;
+  line-height:0.75!important;
+  color:var(--burgundy)!important;
+}
 
-/* S3 PAGES 5-15 */
+/* === S3 PAGES 5-15 - TITLE DRAG FIX === */
 .s3-pdf{padding:30px 50px!important;background:white!important;}
-.s3-header{font-size:12px!important;font-weight:700!important;text-align:center!important;text-transform:uppercase!important;letter-spacing:2px!important;margin:24px 0 16px 0!important;}
-.s3-title{font-size:11px!important;font-style:italic!important;text-align:center!important;margin:0 40px 20px 40px!important;line-height:1.6!important;}
-.s3-para{text-indent:1.5em!important;text-align:justify!important;margin:0 0 1em 0!important;line-height:1.85!important;}
+.s3-header,.s3-title,.s3-chapter{
+  font-size:12px!important;
+  font-weight:700!important;
+  text-align:center!important;
+  text-transform:uppercase!important;
+  letter-spacing:2px!important;
+  margin:24px 0 16px 0!important;
+  display:block!important;
+  clear:both!important;
+  border-bottom:1px solid #d4c8a8!important;
+  padding-bottom:8px!important;
+  page-break-after:avoid;
+}
+.s3-title{font-size:11px!important;font-style:italic!important;text-align:center!important;margin:0 40px 20px 40px!important;line-height:1.6!important;text-transform:none!important;letter-spacing:normal!important;}
+.s3-para{
+  text-indent:1.5em!important;
+  text-align:justify!important;
+  margin:0 0 1em 0!important;
+  line-height:1.85!important;
+  display:block!important;
+}
 
-/* S4 PAGE 16 FINAL */
+/* === S4 PAGE 16 FINAL === */
 .s4-pdf{padding:30px 50px!important;background:white!important;}
-.s4-header-block{text-align:center!important;margin:0 0 24px 0!important;}
-.s4-h0{font-size:12px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:2px!important;margin-bottom:4px!important;}
-.s4-h1{font-size:11px!important;margin-bottom:2px!important;}
-.s4-h2{font-size:11px!important;font-style:italic!important;margin-bottom:18px!important;}
-.s4-para{text-indent:1.5em!important;text-align:justify!important;margin:0 0 1em 0!important;line-height:1.85!important;}
-.s4-verse{text-indent:0!important;text-align:left!important;margin:0 0 0.6em 0!important;}
+.s4-header-block{text-align:center!important;margin:0 0 24px 0!important;display:block;clear:both;border-bottom:1px solid #d4c8a8!important;padding-bottom:12px!important;}
+.s4-h0{font-size:12px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:2px!important;margin-bottom:4px!important;display:block;}
+.s4-h1{font-size:11px!important;margin-bottom:2px!important;display:block;}
+.s4-h2{font-size:11px!important;font-style:italic!important;margin-bottom:18px!important;display:block;}
+.s4-para{text-indent:1.5em!important;text-align:justify!important;margin:0 0 1em 0!important;line-height:1.85!important;display:block;clear:both;}
+.s4-verse{text-indent:0!important;text-align:left!important;margin:0 0 0.6em 0!important;display:block;}
 
-/* ========== COLOR FIX v78127 - MUST HAVE SPACE.hbvs-output.mathp.fw-eq ========== */
+/* === EPILOGUE SPEC # ## ### - SYNCED === */
+.epilogue-reader .preface-header{
+  font-size:16px!important;font-weight:900!important;text-align:center!important;color:var(--burgundy)!important;
+  margin:22px 0 12px 0!important;display:block!important;clear:both!important;border-bottom:2px solid var(--burgundy)!important;padding-bottom:8px!important;
+}
+.epilogue-reader .preface-chapter-header{
+  font-size:13px!important;font-weight:800!important;text-align:center!important;color:var(--burgundy)!important;
+  margin:20px 0 12px 0!important;display:block!important;clear:both!important;border-bottom:1px solid #d4c8a8!important;padding-bottom:6px!important;
+}
+.epilogue-reader .preface-article-header{font-weight:800!important;color:var(--burgundy)!important;margin:16px 0 8px 0!important;font-size:11.5px!important;display:block!important;}
+.epilogue-reader .preface-para{text-indent:1.5em!important;text-align:justify!important;margin:0 0 1em 0!important;line-height:1.85!important;display:block!important;}
+.epilogue-reader .preface-para:first-of-type{text-indent:0!important;}
+
+/* === COLOR FIX - MUST HAVE SPACE === */
 .hbvs-output.akjv.fw-eq,.hbvs-output.akjv.fw-arrow,.hbvs-output.akjv.fw-paren{color:inherit!important;font-weight:400!important;}
-
-/* MathKJVP = BURGUNDY at glance */
-.hbvs-output.mathp.fw-eq,
-.hbvs-output.mathp.fw-arrow,
-.hbvs-output.mathp.fw-paren{color:#8B0000!important;font-weight:700!important;}
-
-/* MathKJVS = TOMATO at glance */
-.hbvs-output.maths.fw-eq,
-.hbvs-output.maths.fw-arrow,
-.hbvs-output.maths.fw-paren{color:#B22222!important;font-weight:700!important;}
-
-/* MathKJVT = GOLD at glance */
-.hbvs-output.matht.fw-eq,
-.hbvs-output.matht.fw-arrow,
-.hbvs-output.matht.fw-paren{color:#B8860B!important;font-weight:700!important;}
-
+.hbvs-output.mathp.fw-eq,.hbvs-output.mathp.fw-arrow,.hbvs-output.mathp.fw-paren{color:#8B0000!important;font-weight:700!important;}
+.hbvs-output.maths.fw-eq,.hbvs-output.maths.fw-arrow,.hbvs-output.maths.fw-paren{color:#B22222!important;font-weight:700!important;}
+.hbvs-output.matht.fw-eq,.hbvs-output.matht.fw-arrow,.hbvs-output.matht.fw-paren{color:#B8860B!important;font-weight:700!important;}
 .hbvs-output.superscript.fw-eq{color:#8B0000!important;font-weight:700!important;}
 .hbvs-output.superscript.fw-arrow{color:#483D8B!important;font-weight:700!important;}
 .hbvs-output.superscript.fw-paren{color:#2F4F4F!important;font-weight:700!important;}
-
 .para-end{color:#8B0000!important;font-weight:700!important;margin-left:3px;}
 
-body::after{content:"CSS v78127 LOADED - COLORS FIXED";position:fixed;bottom:0;right:0;background:darkred;color:white;z-index:9999;padding:3px 8px;font-size:10px;}
-/* S1 PAGE 1 CENTERED WYSIWYG v78128 */
-.s1-pdf{background:white!important;padding:60px 40px!important;text-align:center!important;max-width:700px!important;margin:0 auto!important;}
-.s1-h1{font-size:28px!important;font-weight:900!important;letter-spacing:3px!important;text-transform:uppercase!important;margin-bottom:18px!important;line-height:1.2!important;}
-.s1-h2{font-size:16px!important;font-weight:400!important;margin-bottom:22px!important;}
-.s1-h3{font-size:12px!important;line-height:1.6!important;margin-bottom:4px!important;}
-.s1-h4{font-size:11px!important;line-height:1.5!important;margin-top:12px!important;}
-.s1-pdf.hbvs-output{justify-content:center!important;}
+/* === CRITICAL: PREVENT TITLE DRAG === */
+.preface-reader > div{page-break-inside:avoid;}
+.s2-title-block + .s2-para, .s3-title + .s3-para, .s3-header + .s3-para{margin-top:18px!important;}
 
-/* Force centered for all 5 maths */
-.s1-pdf.hbvs-output{text-align:center!important;display:block!important;width:100%!important;}
-.s1-pdf.hbvs-output.mathp,.s1-pdf.hbvs-output.maths,.s1-pdf.hbvs-output.matht,.s1-pdf.hbvs-output.superscript,.s1-pdf.hbvs-output.akjv{text-align:center!important;}
-.s1-pdf{background:white!important;padding:60px 40px!important;text-align:center!important;}
-.s1-h1{font-size:28px!important;font-weight:900!important;letter-spacing:3px!important;text-transform:uppercase!important;margin-bottom:18px!important;}
-.s1-h2{font-size:16px!important;margin-bottom:22px!important;}
-.s1-h3{font-size:12px!important;line-height:1.6!important;margin-bottom:4px!important;}
-.s1-h4{font-size:11px!important;line-height:1.5!important;margin-top:12px!important;color:#555!important;}
+body::after{content:"CSS v78140 LOADED - TITLE FIXED";position:fixed;bottom:0;right:0;background:darkred;color:white;z-index:9999;padding:3px 8px;font-size:10px;}
+/* FIX 7.8.141 - through line must NOT have dropcap */
+.s2-l7 { 
+  text-align:center!important; 
+  font-style:italic!important; 
+  text-indent:0!important; 
+  display:block!important;
+}
+.s2-l7::first-letter { 
+  font-size:11px!important; 
+  float:none!important; 
+  font-weight:400!important; 
+  color:inherit!important; 
+  margin:0!important; 
+}
+.s2-first-para { text-indent:0!important; }
+.s2-first-para::first-letter {
+  font-size:34px!important;
+  font-weight:700!important;
+  float:left!important;
+  margin:5px 7px 0 0!important;
+  line-height:0.75!important;
+  color:#8B0000!important;
+}
