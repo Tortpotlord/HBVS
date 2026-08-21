@@ -5,7 +5,7 @@ const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
   const PUNCT_RE = /[.,:;!?]/;
-  const DETERMINERS_RE = /^(the|thy|his|my|our|your|a|an|this|that|these|those)$/i;
+  const DETERMINERS_RE = /^(the|thy|his|my|our|your|a|an|that|these|those)$/i;
   const COLOR_SYMBOLS_RE = /([=↦])/g;
   const WFF_OPEN = '##HBVS_WFF_OPEN##';
   const WFF_CLOSE = '##HBVS_WFF_CLOSE##';

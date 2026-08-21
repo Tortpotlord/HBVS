@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HBVS Settings v7.8.45</title>
+<title>HBVS Settings v7.8.139</title>
 
 <script>
 window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
@@ -18,6 +18,7 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 
 <link rel="stylesheet" href="css/global.css?v=7845">
 <link rel="stylesheet" href="css/style.css?v=7845">
+<link rel="stylesheet" href="css/preface.css?v=7845">
 
 <style>
 .card { max-width: 780px; margin: 1.2rem auto; padding: 1.2rem 2.2rem; border: 2px solid var(--border); background: var(--card); border-radius: 12px; }
@@ -26,6 +27,12 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 .setting-row label { font-weight: 700; }
 .setting-row select,.setting-row input[type="range"],.setting-row input[type="file"] { padding: 8px; border-radius: 6px; border: 2px solid var(--border); background: var(--bg2); color: var(--text); min-width: 160px; }
 .btn-export { padding: 10px 16px; border: 2px solid var(--accent); background: var(--accent); color: #fff; border-radius: 8px; cursor: pointer; font-weight: 800; margin-top: 10px; }
+.btn-secondary { background: var(--bg2); color: var(--text); border-color: var(--border); }
+#epilogue-textarea { width:100%; min-height:260px; padding:12px; border:2px solid var(--border); border-radius:8px; background:var(--bg2); color:var(--text); font-family:monospace; font-size:13px; white-space:pre-wrap; }
+#epilogue-preview { margin-top:15px; border:2px solid var(--border); border-radius:8px; padding:12px; max-height:450px; overflow:auto; background:var(--bg); }
+.spec-box { background:var(--bg2); border:2px dashed var(--border); border-radius:8px; padding:12px; font-family:monospace; font-size:12.5px; line-height:1.5; margin:10px 0; }
+.spec-box b { color:var(--accent); }
+details > summary { cursor:pointer; font-weight:800; font-size:13px; color:var(--accent); }
 </style>
 </head>
 <body>
@@ -34,45 +41,69 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
   <header id="topbar">
     <div class="topbar-row1">
       <a href="index.html" style="font-size:24px;text-decoration:none;color:var(--accent);">←</a>
-      <div class="logo-title"><div class="app-title">HBVS SETTINGS</div></div>
+      <div class="logo-title"><div class="app-title">HBVS SETTINGS v7.8.139</div></div>
     </div>
   </header>
 
   <main>
     <div class="card">
       <div class="section-label">APPEARANCE</div>
-      <div class="setting-row">
-        <label>Theme</label>
-        <select id="theme-select"></select> <!-- Will be filled by JS -->
-      </div>
-      <div class="setting-row">
-        <label>Font Family</label>
-        <select id="font-select"></select> <!-- Will be filled by JS -->
-      </div>
-      <div class="setting-row">
-        <label>Font Size: <span id="font-size-label">16</span>px</label>
-        <input type="range" id="font-size" min="12" max="32" value="16">
-      </div>
+      <div class="setting-row"><label>Theme</label><select id="theme-select"></select></div>
+      <div class="setting-row"><label>Font Family</label><select id="font-select"></select></div>
+      <div class="setting-row"><label>Font Size: <span id="font-size-label">16</span>px</label><input type="range" id="font-size" min="12" max="32" value="16"></div>
 
-      <div class="section-label">EPILOGUE BOOK</div>
-      <div class="setting-row">
-        <label>Show Epilogue Book</label>
-        <input type="checkbox" id="epilogue-toggle">
+      <div class="section-label">EPILOGUE BOOK 67 - DYNAMIC (Renaissance 2.0)</div>
+
+      <details open>
+        <summary>📘 EPILOGUE FORMAT SPEC - How to prepare your .txt (Click to toggle)</summary>
+        <div class="spec-box">
+<b>#</b> = Book Title (once at top)<br>
+<b>##</b> = Chapter (number or title)<br>
+<b>###</b> = Sub-Title / Article<br>
+<b>Blank line</b> = New Verse (paragraph)<br>
+<b>¶</b> = Force New Paragraph (even without blank line)<br>
+<b>Body</b> keeps original case - never auto-UPPERCASED<br><br>
+<b>Example:</b><br>
+# UNIVERSAL DECLARATION OF HUMAN RIGHTS<br>
+## PREAMBLE<br>
+Whereas recognition of the inherent dignity...<br><br>
+## ARTICLE 1<br>
+All human beings are born free and equal...<br>
+This is same paragraph unless blank line.<br>
+¶ This forces NEW verse instantly.<br><br>
+## ARTICLE 2<br>
+### (1) Everyone is entitled...<br>
+Everyone is entitled...
+        </div>
+      </details>
+      
+      <div class="setting-row"><label>Show Epilogue Book</label><input type="checkbox" id="epilogue-toggle"></div>
+      <div class="setting-row"><label>Import *.txt (raw, no formatting)</label><input type="file" id="epilogue-file" accept=".txt"></div>
+
+      <textarea id="epilogue-textarea" placeholder="# BOOK TITLE
+## CHAPTER 1
+Your text here...
+Use ¶ to force new paragraph"></textarea>
+
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn-export" id="btn-save-epilogue">💾 Save Epilogue (to App)</button>
+        <button class="btn-export btn-secondary" id="btn-preview-epilogue">👁️ Preview S3/S4</button>
+        <button class="btn-export btn-secondary" id="btn-export-epilogue">📤 Export Epilogue.json</button>
+        <button class="btn-export btn-secondary" id="btn-clear-epilogue">🗑️ Clear</button>
       </div>
-      <div class="setting-row">
-        <label>Load Epilogue.txt</label>
-        <input type="file" id="epilogue-file" accept=".txt">
-      </div>
-      <button class="btn-export" id="btn-export-epilogue">Export Epilogue.json</button>
+      <div id="epilogue-status" style="margin-top:8px;font-size:12px;font-weight:700;"></div>
+
+      <div class="section-label">Live Preview (Preface S3/S4 Template) - Check before Save</div>
+      <div id="epilogue-preview">No Epilogue loaded. Paste or Load file.</div>
     </div>
   </main>
 </div>
 
-<!-- [v7.8.65] SHARED LAYOUT - Bottom Bar -->
 <script src="js/layout.js?v=7845"></script>
+<script src="js/epilogue.js?v=7845"></script>
 
 <script>
-console.log("HBVS SETTINGS.JS v7.8.45 LOADED");
+console.log("HBVS SETTINGS.JS v7.8.139 LOADED");
 const THEMES = [
   {id:'light', name:'Light'}, {id:'dark', name:'Dark'}, {id:'sepia', name:'Sepia'},
   {id:'parchment', name:'Parchment'}, {id:'amber', name:'Amber'}, {id:'sand', name:'Sand'},
@@ -82,7 +113,7 @@ const FONTS = [
   {id:'serif', name:'Serif'}, {id:'sans', name:'Sans'}, {id:'mono', name:'Mono'},
   {id:'georgia', name:'Georgia'}, {id:'garamond', name:'Garamond'}, {id:'lora', name:'Lora'},
   {id:'merriweather', name:'Merriweather'}, {id:'roboto', name:'Roboto'},
-  {id:'open-sans', name:'Open Sans'}, {id:'cormorant', name:'Cormant Garamond'}
+  {id:'open-sans', name:'Open Sans'}, {id:'cormorant', name:'Cormorant Garamond'}
 ];
 
 const SETTINGS = {
@@ -98,50 +129,159 @@ function applySettings(){
   document.documentElement.style.setProperty('--font-size', SETTINGS.fontSize + 'px');
 }
 
-function txtToEpilogueJSON(txt){ /*... your function unchanged... */
-  const lines = txt.split(/\r?\n/); const result = []; let chapter = 1; let verse = 0; const bkorder = 67;
-  for(let rawLine of lines){ let line = rawLine.trim(); if(!line) continue;
-    const isHeading = line === line.toUpperCase() && line.length < 120 &&!line.includes('.') &&!line.includes(',');
-    if(isHeading && verse > 0){ chapter++; verse = 0; }
-    line = line.replace(/¶/g, '<br>'); const words = line.replace(/<br>/g, ' ').split(/\s+/).filter(w=>w);
-    result.push({"BOOK":"EPILOGUE","BN":"EPI","CHAPTER":chapter,"VERSE":verse,"BKORDER":bkorder,"BKCHAPVERSE":`EPI${chapter}:${verse}`,"WORDCOUNT":words.length,"text":line}); verse++;
-  } return result;
+// === v7.8.139 NEW SPEC PARSER ===
+function txtToEpilogueJSON(rawText){
+  if(window.parseRawEpilogue) return window.parseRawEpilogue(rawText);
+
+  const lines = rawText.split(/\r?\n/);
+  let result=[], chapter=1, verse=0;
+  let currentChapterTitle = "PREAMBLE";
+  let hasBookTitle = false;
+
+  function pushVerse(text, isTitleType){
+    if(!text.trim()) return;
+    // Split by ¶ force paragraph
+    text.split('¶').forEach(part=>{
+      part = part.trim().replace(/\s+/g,' ').trim();
+      if(!part) return;
+      result.push({
+        "BOOK":"EPILOGUE","BN":"EPI","CHAPTER":chapter,"VERSE":verse,
+        "BKORDER":67,"BKCHAPVERSE":`EPI${chapter}:${verse}`,
+        "WORDCOUNT":part.split(/\s+/).length,
+        "text":part,
+        "type": isTitleType || "verse",
+        "chapterTitle": currentChapterTitle
+      });
+      verse++;
+    });
+  }
+
+  for(let rawLine of lines){
+    let line = rawLine.trim();
+    if(!line){ verse++; continue; } // blank = new verse gap handled by verse increment logic in preview, but keep continuity
+
+    if(line.startsWith('# ')){
+      hasBookTitle = true;
+      pushVerse(line.replace(/^#\s+/,'').trim(), 'bookTitle');
+      continue;
+    }
+    if(line.startsWith('## ')){
+      chapter++;
+      verse=0;
+      currentChapterTitle = line.replace(/^##\s+/,'').trim();
+      pushVerse(currentChapterTitle, 'chapter');
+      continue;
+    }
+    if(line.startsWith('### ')){
+      pushVerse(line.replace(/^###\s+/,'').trim(), 'subtitle');
+      continue;
+    }
+    // Regular body - keep original case
+    pushVerse(line, 'verse');
+  }
+  return result;
 }
-function downloadJSON(filename, data){ const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+
+function downloadJSON(filename, data){
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function renderPreview() {
+  const jsonStr = localStorage.getItem('hbvs_epilogueJSON');
+  if(!jsonStr){ document.getElementById('epilogue-preview').innerHTML='No Epilogue loaded.'; return; }
+  const verses = JSON.parse(jsonStr);
+  let html='<div class="preface-reader epilogue-reader">';
+  let currentCh = -1;
+  verses.forEach(v=>{
+    if(v.CHAPTER !== currentCh){
+      currentCh = v.CHAPTER;
+      if(v.type !== 'bookTitle') html+=`<div class="preface-chapter-header" style="font-weight:900;color:var(--accent);margin-top:18px;border-bottom:2px solid var(--border);padding-bottom:6px;">${v.chapterTitle || 'CHAPTER '+v.CHAPTER}</div>`;
+    }
+    if(v.type==='bookTitle'){
+      html+=`<div class="preface-header" style="text-align:center;font-weight:900;font-size:1.3em;margin:14px 0;">${v.text}</div>`;
+    } else if(v.type==='chapter'){
+      // already rendered as header, skip duplicate if needed
+      if(v.VERSE!==0) html+=`<div class="preface-title-centered" style="text-align:center;font-weight:800;margin:10px 0;">${v.text}</div>`;
+    } else if(v.type==='subtitle'){
+      html+=`<div class="preface-article-header" style="font-weight:bold;color:var(--accent);margin-top:12px;">${v.text}</div>`;
+    } else {
+      html+=`<div class="preface-para" style="margin:8px 0;text-align:justify;">${v.text}</div>`;
+    }
+  });
+  html+='</div>';
+  html+=`<div style="margin-top:12px;font-size:11px;color:var(--muted);">📊 ${verses.length} verses, ${new Set(verses.map(v=>v.CHAPTER)).size} chapters | Body case preserved | ¶ split active</div>`;
+  document.getElementById('epilogue-preview').innerHTML=html;
+}
 
 document.addEventListener('DOMContentLoaded', ()=>{
   applySettings();
-
-  // [FIX] POPULATE ALL 10
   const themeSelect = document.getElementById('theme-select');
   themeSelect.innerHTML = THEMES.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
   themeSelect.value = SETTINGS.theme;
   themeSelect.onchange = (e)=>{ SETTINGS.theme=e.target.value; localStorage.setItem('hbvs_theme',e.target.value); applySettings(); }
-
   const fontSelect = document.getElementById('font-select');
   fontSelect.innerHTML = FONTS.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
   fontSelect.value = SETTINGS.font;
   fontSelect.onchange = (e)=>{ SETTINGS.font=e.target.value; localStorage.setItem('hbvs_font',e.target.value); applySettings(); }
-
   document.getElementById('font-size').value = SETTINGS.fontSize;
   document.getElementById('font-size-label').innerText = SETTINGS.fontSize;
   document.getElementById('font-size').oninput = (e)=>{ SETTINGS.fontSize=e.target.value; document.getElementById('font-size-label').innerText=e.target.value; localStorage.setItem('hbvs_fontSize',e.target.value); applySettings(); }
-
   document.getElementById('epilogue-toggle').checked = SETTINGS.epilogueOn;
   document.getElementById('epilogue-toggle').onchange = (e)=>{ SETTINGS.epilogueOn=e.target.checked; localStorage.setItem('hbvs_epilogueOn',e.target.checked); }
 
+  const existingRaw = localStorage.getItem('epilogue_raw') || localStorage.getItem('hbvs_epilogueRaw');
+  if(existingRaw) document.getElementById('epilogue-textarea').value = existingRaw;
+  renderPreview();
+
   document.getElementById('epilogue-file').onchange = async (e)=>{
     const file = e.target.files[0]; if(!file) return;
-    const rawText = await file.text(); const json = txtToEpilogueJSON(rawText);
+    const rawText = await file.text();
+    document.getElementById('epilogue-textarea').value = rawText;
+    const json = txtToEpilogueJSON(rawText);
     localStorage.setItem('hbvs_epilogueJSON', JSON.stringify(json));
-    SafeNotify(`Epilogue loaded: ${json.length} verses. Enable toggle to see it in Bible`, 'success');
+    localStorage.setItem('epilogue_raw', rawText);
+    localStorage.setItem('hbvs_epilogueRaw', rawText);
+    localStorage.setItem('hbvs_epilogue_text', rawText); // for Search_glass
+    document.getElementById('epilogue-status').innerText = `✅ Loaded ${json.length} verses from ${file.name}`;
+    SafeNotify(`Epilogue loaded: ${json.length} verses`, 'success');
+    renderPreview();
   }
-  document.getElementById('btn-export-epilogue')?.addEventListener('click', ()=>{
+
+  document.getElementById('btn-save-epilogue').onclick = ()=>{
+    const raw = document.getElementById('epilogue-textarea').value;
+    if(!raw.trim()){ SafeNotify('Paste text first', 'error'); return; }
+    const json = txtToEpilogueJSON(raw);
+    localStorage.setItem('hbvs_epilogueJSON', JSON.stringify(json));
+    localStorage.setItem('epilogue_raw', raw);
+    localStorage.setItem('hbvs_epilogueRaw', raw);
+    localStorage.setItem('hbvs_epilogue_text', raw);
+    localStorage.setItem('hbvs_epilogueOn', 'true');
+    document.getElementById('epilogue-toggle').checked = true;
+    document.getElementById('epilogue-status').innerText = `✅ Saved ${json.length} verses - Book 67 ready`;
+    SafeNotify(`Saved ${json.length} verses`, 'success');
+    renderPreview();
+  }
+  document.getElementById('btn-preview-epilogue').onclick = renderPreview;
+  document.getElementById('btn-export-epilogue').onclick = ()=>{
     const jsonStr = localStorage.getItem('hbvs_epilogueJSON');
-    if(!jsonStr){ SafeNotify('Load an Epilogue.txt first', 'error'); return; }
+    if(!jsonStr){ SafeNotify('Load or Save first', 'error'); return; }
     downloadJSON('Epilogue.json', JSON.parse(jsonStr));
-    SafeNotify('Epilogue.json exported to Downloads', 'success');
-  });
+    SafeNotify('Epilogue.json exported', 'success');
+  }
+  document.getElementById('btn-clear-epilogue').onclick = ()=>{
+    localStorage.removeItem('hbvs_epilogueJSON');
+    localStorage.removeItem('epilogue_raw');
+    localStorage.removeItem('hbvs_epilogueRaw');
+    localStorage.removeItem('hbvs_epilogue_text');
+    document.getElementById('epilogue-textarea').value='';
+    document.getElementById('epilogue-preview').innerHTML='Cleared';
+    document.getElementById('epilogue-status').innerText='Cleared';
+    SafeNotify('Epilogue cleared', 'info');
+  }
 });
 </script>
 </body>
