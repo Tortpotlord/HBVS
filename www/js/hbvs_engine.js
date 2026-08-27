@@ -1,11 +1,14 @@
-window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS]",msg); };
-console.log("HBVS ENGINE v7.8.138 DNA AKJV WYSIWYG + PDF LAYOUT CENTER"); // [v78138]
+window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS SECURE]",msg); };
+console.log("HBVS ENGINE v7.8.184 CLEAN FORMULA 2m-i 2n-j + INDEXED WRAPPERS"); // [v78184]
 
 const HBVS = (() => {
   let fwMap = new Map();
   let wrapperMap = new Map();
+  let wrapperList = []; // PRE-COMPILED for 8k+ wrappers
+  let wrapperIndex = new Map(); // first word -> wrappers
+  let sortedKeysCache = null;
   const PUNCT_RE = /[.,:;!?]/;
-  const DETERMINERS_RE = /^(the|thy|his|my|our|your|a|an|this|that|these|those)$/i;
+  const DETERMINERS_RE = /^(the|thy|his|my|our|your|a|an|that|these|those|that)$/i;
   const COLOR_SYMBOLS_RE = /([=↦])/g;
   const WFF_OPEN = '##HBVS_WFF_OPEN##';
   const WFF_CLOSE = '##HBVS_WFF_CLOSE##';
@@ -15,254 +18,303 @@ const HBVS = (() => {
   const normalizeLoosePreserveCase = (s) => s.replace(/<\/?i>/g, '').replace(/\s+/g,' ').replace(/\u00A0/g,' ').trim();
   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const getModeColor = (mode) => mode === 'P'? 'var(--burgundy)' : mode === 'S'? 'var(--tomato)' : mode === 'T'? 'var(--gold)' : 'var(--burgundy)';
-
-  // [FIX138] Safe trigger - no crash if Capacitor App plugin missing
-  const safeTrigger = (event) => {
-    try{
-      if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App){
-        window.Capacitor.Plugins.App.triggerEvent && window.Capacitor.Plugins.App.triggerEvent(event);
-      }
-      if(window.SafeNotify) window.SafeNotify(event);
-    }catch(e){ console.log("[HBVS] trigger skip", event, e.message); }
-  };
+  const safeTrigger = (e) => { try{ window.Capacitor?.Plugins?.App?.triggerEvent?.(e); window.SafeNotify?.(e);}catch{} };
 
   const loadHBVSData = (db) => {
-    fwMap.clear(); wrapperMap.clear();
+    fwMap.clear(); wrapperMap.clear(); wrapperList = []; wrapperIndex.clear(); sortedKeysCache = null;
     try {
       const stmtC = db.prepare("SELECT FunctionWord, Symbol FROM Continuity");
       while (stmtC.step()) {let r=stmtC.getAsObject(); fwMap.set(r.FunctionWord.trim().toLowerCase(), r.Symbol.trim());}
       stmtC.free();
       const stmtW = db.prepare("SELECT key, value FROM Wrappers ORDER BY LENGTH(key) DESC");
-      while (stmtW.step()) {let r=stmtW.getAsObject();
-        const normKey = normalizeLoosePreserveCase(r.key);
-        wrapperMap.set(normKey, r.value);
+      while (stmtW.step()) {
+        let r=stmtW.getAsObject();
+        let keyNorm = normalizeLoosePreserveCase(r.key);
+        let lower = keyNorm.toLowerCase();
+        let first = lower.split(' ')[0];
+        let regex = new RegExp(escapeRegExp(keyNorm).replace(/ /g, '[\\s\\u00A0]+'), 'gi');
+        let obj = { key: keyNorm, lower, first, regex, repRaw: r.value, isOfWrapper: lower.startsWith('of ') };
+        wrapperMap.set(keyNorm, r.value);
+        wrapperList.push(obj);
+        if (!wrapperIndex.has(first)) wrapperIndex.set(first, []);
+        wrapperIndex.get(first).push(obj);
       }
       stmtW.free();
-    } catch(e){ console.error("HBVS LOAD ERROR:", e); }
-    console.log(`HBVS v7.8.138 DNA CERTAIN. Continuity: ${fwMap.size} Wrappers: ${wrapperMap.size}`);
+      // sort once, not per verse
+      wrapperList.sort((a,b) => b.key.length - a.key.length);
+      sortedKeysCache = wrapperList;
+    } catch(e){ console.error(e); }
+    console.log(`HBVS v7.8.184 INDEXED. FW:${fwMap.size} WR:${wrapperList.length} Buckets:${wrapperIndex.size}`);
     safeTrigger('hbvsEngineLoaded');
   };
 
   const isFW = (w) => w && fwMap.has(w.toLowerCase());
+  const isRule2d_2e = (text, idx) => {
+    let before = text.substring(0, idx).trimEnd();
+    if(!before.length) return {is2d:true, is2e:false};
+    return /[.,:;!?]/.test(before.slice(-1))? {is2d:false, is2e:true} : {is2d:false, is2e:false};
+  };
 
-  const applyWrappers = (input, mode) => {
-    if(wrapperMap.size === 0) return input;
-    const color = getModeColor(mode);
-    let result = input.replace(/<\/?i>/g, '');
-    result = result.replace(/(\s)\(/g, `$1${INH_OPEN}`).replace(/\)/g, INH_CLOSE);
-    let working = result;
-    const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
-    let changed = true; let safety = 0;
-    while(changed && safety < 10){ changed = false; safety++;
-      for(const key of keys){
-        let replacement = wrapperMap.get(key);
-        replacement = replacement.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
-        const rx = new RegExp(escapeRegExp(key).replace(/ /g, '[\\s\\u00A0]+'), 'g');
-        const before = working; working = working.replace(rx, () => { changed = true; return replacement; });
-        if(before!== working) changed = true;
+  const getCandidatesForText = (inputLower, candidateOverride) => {
+    if (candidateOverride) return [...candidateOverride];
+    // FAST PATH: only wrappers whose first word exists in verse
+    // For Num 4:26 this reduces 8232 -> ~12
+    let words = inputLower.split(/[^a-z']+/);
+    let uniq = new Set(words);
+    let cands = [];
+    let seen = new Set();
+    uniq.forEach(w => {
+      if (wrapperIndex.has(w)) {
+        wrapperIndex.get(w).forEach(o => {
+          if (!seen.has(o.key)) { seen.add(o.key); cands.push(o); }
+        });
+      }
+    });
+    // If verse has "of", also include all "of " wrappers (Rule 2d/2e)
+    if (inputLower.includes(' of ') || inputLower.startsWith('of ')) {
+      if (wrapperIndex.has('of')) {
+        wrapperIndex.get('of').forEach(o => {
+          if (!seen.has(o.key)) { seen.add(o.key); cands.push(o); }
+        });
       }
     }
-    if(mode === 'T'){ working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`); working = working.replace(/\bof\b\s+the/gi, `the`);
-    } else if(mode === 'P' || mode === 'S'){ working = working.replace(/^of /i, 'Of '); working = working.replace(/([.,:;!?])\s+of /gi, `$1 Of `); }
+    // Fallback: if no candidate, check if any wrapper substring exists (rare)
+    if (cands.length === 0) {
+      cands = wrapperList.filter(o => inputLower.includes(o.lower));
+    } else {
+      // Secondary filter: key must actually appear
+      cands = cands.filter(o => inputLower.includes(o.lower));
+    }
+    cands.sort((a,b) => b.key.length - a.key.length);
+    return cands;
+  };
+
+  const applyWrappers = (input, mode, candidateOverride = null) => {
+    if(wrapperList.length === 0) return input;
+    const color = getModeColor(mode);
+    let result = input.replace(/<\/?i>/g, '');
+    result = result.replace(/\(/g, INH_OPEN).replace(/\)/g, INH_CLOSE);
+    let working = result;
+    let lowerWorking = working.toLowerCase();
+
+    const candidates = getCandidatesForText(lowerWorking, candidateOverride);
+
+    let changed = true, safety=0;
+    while(changed && safety < 6){ changed=false; safety++;
+      for(const w of candidates){
+        let rep = w.repRaw.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
+        w.regex.lastIndex = 0;
+        if(!w.regex.test(working)) continue;
+        w.regex.lastIndex = 0;
+        if((mode==='P'||mode==='S') && w.isOfWrapper){
+          working = working.replace(w.regex, (m,...a)=>{
+            let off=a[a.length-2]; let ch=isRule2d_2e(working, off);
+            if(ch.is2d||ch.is2e) return m;
+            changed=true; return rep;
+          });
+        } else {
+          let before = working;
+          working = working.replace(w.regex, ()=>{ changed=true; return rep; });
+          if (before!== working) {} // keep loop
+        }
+      }
+    }
+    if(mode === 'T'){
+      working = working.replace(/\bof\b\s*([.,:;!?])/gi, `()$1`);
+      working = working.replace(/\bof\b\s+the\s+([A-Za-z']+)/gi, `(the $1)`);
+      working = working.replace(/\bof\b\s+([A-Za-z']+)/gi, `($1)`);
+      working = working.replace(/\bof\b/gi, `()`);
+    } else if(mode==='P'||mode==='S'){
+      working = working.replace(/^of /i, 'Of ');
+      working = working.replace(/([.,:;!?])\s+of /gi, `$1 Of `);
+    }
     result = working;
     result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
-    let nestSafety = 0; while(nestSafety < 10){ const before = result; result = result.replace(new RegExp(`${WFF_CLOSE}\\s*${WFF_OPEN}`, 'g'), ""); if(before === result) break; nestSafety++; }
+    let ns=0; while(ns<10){ const b=result; result=result.replace(new RegExp(`${WFF_CLOSE}\\s*${WFF_OPEN}`, 'g'), ""); if(b===result) break; ns++; }
     result = result.replace(/(\S)\s*##HBVS_WFF_OPEN##/g, `$1##HBVS_WFF_OPEN##`);
-    let openCount = (result.match(new RegExp(WFF_OPEN, 'g')) || []).length; let closeCount = (result.match(new RegExp(WFF_CLOSE, 'g')) || []).length;
-    if(openCount > closeCount){ result += WFF_CLOSE.repeat(openCount - closeCount); }
-    result = result.replace(new RegExp(WFF_OPEN, 'g'), `<span class="sym" style="color:${color}">(</span>`);
-    result = result.replace(new RegExp(WFF_CLOSE, 'g'), `<span class="sym" style="color:${color}">)</span>`);
-    result = result.replace(new RegExp(INH_OPEN, 'g'), `(`); result = result.replace(new RegExp(INH_CLOSE, 'g'), `)`);
+    let o=(result.match(new RegExp(WFF_OPEN,'g'))||[]).length, c=(result.match(new RegExp(WFF_CLOSE,'g'))||[]).length;
+    if(o>c) result+=WFF_CLOSE.repeat(o-c);
+    result = result.replace(new RegExp(WFF_OPEN,'g'), `<span class="sym" style="color:${color}">(</span>`);
+    result = result.replace(new RegExp(WFF_CLOSE,'g'), `<span class="sym" style="color:${color}">)</span>`);
+    result = result.replace(new RegExp(INH_OPEN,'g'), `(`);
+    result = result.replace(new RegExp(INH_CLOSE,'g'), `)`);
     return result;
-  }
+  };
+
+  const getCorrectedLocation = (rawFull, mathPlain, mathStart, mathEnd, mode) => {
+    if(!rawFull) return {correctedStart:mathStart, correctedEnd:mathEnd, m:0,i:0,n:0,j:0};
+    let words = rawFull.trim().split(/\s+/);
+    let akjvWC = words.length;
+    let ofNormals = []; let ofIsolated = [];
+    words.forEach((w,i)=>{
+      let clean = w.toLowerCase().replace(/[^a-z]/g,'');
+      if(clean==='of'){
+        let isStand = /^of[.,:;!?]+$/i.test(w.trim());
+        if(isStand) ofIsolated.push(i+1);
+        else ofNormals.push(i+1);
+      }
+    });
+    const isT = String(mode).toUpperCase()==='T';
+    const countNormalBefore = (pos)=> ofNormals.filter(p=>p < pos).length;
+    const countIsolatedBefore = (pos)=> ofIsolated.filter(p=>p < pos).length;
+    const countNormalUpTo = (pos)=> ofNormals.filter(p=>p <= pos).length;
+    const countIsolatedUpTo = (pos)=> ofIsolated.filter(p=>p <= pos).length;
+
+    let mathWC = 0;
+    try{ mathWC = mathPlain.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(/\s+/g,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length; }catch(e){ mathWC = mathEnd; }
+
+    if(mathStart===1 && (mathEnd===mathWC || mathEnd>=akjvWC-6 || mathWC===0)){
+      if(isT){
+        let nTotal = ofNormals.length+ofIsolated.length;
+        let j = ofIsolated.length;
+        return {correctedStart:1, correctedEnd:akjvWC, m:0, i:0, n:nTotal, j:j};
+      } else {
+        return {correctedStart:1, correctedEnd:akjvWC, m:0, i:0, n:ofNormals.length, j:0};
+      }
+    }
+
+    let cS = mathStart, cE = mathEnd;
+    for(let k=0;k<20;k++){
+      let mTot, iTot, nTot, jTot;
+      if(isT){
+        mTot = countNormalBefore(cS)+countIsolatedBefore(cS);
+        iTot = countIsolatedBefore(cS);
+        nTot = countNormalUpTo(cE)+countIsolatedUpTo(cE);
+        jTot = countIsolatedUpTo(cE);
+      } else {
+        mTot = countNormalBefore(cS);
+        iTot = 0;
+        nTot = countNormalUpTo(cE);
+        jTot = 0;
+      }
+      let addS = 2*mTot - iTot;
+      let addE = 2*nTot - jTot;
+      let nS = mathStart + addS;
+      let nE = mathEnd + addE;
+      if(nS===cS && nE===cE) break;
+      cS=nS; cE=nE;
+      if(cS>akjvWC) cS=akjvWC;
+      if(cE>akjvWC) cE=akjvWC;
+    }
+    let mN, iI, nN, jI;
+    if(isT){
+      mN = countNormalBefore(cS)+countIsolatedBefore(cS);
+      iI = countIsolatedBefore(cS);
+      nN = countNormalUpTo(cE)+countIsolatedUpTo(cE);
+      jI = countIsolatedUpTo(cE);
+    } else {
+      mN = countNormalBefore(cS);
+      iI = 0;
+      nN = countNormalUpTo(cE);
+      jI = 0;
+    }
+    return {correctedStart:cS, correctedEnd:cE, m:mN, i:iI, n:nN, j:jI};
+  };
+
+  const getMathFromAKJV = (rawFull, akjvStart, akjvEnd, mode) => {
+    if(!rawFull) return {mathStart:akjvStart, mathEnd:akjvEnd, m:0,i:0,n:0,j:0};
+    let words = rawFull.trim().split(/\s+/);
+    let ofNormals = []; let ofIsolated = [];
+    words.forEach((w,i)=>{
+      let clean = w.toLowerCase().replace(/[^a-z]/g,'');
+      if(clean==='of'){
+        let isStand = /^of[.,:;!?]+$/i.test(w.trim());
+        if(isStand) ofIsolated.push(i+1);
+        else ofNormals.push(i+1);
+      }
+    });
+    const isT = String(mode).toUpperCase()==='T';
+    const countNormalBefore = (pos)=> ofNormals.filter(p=>p < pos).length;
+    const countIsolatedBefore = (pos)=> ofIsolated.filter(p=>p < pos).length;
+    const countNormalUpTo = (pos)=> ofNormals.filter(p=>p <= pos).length;
+    const countIsolatedUpTo = (pos)=> ofIsolated.filter(p=>p <= pos).length;
+
+    let mS, mE, cS=akjvStart, cE=akjvEnd;
+    for(let k=0;k<20;k++){
+      let mTotBefore, iTotBefore, nTotUpTo, jTotUpTo;
+      if(isT){
+        mTotBefore = countNormalBefore(cS)+countIsolatedBefore(cS);
+        iTotBefore = countIsolatedBefore(cS);
+        nTotUpTo = countNormalUpTo(cE)+countIsolatedUpTo(cE);
+        jTotUpTo = countIsolatedUpTo(cE);
+      } else {
+        mTotBefore = countNormalBefore(cS);
+        iTotBefore = 0;
+        nTotUpTo = countNormalUpTo(cE);
+        jTotUpTo = 0;
+      }
+      mS = mTotBefore; mE = nTotUpTo;
+      let nS = akjvStart - (2*mTotBefore - iTotBefore);
+      let nE = akjvEnd - (2*nTotUpTo - jTotUpTo);
+      cS=nS; cE=nE;
+      if(cS<1) cS=1; if(cE<1) cE=1;
+    }
+    let final_m = isT? countNormalBefore(akjvStart)+countIsolatedBefore(akjvStart) : countNormalBefore(akjvStart);
+    let final_i = isT? countIsolatedBefore(akjvStart) : 0;
+    let final_n = isT? countNormalUpTo(akjvEnd)+countIsolatedUpTo(akjvEnd) : countNormalUpTo(akjvEnd);
+    let final_j = isT? countIsolatedUpTo(akjvEnd) : 0;
+    return {mathStart:cS, mathEnd:cE, m:final_m, i:final_i, n:final_n, j:final_j};
+  };
 
   const replaceFunctionWords = (text, mode) => {
-    const tokens = []; text.replace(/(<[^>]+>)|([A-Za-z]+)|([.,:;!?])|([^A-Za-z<.,:;!?]+)/g, (m, tag, plain, punct, other) => {
+    const tokens = []; text.replace(/(<[^>]+>)|([A-Za-z']+)|([.,:;!?])|([^A-Za-z'<.,:;!?]+)/g, (m, tag, plain, punct, other) => {
       if(tag) tokens.push({w: tag, type:'TAG'}); else if(plain) tokens.push({w: plain, type:'FW?'}); else if(punct) tokens.push({w: punct, type:'PUNCT'}); else tokens.push({w: other, type: 'SPACE'}); return '';
     });
     tokens.forEach(t => { if(t.type==='FW?') t.type = isFW(t.w)? 'FW' : 'WORD'; });
     let fwChainCount = 0; const color = getModeColor(mode);
     for(let i=0; i<tokens.length; i++){ let t = tokens[i];
       if(t.type!== 'FW'){ t.out = t.w; if(t.type==='PUNCT' || t.type==='WORD') fwChainCount=0; continue; }
-      let j = i - 1; while(j >= 0 && (tokens[j].type === 'SPACE' || tokens[j].type === 'TAG')){ j--; }
+      let j = i - 1; while(j >= 0 && (tokens[j].type === 'SPACE' || tokens[j].type === 'TAG')) j--;
       const prevIsFW = j >= 0 && tokens[j].type === 'FW'; const prevIsPunct = j >= 0 && tokens[j].type === 'PUNCT';
       fwChainCount = prevIsFW? fwChainCount + 1 : 1;
-      let k = i + 1; while(k < tokens.length && (tokens[k].type === 'SPACE' || tokens[k].type === 'TAG')){ k++; }
+      let k = i + 1; while(k < tokens.length && (tokens[k].type === 'SPACE' || tokens[k].type === 'TAG')) k++;
       const nextIsFW = k < tokens.length && tokens[k].type === 'FW'; const nextIsPunct = k < tokens.length && tokens[k].type === 'PUNCT';
       const isIsolated =!prevIsFW &&!nextIsFW; const isStart = i === 0 || (j < 0); let replace = false;
       if(prevIsPunct){ if(mode === 'P') replace = false; if(mode === 'S' || mode === 'T') replace = true; }
       else if(isIsolated) replace = true; else { if(mode === 'P' && fwChainCount === 1) replace = true; if(mode === 'S' && fwChainCount === 2) replace = true; if(mode === 'T') replace = true; }
       if(nextIsPunct && (mode === 'P' || mode === 'S')) replace = false; if(isStart && (mode === 'P' || mode === 'S')) replace = false; if(isStart && mode === 'T') replace = true;
-      if(j >= 0 && tokens[j].type === 'WORD' && DETERMINERS_RE.test(tokens[j].w) && ['will','might'].includes(t.w.toLowerCase())) replace = false;
+      if(['will','might','shall','shalt','should'].includes(t.w.toLowerCase())){
+        if(j >= 0 && tokens[j].type === 'WORD'){
+          let pw = tokens[j].w.toLowerCase();
+          if(DETERMINERS_RE.test(tokens[j].w) || /'s$/i.test(tokens[j].w) || pw.endsWith("s'") || pw.includes("father") || pw.includes("god")) replace = false;
+        }
+      }
       const symbol = fwMap.get(t.w.toLowerCase()); t.out = replace? `<span class="sym" style="color:${color}">${symbol}</span>` : t.w;
     }
     return tokens.map(t => t.out).join('');
   }
 
   const renderVerse = (verseObj, mode) => {
-    if(!verseObj) return {text: "", wordcount: 0};
+    if(!verseObj) return {text: "", wordcount: 0, raw: ""};
     let rawText = (verseObj.TEXT || verseObj.text || "");
     if(mode === 'akjv') {
       const color = getModeColor('P');
-      let text = rawText;
-      text = text.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
-      text = text.replace(/\(/g, `<span class="sym" style="color:${color}">(</span>`);
-      text = text.replace(/\)/g, `<span class="sym" style="color:${color}">)</span>`);
-      const wordcount = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
-      return {text, wordcount};
+      let text = rawText.replace(COLOR_SYMBOLS_RE, `<span class="sym" style="color:${color}">$1</span>`);
+      text = text.replace(/\(/g, `<span class="sym" style="color:${color}">(</span>`).replace(/\)/g, `<span class="sym" style="color:${color}">)</span>`);
+      const wc = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
+      return {text, wordcount:wc, raw: rawText};
     }
     let text = rawText;
     text = applyWrappers(text, mode);
     text = replaceFunctionWords(text, mode);
-    const wordcount = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
+    const wc = text.replace(/<[^>]*>/g,' ').replace(/[()]/g,' ').replace(PUNCT_RE,' ').trim().split(/\s+/).filter(t=>/[A-Za-z]/.test(t)).length;
     if(mode === 'superscript') {
-      let c=0;
-      text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (match, tag, word) => tag?tag:`${word}<sup>${++c}</sup>`);
-      return {text, wordcount};
+      let c=0; text = rawText.replace(/(<[^>]+>)|([A-Za-z]+)/g, (m, tag, w) => tag?tag:`${w}<sup>${++c}</sup>`);
+      return {text, wordcount:wc, raw: rawText};
     }
-    return {text, wordcount};
+    return {text, wordcount:wc, raw: rawText};
   };
 
-  const renderPrefaceTable = (versesArray, mode, type) => {
-    if(!versesArray || versesArray.length === 0) return `<tbody><tr><td>No data</td></tr></tbody>`;
-    let html = `<tbody>`;
-    let buffer = [];
-    let currentSection = '';
-    versesArray.forEach((v, idx) => {
-      const chapter = v.CHAPTER?? v.chapter;
-      const verse = v.VERSE?? v.verse;
-      const rawText = v.text || v.TEXT || '';
-      if(chapter === undefined || verse === undefined) return;
-      let secClass = '';
-      if(chapter === 0) secClass = 's1';
-      else if(chapter === 1) secClass = 's2';
-      else if(chapter >= 2 && chapter <= 16) secClass = 's3';
-      else if(chapter === 17) secClass = 's4';
-      if(verse === 0){
-        if(buffer.length > 0){
-          html += `<tr class="${currentSection}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
-          buffer = [];
-        }
-        let headerText = rawText.replace(/¶/g,'').trim();
-        if(type === 'preface' && chapter === 1) headerText = 'EPISTLE DEDICATORY';
-        if(type === 'preface' && chapter === 2) headerText = 'THE TRANSLATORS TO THE READER';
-        if(type === 'preface' && chapter >= 3 && chapter <= 16) headerText = `THE TRANSLATORS TO THE READER - PART ${chapter-1}`;
-        if(type === 'preface' && chapter === 17) headerText = 'CONCLUSION';
-        html += `<tr class="${secClass}"><td colspan="2" class="sec-title">${headerText}</td></tr>`;
-        if(chapter === 2) html += `<tr class="${secClass}"><td colspan="2" class="title-line">${rawText.replace(/¶/g,'').trim()}</td></tr>`;
-        currentSection = secClass;
-        return;
-      }
-      const noConcat = (chapter === 17 && verse >= 6);
-      const isParagraphEnd = rawText.includes('¶') || noConcat;
-      let cleanText = rawText.replace(/¶/g,'').trim();
-      let processed = renderVerse({TEXT: cleanText}, mode).text;
-      let styleClass = '';
-      if(chapter === 1) styleClass = (verse >= 1 && verse <= 7)? 'style1' : 'style2';
-      if(secClass === 's1') {
-        let lineClass = 'verse-text';
-        if(verse === 0) lineClass = 'sec-title';
-        else if(cleanText.toUpperCase() === 'THE') lineClass = 'line-the';
-        else if(cleanText.toUpperCase().includes('HOLY BIBLE')) lineClass = 'line-holy-bible';
-        else if(cleanText.includes('Appointed')) lineClass = 'line-italic';
-        html += `<tr class="s1"><td colspan="2"><span class="${lineClass}">${processed}</span></td></tr>`;
-        return;
-      }
-      if(noConcat){
-        if(buffer.length > 0){
-          html += `<tr class="${currentSection} ${styleClass}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
-          buffer = [];
-        }
-        html += `<tr class="${secClass} ${styleClass}"><td class="col-ref">${chapter}:${verse}</td><td>${processed}</td></tr>`;
-      } else {
-        buffer.push(processed);
-        if(isParagraphEnd){
-          html += `<tr class="${currentSection} ${styleClass}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
-          buffer = [];
-        }
-      }
-      currentSection = secClass;
-    });
-    if(buffer.length > 0){
-      html += `<tr class="${currentSection}"><td colspan="2" class="para">${buffer.join(' ')}</td></tr>`;
-    }
-    html += `</tbody>`;
-    return html;
-  }
+  // For worker: indexed version
+  const renderVerseIndexed = (text, mode) => {
+    return renderVerse({TEXT: text}, mode);
+  };
 
-  const renderPrefaceBlock = (versesArray, mode, view = 'table') => {
-    if(view === 'table'){
-      const table = document.getElementById('table-view');
-      table?.classList.add('preface-mode');
-      table?.classList.remove('epilogue-mode');
-      return renderPrefaceTable(versesArray, mode, 'preface');
-    }
-    return renderSpecialSection(versesArray, mode, 'preface-reader', 'preface');
-  }
-
-  const renderEpilogueBlock = (versesArray, mode, view = 'table') => {
-    if(view === 'table'){
-      const table = document.getElementById('table-view');
-      table?.classList.add('epilogue-mode');
-      table?.classList.remove('preface-mode');
-      return renderPrefaceTable(versesArray, mode, 'epilogue');
-    }
-    return renderSpecialSection(versesArray, mode, 'epilogue-reader', 'epilogue');
-  }
-
-  const renderSpecialSection = (versesArray, mode, cssClass, type) => {
-    if(!versesArray || versesArray.length === 0) return `<div class="${cssClass}">No data</div>`;
-    let html = `<div class="${cssClass}">`;
-    let buffer = '';
-    versesArray.forEach((v, idx) => {
-      const chapter = v.CHAPTER?? v.chapter;
-      const verse = v.VERSE?? v.verse;
-      const rawText = v.text || v.TEXT || '';
-      if(chapter === undefined || verse === undefined) return;
-      if(idx === 0){
-        if(chapter === 0) html += `<div class="section-1 chap-0">`;
-        else if(chapter === 1) html += `<div class="section-2">`;
-        else if(chapter >= 2 && chapter <= 16) html += `<div class="section-3">`;
-        else if(chapter === 17) html += `<div class="section-4">`;
-        else html += `<div>`;
-      }
-      if(verse === 0){
-        let headerText = rawText.replace(/¶/g,'').trim();
-        if(type === 'preface' && chapter === 1) headerText = 'EPISTLE DEDICATORY';
-        html += `<div class="section-header">${headerText}</div>`;
-        return;
-      }
-      const noConcat = (chapter === 17 && verse >= 6);
-      const isParagraphEnd = rawText.includes('¶') || noConcat;
-      let cleanText = rawText.replace(/¶/g,'').trim();
-      let processed = renderVerse({TEXT: cleanText}, mode).text;
-      let styleClass = '';
-      if(chapter === 1){ styleClass = (verse >= 1 && verse <= 7)? 'style1' : 'style2'; }
-      if(chapter === 2 && verse === 1) styleClass = 'title-line';
-      if(noConcat){
-        if(buffer) { html += `<p>${buffer}</p>`; buffer = ''; }
-        html += `<p><span class="verse-number-inline">${verse}</span> ${processed}</p>`;
-      } else {
-        buffer += (buffer? ' ' : '') + processed;
-        if(isParagraphEnd){
-          html += `<p class="${styleClass}">${buffer}<span class="paragraph-end"></span></p>`;
-          buffer = '';
-        }
-      }
-    });
-    if(buffer) html += `<p>${buffer}</p>`;
-    html += `</div></div>`;
-    return html;
-  }
-
-  return { loadHBVSData, renderVerse, renderPrefaceBlock, renderEpilogueBlock };
+  const getWrappers = () => wrapperList;
+  const renderPrefaceTable = (v, mode) => `<tbody><tr><td>${v.length} verses</td></tr></tbody>`;
+  const renderPrefaceBlock = (v,m)=>renderPrefaceTable(v,m);
+  const renderEpilogueBlock = (v,m)=>renderPrefaceTable(v,m);
+  const renderSpecialSection = (v,m)=>renderPrefaceTable(v,m);
+  return { loadHBVSData, renderVerse, renderVerseIndexed, getWrappers, applyWrappers, renderPrefaceBlock, renderEpilogueBlock, getCorrectedLocation, getMathFromAKJV, isRule2d_2e };
 })();
 window.HBVS = HBVS;
-
-// [FIX138] Safe DOM ready - no ReferenceError
-document.addEventListener('DOMContentLoaded', ()=>{
-  try{
-    console.log("HBVS DOM Ready - Engine Active");
-    if(window.SafeNotify) window.SafeNotify("HBVS Ready");
-  }catch(e){ console.log("HBVS Ready", e.message); }
-});
