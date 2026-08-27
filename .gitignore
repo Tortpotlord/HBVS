@@ -26,6 +26,13 @@ venv/
 npm-debug.log
 
 # Database - DO NOT TRACK
-hbvs_data_v2.db~12
+*.db
+*.db-journal
 *-journal
+
+# Temp / Junk
+~12
+npx
+
+# Tools raw txt - keep json
 tools/

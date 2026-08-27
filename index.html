@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v7.8.138</title>
+<title>Holy Bible Vector Space v7.8.184.11 SECURE-WASM</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'">
 
 <script>
-// [FIX138] Safe polyfills - DO NOT override real Capacitor
 window.Capacitor = window.Capacitor || {};
 window.Capacitor.Plugins = window.Capacitor.Plugins || {};
 if(!window.Capacitor.Plugins.App){
@@ -18,33 +18,34 @@ if(!window.Capacitor.Plugins.App){
 }
 window.Capacitor.isNativePlatform = window.Capacitor.isNativePlatform || function(){ return false; };
 window.Capacitor.getPlatform = window.Capacitor.getPlatform || function(){ return 'web'; };
-
-window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS]",msg); };
+window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS SECURE]",msg); };
 window.HBVS_SPLASH_READY = function(){
   const s=document.getElementById('splash');
   const a=document.getElementById('app');
   if(s) s.style.display='none';
   if(a) a.classList.remove('hidden');
 };
+window.HBVS_READONLY = true;
 </script>
 
-<link rel="stylesheet" href="css/global.css?v=78138">
-<link rel="stylesheet" href="css/style.css?v=78138">
-<link rel="stylesheet" href="css/preface.css?v=78138">
-<link rel="stylesheet" href="css/preface-reader.css?v=78138">
-<link rel="stylesheet" href="css/superscript.css?v=78138">
-<link rel="stylesheet" href="css/mathkjv.css?v=78138">
+<link rel="stylesheet" href="css/global.css?v=788411">
+<link rel="stylesheet" href="css/style.css?v=7818411">
+<link rel="stylesheet" href="css/preface.css?v=7818411">
+<link rel="stylesheet" href="css/preface-reader.css?v=7818411">
+<link rel="stylesheet" href="css/superscript.css?v=7818411">
+<link rel="stylesheet" href="css/mathkjv.css?v=7818411">
 <style>
 .change-verse-nav{display:flex;justify-content:center;align-items:center;gap:14px;margin:10px 0 6px 0;}
 .change-verse-nav button{padding:8px 16px;border:2px solid var(--border);background:var(--bg2);border-radius:8px;font-weight:900;font-size:18px;min-width:44px;cursor:pointer;}
 #btn-change-verse{font-weight:800;color:var(--accent);text-decoration:underline;margin:0;cursor:pointer;}
+.security-badge{display:inline-block;background:#0a7;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:800;margin-left:8px;}
 </style>
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=78138" alt="I Go To The Father"/>
-  <div style="font-size:18px;font-weight:bold;color:#8B5A2B;">HOLY BIBLE VECTOR SPACE</div>
-  <p id="splash-text">Initializing HBVS v7.8.138</p>
+  <img src="assets/IGoToTheFather.png?v=7818411" alt="I Go To The Father"/>
+  <div style="font-size:18px;font-weight:bold;color:#8B5A2B;">HOLY BIBLE VECTOR SPACE <span class="security-badge">SECURE-WASM</span></div>
+  <p id="splash-text">Initializing HBVS v7.8.18411 - DB Read-Only + WASM + Epi3:3 Wrapper Fix</p>
 </div>
 <div id="overlay"></div>
 <div id="sidemenu">
@@ -67,7 +68,7 @@ window.HBVS_SPLASH_READY = function(){
   <header id="topbar">
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
-      <div class="logo-title"><img src="assets/IGoToTheFather.png?v=78138" alt="Logo"/><div class="app-title">Holy Bible Vector Space</div></div>
+      <div class="logo-title"><img src="assets/IGoToTheFather.png?v=7818411" alt="Logo"/><div class="app-title">Holy Bible Vector Space</div></div>
       <div class="topbar-icons header-icons">
         <button id="btn-random" class="icon-btn" title="Random Verse">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -83,13 +84,13 @@ window.HBVS_SPLASH_READY = function(){
         </button>
       </div>
     </div>
-    <div class="subtitle" id="sub1">Bible: AKJV 1611 PCE circa 1900</div>
-    <div class="subtitle" id="sub2">Reader: MathKJVP</div>
+    <div class="subtitle" id="sub1">Bible: AKJV 1611 PCE circa 1900 [READ-ONLY]</div>
+    <div class="subtitle" id="sub2">Reader: MathKJVP - v7.8.18411 Secure WASM + Inherent Plain + Epi3:3</div>
     <div class="topbar-row2"><select id="bible-select"></select><select id="math-select"></select></div>
   </header>
   <main>
     <section id="tab-home">
-      <p class="daily-bread">Daily Bread</p>
+      <p class="daily-bread">Daily Bread - Protected</p>
       <h2 class="current-ref" id="current-ref">Gen1:4</h2>
       <div class="change-verse-nav">
         <button id="btn-prev-verse" title="Previous Verse">&lt;</button>
@@ -108,7 +109,8 @@ window.HBVS_SPLASH_READY = function(){
   </nav>
 </div>
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=78138"></script>
-<script src="js/app.js?v=78138"></script>
+<script src="js/hbvs_engine.js?v=7818411"></script>
+<script src="js/app.js?v=7818411"></script>
+<script src="js/highlight_copy.js?v=7818411"></script>
 </body>
 </html>
