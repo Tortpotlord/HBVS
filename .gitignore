@@ -30,3 +30,6 @@ hbvs_data_v2.dbcd
 npx
 *.db-journal
 tools/*.txt
+"~12" 
+"hbvs_data_v2.db" 
+"*.db" 
