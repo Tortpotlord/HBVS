@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HBVS Bible Reader v7.8.138</title> <!-- [v78138] -->
+<title>HBVS Bible Reader v7.8.184.11 SECURE-WASM</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'">
 
 <script>
-// [FIX138] DO NOT override real Capacitor on Android. Only polyfill if missing (PC browser)
 window.Capacitor = window.Capacitor || {};
 window.Capacitor.Plugins = window.Capacitor.Plugins || {};
 if(!window.Capacitor.Plugins.App){
@@ -18,7 +19,7 @@ if(!window.Capacitor.Plugins.App){
 }
 window.Capacitor.isNativePlatform = window.Capacitor.isNativePlatform || function(){ return false; };
 window.Capacitor.getPlatform = window.Capacitor.getPlatform || function(){ return 'web'; };
-// [FIX138] REMOVED whenReady - not exists in Capacitor v6
+window.HBVS_READONLY = true;
 </script>
 
 <script>
@@ -33,13 +34,12 @@ window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
 };
 </script>
 
-<!-- [v78138] ALL CSS BUMPED -->
-<link rel="stylesheet" href="css/global.css?v=78138">
-<link rel="stylesheet" href="css/style.css?v=78138">
-<link rel="stylesheet" href="css/mathkjv.css?v=78138">
-<link rel="stylesheet" href="css/superscript.css?v=78138">
-<link rel="stylesheet" href="css/preface.css?v=78138">
-<link rel="stylesheet" href="css/preface-reader.css?v=78138">
+<link rel="stylesheet" href="css/global.css?v=7818411">
+<link rel="stylesheet" href="css/style.css?v=7818411">
+<link rel="stylesheet" href="css/mathkjv.css?v=7818411">
+<link rel="stylesheet" href="css/superscript.css?v=7818411">
+<link rel="stylesheet" href="css/preface.css?v=7818411">
+<link rel="stylesheet" href="css/preface-reader.css?v=7818411">
 
 <style>
 #settingsTab.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
@@ -62,20 +62,21 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
 .reader-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .reader-tools span{cursor:pointer;font-size:18px;padding:4px 6px;border-radius:4px;}
 .reader-tools span:hover{background:var(--bg2);}
+.security-badge{display:inline-block;background:#0a7;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:800;margin-left:8px;}
 </style>
 
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=78138" alt="Splash Logo"/>
-  <p id="splash-text">Loading Reader v7.8.138...</p>
+  <img src="assets/IGoToTheFather.png?v=7818411" alt="Splash Logo"/>
+  <p id="splash-text">Loading Reader v7.8.184 SECURE-WASM - Inherent Plain + Epi3:3 Wrapper...</p>
 </div>
 <div id="overlay"></div>
 <div id="app" class="hidden">
   <header id="topbar">
     <div class="topbar-row1">
       <a href="index.html" style="font-size:24px;text-decoration:none;color:var(--accent);">←</a>
-      <div class="logo-title"><div class="app-title">HBVS READER</div></div>
+      <div class="logo-title"><div class="app-title">HBVS READER <span class="security-badge">SECURE</span></div></div>
       <div class="topbar-icons">
         <button id="btn-tab-reader" title="Reader">📖</button>
         <button id="btn-tab-search" title="Search">🔍</button>
@@ -114,9 +115,9 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
     </div>
 
     <div id="searchTab" class="hidden">
-      <div class="section-label">SEARCH - FIND ALL WHOLE WORDS</div>
+      <div class="section-label">SEARCH - FIND ALL WHOLE WORDS - DB READ-ONLY - Epi3:3 READY</div>
       <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Enter Phrase OR Location: 1Co3:1" />
+        <input type="text" id="searchInput" placeholder="Enter Phrase OR Location: Gen22:2:32-41 OR Epi3:3:1-25" />
         <button id="btn-search">🔍 Search</button>
         <button id="btn-clear-search" class="btn-small btn-danger">Clear</button>
       </div>
@@ -152,7 +153,7 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
         <input type="checkbox" id="epilogue-toggle">
       </div>
       <div class="section-row">
-        <label>Load Epilogue Override</label>
+        <label>Load Epilogue Override (Secure - sanitized)</label>
         <input type="file" id="epilogue-file" accept=".txt">
       </div>
     </div>
@@ -160,16 +161,14 @@ mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2
   </main>
 </div>
 
-<!-- [v78138] ALL JS BUMPED -->
-<script src="js/layout.js?v=78138"></script>
+<script src="js/layout.js?v=7818411"></script>
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=78138"></script>
-<script src="js/search_glass.js?v=78138"></script>
-<script src="js/highlight_copy.js?v=78138"></script>
-<script src="js/bible.js?v=78138"></script>
+<script src="js/hbvs_engine.js?v=7818411"></script>
+<script src="js/search_glass.js?v=7818411"></script>
+<script src="js/highlight_copy.js?v=7818411"></script>
+<script src="js/bible.js?v=7818411"></script>
 
 <script>
-// [FIX138] Safe ready - no whenReady()
 document.addEventListener('DOMContentLoaded', ()=>{
   function initTabs(){
     if(window.SearchGlass) SearchGlass.init();
@@ -202,14 +201,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(btnSearch) btnSearch.onclick = () => setActiveTab('search');
     setActiveTab('reader');
 
-    // Open search if flagged from Home
     if(localStorage.getItem('hbvs_openSearchInput')==='true'){
       localStorage.removeItem('hbvs_openSearchInput');
       setActiveTab('search');
       setTimeout(()=> document.getElementById('searchInput')?.focus(), 300);
     }
 
-    // Hide splash after engine ready
     const splash=document.getElementById('splash');
     const app=document.getElementById('app');
     if(splash) splash.style.display='none';
@@ -223,7 +220,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 });
 </script>
-<script src="js/epilogue.js?v=78138"></script>
+<script src="js/epilogue.js?v=7818411"></script>
 
 </body>
 </html>

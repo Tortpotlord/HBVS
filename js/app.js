@@ -33,7 +33,8 @@ function initWorker() {
   try {
     hbvsWorker = new Worker('js/hbvs_worker.js');
     hbvsWorker.onmessage = (e) => {
-      const {id, processed, error} = e.data;
+      const {id, processed, error, ready} = e.data;
+      if(ready){ console.log("Worker ready feed", e.data); return; }
       const job = pendingJobs.get(id);
       if (!job) return;
       pendingJobs.delete(id);
@@ -63,7 +64,6 @@ function renderWithWorkerOrMain(rawForMath, mode, cb) {
     pendingJobs.set(id, {
       onSuccess: cb,
       onError: () => {
-        // fallback
         try {
           const {text} = window.HBVS.renderVerse({TEXT: rawForMath}, mode);
           cb(text);
@@ -195,7 +195,6 @@ function render5Cards(row){
           let mathWC = tightCount(mathPlain) || tightWC;
           let corr = window.HBVS.getCorrectedLocation(rawDB, mathPlain, 1, mathWC, mode);
           verseCache.set(cacheKey, {processed, mathPlain, corr});
-          // Ensure we are still on same verse
           if (currentRef.bkorder===parseInt(cacheKey.split('-')[0]) && currentRef.verse===parseInt(cacheKey.split('-')[2])) {
             target.innerHTML=processed;
             hdr.innerText=`${uiCode}${displayChap}:${currentRef.verse}:${corr.correctedStart}-${corr.correctedEnd} [m=${corr.m} i=${corr.i} n=${corr.n} j=${corr.j}]`;
@@ -293,7 +292,7 @@ async function renderHomeVerse(){
   const s1=document.getElementById('sub1');
   const s2=document.getElementById('sub2');
   if(s1) s1.innerText=`Bible: ${BIBLES.find(b=>b.id==selectedBible)?.name} [READ-ONLY]`;
-  if(s2) s2.innerText=`Reader: ${MATHS.find(m=>m.class==selectedMath)?.name} v7.8.184 FINAL tightWC`;
+  if(s2) s2.innerText=`Reader: ${MATHS.find(m=>m.class==selectedMath)?.name} v7.8.184.11 FINAL tightWC`;
 }
 
 async function fillModal(){
@@ -456,7 +455,7 @@ onAppReady(async () => {
   applyGlobalSettings();
   try{
     SQL=await window.initSqlJs({ locateFile: file => `js/sql.js-1.8.0/dist/${file}` });
-    const dbResponse=await fetch(`hbvs_data_v2.db?v=78184&t=${Date.now()}`);
+    const dbResponse=await fetch(`hbvs_data_v2.db?v=7818411&t=${Date.now()}`);
     if(!dbResponse.ok) throw new Error("DB fetch failed "+dbResponse.status);
     const dbBinary=new Uint8Array(await dbResponse.arrayBuffer());
     db=new SQL.Database(dbBinary);
@@ -467,6 +466,23 @@ onAppReady(async () => {
     else throw new Error("HBVS Engine not loaded");
 
     initWorker();
+
+    // --- NEW: feed worker with FW + Wrappers ---
+    let fwArr = [];
+    let wrArr = [];
+    try{
+      let s1=db.prepare("SELECT FunctionWord, Symbol FROM Continuity");
+      while(s1.step()){ let r=s1.getAsObject(); fwArr.push([r.FunctionWord, r.Symbol]); }
+      s1.free();
+      let s2=db.prepare("SELECT key, value FROM Wrappers");
+      while(s2.step()){ let r=s2.getAsObject(); wrArr.push({key:r.key, value:r.value}); }
+      s2.free();
+      console.log(`Main: feeding worker FW:${fwArr.length} WR:${wrArr.length}`);
+    }catch(e){ console.error("Feed arrays build failed", e); }
+    if(hbvsWorker && fwArr.length){
+      hbvsWorker.postMessage({type:'init', id:'init_feed', fw: fwArr, wrappers: wrArr});
+    }
+    // --- END NEW ---
 
     let stmtBooks=db.prepare("SELECT DISTINCT BOOKS, BKORDER FROM Verses ORDER BY BKORDER ASC");
     while(stmtBooks.step()){
@@ -501,7 +517,7 @@ onAppReady(async () => {
       const cardEl = document.querySelector(`.card.${getCardClasses(selectedMath).split(' ').pop()}`);
       if (cardEl) cardEl.classList.add('highlight');
       const s2=document.getElementById('sub2');
-      if(s2) s2.innerText=`Reader: ${MATHS.find(m=>m.class==selectedMath)?.name} v7.8.184 FINAL`;
+      if(s2) s2.innerText=`Reader: ${MATHS.find(m=>m.class==selectedMath)?.name} v7.8.184.11 FINAL`;
     }
 
     document.getElementById('btn-change-verse')?.addEventListener('click', ()=>{ fillModal(); document.getElementById('verse-modal').classList.remove('hidden'); });
@@ -526,7 +542,7 @@ onAppReady(async () => {
     document.getElementById('btn-next-verse')?.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); nextVerseHome(); });
     await fillModal();
     await renderHomeVerse();
-    console.log("HBVS v7.8.184 FINAL - Worker + Cache without seams - Ready");
+    console.log("HBVS v7.8.184.11 FINAL - Worker + Cache without seams - Ready");
     if(window.HBVS_SPLASH_READY) window.HBVS_SPLASH_READY();
   }catch(err){
     console.error("FATAL:",err);

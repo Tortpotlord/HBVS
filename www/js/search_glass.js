@@ -1,4 +1,4 @@
-console.log("SEARCH GLASS v7.8.184 FINAL tightWC + 2m-i FIXED 1Co13:8 + Gen31:1:1-31");
+console.log("SEARCH GLASS v7.8.184.1 FINAL tightWC INDEX FIX Search Dictionary Accurate");
 const SEARCH_GLASS = (() => {
   const DB_NAME = 'HBVS_SearchCache_v1';
   const STORE_NAME = 'results';
@@ -18,7 +18,11 @@ const SEARCH_GLASS = (() => {
     "2Jo":"2Jo","3Jo":"3Jo","Jde":"Jde","Rev":"Rev","Epi":"Epi","EPI":"EPI"
   };
   const getShort = (uiCode) => SHORT_MAP[uiCode] || (uiCode||"").substring(0,3);
+
+  // TIGHT COUNT = same as app.js and hbvs_engine.js
   const tightCount = (t) => (t||"").replace(/<[^>]*>/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z']/.test(w)).length;
+  const getTightList = (t) => (t||"").replace(/<[^>]*>/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z']/.test(w));
+  const stripPunct = (s) => (s||"").toString().replace(/[.,:;!?()"<>\[\]{}—–¶]/g, " ").replace(/'/g," ").replace(/"/g," ").toLowerCase().trim();
 
   function getEpilogueVerses(){
     try{
@@ -55,7 +59,7 @@ const SEARCH_GLASS = (() => {
           idb.createObjectStore(STORE_NAME, {keyPath: 'id', autoIncrement: true});
         }
       };
-      req.onsuccess = (e) => { db = e.target.result; console.log("SEARCH GLASS DB READY + EPI 184 tightWC"); resolve(); }
+      req.onsuccess = (e) => { db = e.target.result; console.log("SEARCH GLASS DB READY tightWC INDEX FIX"); resolve(); }
       req.onerror = (e) => reject(e);
     });
   }
@@ -98,38 +102,31 @@ const SEARCH_GLASS = (() => {
     bar.style.display = 'block';
   }
 
-  function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-  function stripPunct(s){ return (s||"").toString().replace(/[.,:;!?()"<>\[\]{}—–¶]/g, " ").replace(/'/g," ").replace(/"/g," "); }
-  function getWordIndexAtChar(text, charIndex){
-    const before = text.substring(0, charIndex);
-    return before.split(/\s+/).filter(Boolean).length + 1;
-  }
-
   function buildContinuum(){
     let globalWords=[]; let globalMap=[];
     if(bibleDB){
       let stmt=bibleDB.prepare("SELECT BOOKS, BKORDER, CHAPTER, VERSE, text FROM Verses ORDER BY BKORDER ASC, CHAPTER ASC, VERSE ASC");
       while(stmt.step()){
         let row=stmt.getAsObject();
-        let clean=stripPunct((row.text||'').replace(/<[^>]*>/g,'')).trim();
-        let origWords=(row.text||'').replace(/<[^>]*>/g,'').split(/\s+/).filter(Boolean);
-        let cleanWords=clean.split(/\s+/).filter(Boolean);
-        let tightWC = tightCount(row.text);
-        cleanWords.forEach((cw, idx)=>{
-          globalWords.push(cw.toLowerCase());
-          globalMap.push({BOOKS:row.BOOKS, BKORDER:row.BKORDER, CHAPTER:row.CHAPTER, VERSE:row.VERSE, wordPos:idx+1, WORDCOUNT:tightWC, originalWord: origWords[idx] || cw});
+        let tightList = getTightList(row.text);
+        let tightWC = tightList.length;
+        tightList.forEach((origWord, idx)=>{
+          let cw = stripPunct(origWord);
+          if(!cw) return;
+          globalWords.push(cw);
+          globalMap.push({BOOKS:row.BOOKS, BKORDER:row.BKORDER, CHAPTER:row.CHAPTER, VERSE:row.VERSE, wordPos:idx+1, WORDCOUNT:tightWC, originalWord: origWord});
         });
       }
       stmt.free();
     }
     getEpilogueVerses().forEach(r=>{
-      let clean=stripPunct((r.text||'').replace(/<[^>]*>/g,'')).trim();
-      let origWords=(r.text||'').replace(/<[^>]*>/g,'').split(/\s+/).filter(Boolean);
-      let cleanWords=clean.split(/\s+/).filter(Boolean);
-      let tightWC = tightCount(r.text);
-      cleanWords.forEach((cw, idx)=>{
-        globalWords.push(cw.toLowerCase());
-        globalMap.push({BOOKS:"EPI", BKORDER:67, CHAPTER:r.CHAPTER||1, VERSE:r.VERSE||0, wordPos:idx+1, WORDCOUNT:tightWC, originalWord: origWords[idx]||cw});
+      let tightList = getTightList(r.text);
+      let tightWC = tightList.length;
+      tightList.forEach((origWord, idx)=>{
+        let cw = stripPunct(origWord);
+        if(!cw) return;
+        globalWords.push(cw);
+        globalMap.push({BOOKS:"EPI", BKORDER:67, CHAPTER:r.CHAPTER||1, VERSE:r.VERSE||0, wordPos:idx+1, WORDCOUNT:tightWC, originalWord: origWord});
       });
     });
     return {globalWords, globalMap};
@@ -152,55 +149,63 @@ const SEARCH_GLASS = (() => {
   const Phrase = async (phrase) => {
     if(!phrase) return [];
     const originalPhrase = phrase.trim();
-    const cleanPhrase = stripPunct(phrase).trim().toLowerCase();
-    const searchWords = cleanPhrase.split(/\s+/).filter(Boolean);
-    if(searchWords.length === 0) return [];
-    const rx = new RegExp(`\\b${searchWords.map(escapeRegExp).join('\\s+')}\\b`, 'gi');
+    const cleanPhraseTokens = stripPunct(originalPhrase).split(/\s+/).filter(Boolean);
+    if(cleanPhraseTokens.length === 0) return [];
     const results = [];
+
     if(bibleDB){
       const stmt = bibleDB.prepare("SELECT BOOKS, BKORDER, CHAPTER, VERSE, text FROM Verses");
       while(stmt.step()){
         let row = stmt.getAsObject();
         let original = (row.text||'').replace(/<[^>]*>/g, '');
-        let tightWC = tightCount(original);
-        let cleanForSearch = stripPunct(original).toLowerCase();
-        let match;
-        while((match = rx.exec(cleanForSearch))!== null){
-          const charStart = match.index;
-          const wordStart = getWordIndexAtChar(cleanForSearch, charStart);
-          const wordEnd = wordStart + searchWords.length - 1;
+        let tightList = getTightList(original);
+        let tightLower = tightList.map(w=> stripPunct(w)).filter(Boolean);
+        let tightWC = tightList.length;
+
+        // FIXED: search in tight word space, not char space
+        for(let i=0; i <= tightLower.length - cleanPhraseTokens.length; i++){
+          let match=true;
+          for(let j=0;j<cleanPhraseTokens.length;j++){
+            if(tightLower[i+j]!== cleanPhraseTokens[j]){ match=false; break; }
+          }
+          if(!match) continue;
+          const wordStart = i+1;
+          const wordEnd = wordStart + cleanPhraseTokens.length - 1;
           const uiCode = Object.keys(window.bookMap||{}).find(k=>window.bookMap[k][0]==row.BKORDER) || row.BOOKS;
           const shortCode = getShort(uiCode);
-          const locationShort = searchWords.length === 1? `${shortCode}${row.CHAPTER}:${row.VERSE}:${wordStart}` : `${shortCode}${row.CHAPTER}:${row.VERSE}:${wordStart}-${wordEnd}`;
+          const locationShort = cleanPhraseTokens.length === 1? `${shortCode}${row.CHAPTER}:${row.VERSE}:${wordStart}` : `${shortCode}${row.CHAPTER}:${row.VERSE}:${wordStart}-${wordEnd}`;
           const locationTable = `${uiCode}${row.CHAPTER}:${row.VERSE}:1-${tightWC}`;
-          let words = original.split(/\s+/);
-          for(let i = wordStart-1; i <= wordEnd-1 && i < words.length; i++) words[i] = `<mark class="search-highlight">${words[i]}</mark>`;
-          results.push({ phrase: match[0], originalPhrase, locationShort, locationTable, wordCount: tightWC, book: uiCode, chapter: row.CHAPTER, verse: row.VERSE, html: words.join(' '), isCross:false });
+          let words = [...tightList];
+          for(let k = wordStart-1; k <= wordEnd-1 && k < words.length; k++) words[k] = `<mark class="search-highlight">${words[k]}</mark>`;
+          results.push({ phrase: tightList.slice(i, i+cleanPhraseTokens.length).join(' '), originalPhrase, locationShort, locationTable, wordCount: tightWC, book: uiCode, chapter: row.CHAPTER, verse: row.VERSE, html: words.join(' '), isCross:false });
         }
       }
       stmt.free();
     }
+
     getEpilogueVerses().forEach(row=>{
       let original = (row.text||'').replace(/<[^>]*>/g, '');
-      let tightWC = tightCount(original);
-      let cleanForSearch = stripPunct(original).toLowerCase();
-      let match; let rx2 = new RegExp(`\\b${searchWords.map(escapeRegExp).join('\\s+')}\\b`, 'gi');
-      while((match = rx2.exec(cleanForSearch))!== null){
-        const charStart = match.index;
-        const wordStart = getWordIndexAtChar(cleanForSearch, charStart);
-        const wordEnd = wordStart + searchWords.length - 1;
+      let tightList = getTightList(original);
+      let tightLower = tightList.map(w=> stripPunct(w)).filter(Boolean);
+      let tightWC = tightList.length;
+      for(let i=0; i <= tightLower.length - cleanPhraseTokens.length; i++){
+        let match=true;
+        for(let j=0;j<cleanPhraseTokens.length;j++){ if(tightLower[i+j]!==cleanPhraseTokens[j]){ match=false; break; } }
+        if(!match) continue;
+        const wordStart=i+1; const wordEnd=wordStart+cleanPhraseTokens.length-1;
         const locationShort = `EPI${row.CHAPTER}:${row.VERSE}:${wordStart}${wordEnd>wordStart?'-'+wordEnd:''}`;
         const locationTable = `EPI${row.CHAPTER}:${row.VERSE}:1-${tightWC}`;
-        let words = original.split(/\s+/);
-        for(let i = wordStart-1; i <= wordEnd-1 && i < words.length; i++) words[i] = `<mark class="search-highlight">${words[i]}</mark>`;
-        results.push({ phrase: match[0], originalPhrase, locationShort, locationTable, wordCount: tightWC, book: "EPI", chapter: row.CHAPTER, verse: row.VERSE, html: words.join(' ') + ` <span style="opacity:0.6;font-size:0.8em">[${row.chapterTitle||''}]</span>`, isCross:false, isEpi:true });
+        let words=[...tightList];
+        for(let k=wordStart-1;k<=wordEnd-1 && k<words.length;k++) words[k]=`<mark class="search-highlight">${words[k]}</mark>`;
+        results.push({ phrase: tightList.slice(i,i+cleanPhraseTokens.length).join(' '), originalPhrase, locationShort, locationTable, wordCount: tightWC, book: "EPI", chapter: row.CHAPTER, verse: row.VERSE, html: words.join(' ') + ` <span style="opacity:0.6;font-size:0.8em">[${row.chapterTitle||''}]</span>`, isCross:false, isEpi:true });
       }
     });
+
     try{
       const {globalWords, globalMap}=buildContinuum();
-      let qLen=searchWords.length;
+      let qLen=cleanPhraseTokens.length;
       for(let i=0;i<=globalWords.length-qLen;i++){
-        let match=true; for(let j=0;j<qLen;j++){ if(globalWords[i+j]!==searchWords[j]){ match=false; break; } }
+        let match=true; for(let j=0;j<qLen;j++){ if(globalWords[i+j]!==cleanPhraseTokens[j]){ match=false; break; } }
         if(!match) continue;
         let startMap=globalMap[i]; let endMap=globalMap[i+qLen-1];
         if(startMap.BKORDER===endMap.BKORDER && startMap.CHAPTER===endMap.CHAPTER && startMap.VERSE===endMap.VERSE) continue;
@@ -213,11 +218,12 @@ const SEARCH_GLASS = (() => {
           let txt="[?]";
           if(seg.BKORDER===67){ let epi=getEpilogueVerses().find(v=>v.CHAPTER===seg.CHAPTER && v.VERSE===seg.VERSE); if(epi) txt=epi.text; }
           else if(bibleDB){ let vStmt=bibleDB.prepare("SELECT text FROM Verses WHERE BKORDER=? AND CHAPTER=? AND VERSE=?"); vStmt.bind([seg.BKORDER, seg.CHAPTER, seg.VERSE]); if(vStmt.step()) txt=vStmt.getAsObject().text; vStmt.free(); }
-          let w=txt.replace(/<[^>]*>/g,'').split(/\s+/); for(let wp=seg.wordStart-1; wp<=seg.wordEnd-1 && wp<w.length; wp++) w[wp]=`<mark class="search-highlight">${w[wp]}</mark>`;
+          let tightL=getTightList(txt);
+          let w=[...tightL]; for(let wp=seg.wordStart-1; wp<=seg.wordEnd-1 && wp<w.length; wp++) w[wp]=`<mark class="search-highlight">${w[wp]}</mark>`;
           snippetParts.push(w.join(' '));
         });
         let html=snippetParts.join(' <span style="opacity:0.5">/ </span> ');
-        results.push({ phrase: searchWords.join(' '), originalPhrase, locationShort, locationTable: locationShort, wordCount: qLen, book: startMap.BOOKS, chapter: startMap.CHAPTER, verse: startMap.VERSE, html, isCross:true });
+        results.push({ phrase: cleanPhraseTokens.join(' '), originalPhrase, locationShort, locationTable: locationShort, wordCount: qLen, book: startMap.BOOKS, chapter: startMap.CHAPTER, verse: startMap.VERSE, html, isCross:true });
       }
     }catch(e){ console.error("Continuum search error", e); }
     currentResults = results;
@@ -246,10 +252,10 @@ const SEARCH_GLASS = (() => {
     }catch(e){ return {data:[], summary:"Error: "+e.message}; }
     if(!results.length) return {data:[], summary:`${p.book}${p.chap}:${p.verse} not found`};
     let wS=p.wS, wE=p.wE||p.wS;
-    let words=(rawFull||text).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().split(/\s+/);
-    let tightWC = tightCount(rawFull||text);
-    if(wS<1) wS=1; if(wE>words.length) wE=words.length; if(wE>tightWC) wE=tightWC;
-    let slice=words.slice(wS-1,wE).join(' ');
+    let tightList = getTightList(rawFull||text);
+    let tightWC = tightList.length;
+    if(wS<1) wS=1; if(wE>tightList.length) wE=tightList.length; if(wE>tightWC) wE=tightWC;
+    let slice=tightList.slice(wS-1,wE).join(' ');
     let headerAKJV=`${p.book}${p.chap}:${p.verse}:${wS}-${wE}`;
     let headerMath=headerAKJV;
     try{
@@ -265,7 +271,7 @@ const SEARCH_GLASS = (() => {
         headerMath=`${p.book}${p.chap}:${p.verse}:${corr.correctedStart}-${corr.correctedEnd} [m=${corr.m} i=${corr.i} n=${corr.n} j=${corr.j}]`;
       }
     }catch(e){}
-    let highlighted=[...words]; for(let i=wS-1;i<wE&&i<highlighted.length;i++) highlighted[i]=`<mark class="search-highlight">${highlighted[i]}</mark>`;
+    let highlighted=[...tightList]; for(let i=wS-1;i<wE&&i<highlighted.length;i++) highlighted[i]=`<mark class="search-highlight">${highlighted[i]}</mark>`;
     let copyExact=`${slice}(${headerAKJV})`;
     let copySlice=slice;
     let copyLocation=headerAKJV;
