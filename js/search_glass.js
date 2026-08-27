@@ -1,4 +1,4 @@
-console.log("SEARCH GLASS v7.8.139 LOADED - CONTINUUM + EPILOGUE + PC FIX");
+console.log("SEARCH GLASS v7.8.184.1 FINAL tightWC INDEX FIX Search Dictionary Accurate");
 const SEARCH_GLASS = (() => {
   const DB_NAME = 'HBVS_SearchCache_v1';
   const STORE_NAME = 'results';
@@ -19,7 +19,11 @@ const SEARCH_GLASS = (() => {
   };
   const getShort = (uiCode) => SHORT_MAP[uiCode] || (uiCode||"").substring(0,3);
 
-  // === EPILOGUE HELPER ===
+  // TIGHT COUNT = same as app.js and hbvs_engine.js
+  const tightCount = (t) => (t||"").replace(/<[^>]*>/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z']/.test(w)).length;
+  const getTightList = (t) => (t||"").replace(/<[^>]*>/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z']/.test(w));
+  const stripPunct = (s) => (s||"").toString().replace(/[.,:;!?()"<>\[\]{}—–¶]/g, " ").replace(/'/g," ").replace(/"/g," ").toLowerCase().trim();
+
   function getEpilogueVerses(){
     try{
       const j = localStorage.getItem('hbvs_epilogueJSON') || localStorage.getItem('epilogue_verses');
@@ -28,6 +32,17 @@ const SEARCH_GLASS = (() => {
       return Array.isArray(arr)? arr : [];
     }catch(e){ return []; }
   }
+
+  const parseLoc = (s) => {
+    s = (s||"").trim().split(' wc:')[0];
+    let m = s.match(/^([0-9]?[A-Za-z]+)(\d+):(\d+):(\d+)-(\d+)$/);
+    if(m) return {book:m[1], chap:parseInt(m[2]), verse:parseInt(m[3]), wS:parseInt(m[4]), wE:parseInt(m[5])};
+    m = s.match(/^([0-9]?[A-Za-z]+)(\d+):(\d+):(\d+)$/);
+    if(m) return {book:m[1], chap:parseInt(m[2]), verse:parseInt(m[3]), wS:parseInt(m[4]), wE:parseInt(m[4])};
+    m = s.match(/^([0-9]?[A-Za-z]+)(\d+):(\d+)$/);
+    if(m) return {book:m[1], chap:parseInt(m[2]), verse:parseInt(m[3]), wS:1, wE:null};
+    return null;
+  };
 
   const init = async (bibleDatabase) => {
     bibleDB = bibleDatabase;
@@ -44,7 +59,7 @@ const SEARCH_GLASS = (() => {
           idb.createObjectStore(STORE_NAME, {keyPath: 'id', autoIncrement: true});
         }
       };
-      req.onsuccess = (e) => { db = e.target.result; console.log("SEARCH GLASS DB READY + EPI"); resolve(); }
+      req.onsuccess = (e) => { db = e.target.result; console.log("SEARCH GLASS DB READY tightWC INDEX FIX"); resolve(); }
       req.onerror = (e) => reject(e);
     });
   }
@@ -53,11 +68,7 @@ const SEARCH_GLASS = (() => {
     const select = document.getElementById('bookFilterSearch');
     const bar = document.getElementById('search-filter-bar');
     const clearBtn = document.getElementById('btn-clear-search');
-    if(!select ||!bar) {
-      console.warn("search-filter-bar not found, retry");
-      setTimeout(setupFilter, 300);
-      return;
-    }
+    if(!select ||!bar) { setTimeout(setupFilter, 300); return; }
     uiReady = true;
     select.onchange = () => renderAndShow(select.value);
     if(clearBtn) clearBtn.onclick = async () => {
@@ -65,7 +76,6 @@ const SEARCH_GLASS = (() => {
       await clearResults();
       renderAndShow('ALL');
     }
-    // PC FIX: bookMap may be in window.bookMap or window.BOOKMAP or local hbvs_books
     let map = window.bookMap || window.BOOKMAP || null;
     select.innerHTML = '<option value="ALL">ALL</option>';
     if(map){
@@ -76,61 +86,47 @@ const SEARCH_GLASS = (() => {
         select.appendChild(opt);
       });
     } else {
-      // Fallback hardcoded order - ensures PC works even if bookMap not loaded yet
       const FALLBACK = ["Pre","Gen","Exo","Lev","Num","Deu","Jos","Jud","Rut","1Sa","2Sa","1Ki","2Ki","1Ch","2Ch","Ezr","Neh","Est","Job","Psa","Pro","Ecc","Son","Isa","Jer","Lam","Eze","Dan","Hos","Joe","Amo","Oba","Jon","Mic","Nah","Hab","Zep","Hag","Zec","Mal","Mat","Mar","Luk","Joh","Act","Rom","1Co","2Co","Gal","Eph","Phi","Col","1Th","2Th","1Ti","2Ti","Tit","Phm","Heb","Jam","1Pe","2Pe","1Jo","2Jo","3Jo","Jde","Rev"];
       FALLBACK.forEach(b=>{
         const opt=document.createElement('option'); opt.value=b; opt.textContent=b; select.appendChild(opt);
       });
-      console.warn("bookMap missing on PC, used fallback");
     }
-    // Add EPI if epilogue present
     if(getEpilogueVerses().length){
       if(![...select.options].some(o=>o.value==="EPI")){
         const opt=document.createElement('option'); opt.value="EPI"; opt.textContent="EPI"; select.appendChild(opt);
       }
     }
+    if(![...select.options].some(o=>o.value==="PRE")){
+      const opt=document.createElement('option'); opt.value="PRE"; opt.textContent="PRE"; select.appendChild(opt);
+    }
     bar.style.display = 'block';
   }
 
-  function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-  function stripPunct(s){ return (s||"").toString().replace(/[.,:;!?()"<>\[\]{}—–¶]/g, " ").replace(/'/g," ").replace(/"/g," "); }
-  function getWordIndexAtChar(text, charIndex){
-    const before = text.substring(0, charIndex);
-    return before.split(/\s+/).filter(Boolean).length + 1;
-  }
-
   function buildContinuum(){
-    let globalWords=[];
-    let globalMap=[];
-    // Bible verses
+    let globalWords=[]; let globalMap=[];
     if(bibleDB){
-      let stmt=bibleDB.prepare("SELECT BOOKS, BKORDER, CHAPTER, VERSE, text, WORDCOUNT FROM Verses ORDER BY BKORDER ASC, CHAPTER ASC, VERSE ASC");
+      let stmt=bibleDB.prepare("SELECT BOOKS, BKORDER, CHAPTER, VERSE, text FROM Verses ORDER BY BKORDER ASC, CHAPTER ASC, VERSE ASC");
       while(stmt.step()){
         let row=stmt.getAsObject();
-        let clean=stripPunct((row.text||'').replace(/<[^>]*>/g,'')).trim();
-        let origWords=(row.text||'').replace(/<[^>]*>/g,'').split(/\s+/).filter(Boolean);
-        let cleanWords=clean.split(/\s+/).filter(Boolean);
-        cleanWords.forEach((cw, idx)=>{
-          globalWords.push(cw.toLowerCase());
-          globalMap.push({
-            BOOKS:row.BOOKS, BKORDER:row.BKORDER, CHAPTER:row.CHAPTER, VERSE:row.VERSE,
-            wordPos:idx+1, WORDCOUNT:row.WORDCOUNT, originalWord: origWords[idx] || cw
-          });
+        let tightList = getTightList(row.text);
+        let tightWC = tightList.length;
+        tightList.forEach((origWord, idx)=>{
+          let cw = stripPunct(origWord);
+          if(!cw) return;
+          globalWords.push(cw);
+          globalMap.push({BOOKS:row.BOOKS, BKORDER:row.BKORDER, CHAPTER:row.CHAPTER, VERSE:row.VERSE, wordPos:idx+1, WORDCOUNT:tightWC, originalWord: origWord});
         });
       }
       stmt.free();
     }
-    // Epilogue verses - append as BKORDER 67
     getEpilogueVerses().forEach(r=>{
-      let clean=stripPunct((r.text||'').replace(/<[^>]*>/g,'')).trim();
-      let origWords=(r.text||'').replace(/<[^>]*>/g,'').split(/\s+/).filter(Boolean);
-      let cleanWords=clean.split(/\s+/).filter(Boolean);
-      cleanWords.forEach((cw, idx)=>{
-        globalWords.push(cw.toLowerCase());
-        globalMap.push({
-          BOOKS:"EPI", BKORDER:67, CHAPTER:r.CHAPTER||1, VERSE:r.VERSE||0,
-          wordPos:idx+1, WORDCOUNT:r.WORDCOUNT||cleanWords.length, originalWord: origWords[idx]||cw
-        });
+      let tightList = getTightList(r.text);
+      let tightWC = tightList.length;
+      tightList.forEach((origWord, idx)=>{
+        let cw = stripPunct(origWord);
+        if(!cw) return;
+        globalWords.push(cw);
+        globalMap.push({BOOKS:"EPI", BKORDER:67, CHAPTER:r.CHAPTER||1, VERSE:r.VERSE||0, wordPos:idx+1, WORDCOUNT:tightWC, originalWord: origWord});
       });
     });
     return {globalWords, globalMap};
@@ -138,18 +134,13 @@ const SEARCH_GLASS = (() => {
 
   function compressCrossVerse(segments){
     if(!segments.length) return "";
-    let first=segments[0];
-    let shortCode=getShort(first.BOOKS);
-    let parts=[];
+    let first=segments[0]; let shortCode=getShort(first.BOOKS); let parts=[];
     segments.forEach((seg, i)=>{
       let ws=seg.wordStart===seg.wordEnd? `${seg.wordStart}` : `${seg.wordStart}-${seg.wordEnd}`;
       if(i===0) parts.push(`${shortCode}${seg.CHAPTER}:${seg.VERSE}:${ws}`);
       else {
         if(seg.BKORDER===first.BKORDER && seg.CHAPTER===first.CHAPTER) parts.push(`${seg.VERSE}:${ws}`);
-        else {
-          let sc=getShort(seg.BOOKS);
-          parts.push(`${sc}${seg.CHAPTER}:${seg.VERSE}:${ws}`);
-        }
+        else { let sc=getShort(seg.BOOKS); parts.push(`${sc}${seg.CHAPTER}:${seg.VERSE}:${ws}`); }
       }
     });
     return parts.join('_');
@@ -158,94 +149,83 @@ const SEARCH_GLASS = (() => {
   const Phrase = async (phrase) => {
     if(!phrase) return [];
     const originalPhrase = phrase.trim();
-    const cleanPhrase = stripPunct(phrase).trim().toLowerCase();
-    const searchWords = cleanPhrase.split(/\s+/).filter(Boolean);
-    if(searchWords.length === 0) return [];
-    const rx = new RegExp(`\\b${searchWords.map(escapeRegExp).join('\\s+')}\\b`, 'gi');
-
+    const cleanPhraseTokens = stripPunct(originalPhrase).split(/\s+/).filter(Boolean);
+    if(cleanPhraseTokens.length === 0) return [];
     const results = [];
-    // 1. BibleDB search
+
     if(bibleDB){
-      const stmt = bibleDB.prepare("SELECT BOOKS, BKORDER, CHAPTER, VERSE, text, WORDCOUNT FROM Verses");
+      const stmt = bibleDB.prepare("SELECT BOOKS, BKORDER, CHAPTER, VERSE, text FROM Verses");
       while(stmt.step()){
         let row = stmt.getAsObject();
         let original = (row.text||'').replace(/<[^>]*>/g, '');
-        let cleanForSearch = stripPunct(original).toLowerCase();
-        let match;
-        while((match = rx.exec(cleanForSearch))!== null){
-          const charStart = match.index;
-          const wordStart = getWordIndexAtChar(cleanForSearch, charStart);
-          const wordEnd = wordStart + searchWords.length - 1;
+        let tightList = getTightList(original);
+        let tightLower = tightList.map(w=> stripPunct(w)).filter(Boolean);
+        let tightWC = tightList.length;
+
+        // FIXED: search in tight word space, not char space
+        for(let i=0; i <= tightLower.length - cleanPhraseTokens.length; i++){
+          let match=true;
+          for(let j=0;j<cleanPhraseTokens.length;j++){
+            if(tightLower[i+j]!== cleanPhraseTokens[j]){ match=false; break; }
+          }
+          if(!match) continue;
+          const wordStart = i+1;
+          const wordEnd = wordStart + cleanPhraseTokens.length - 1;
           const uiCode = Object.keys(window.bookMap||{}).find(k=>window.bookMap[k][0]==row.BKORDER) || row.BOOKS;
           const shortCode = getShort(uiCode);
-          const locationShort = searchWords.length === 1? `${shortCode}${row.CHAPTER}:${row.VERSE}:${wordStart}` : `${shortCode}${row.CHAPTER}:${row.VERSE}:${wordStart}-${wordEnd}`;
-          const locationTable = `${uiCode}${row.CHAPTER}:${row.VERSE}:1-${row.WORDCOUNT}`;
-          let words = original.split(/\s+/);
-          for(let i = wordStart-1; i <= wordEnd-1 && i < words.length; i++) words[i] = `<mark class="search-highlight">${words[i]}</mark>`;
-          results.push({ phrase: match[0], originalPhrase, locationShort, locationTable, wordCount: row.WORDCOUNT, book: uiCode, chapter: row.CHAPTER, verse: row.VERSE, html: words.join(' '), isCross:false });
+          const locationShort = cleanPhraseTokens.length === 1? `${shortCode}${row.CHAPTER}:${row.VERSE}:${wordStart}` : `${shortCode}${row.CHAPTER}:${row.VERSE}:${wordStart}-${wordEnd}`;
+          const locationTable = `${uiCode}${row.CHAPTER}:${row.VERSE}:1-${tightWC}`;
+          let words = [...tightList];
+          for(let k = wordStart-1; k <= wordEnd-1 && k < words.length; k++) words[k] = `<mark class="search-highlight">${words[k]}</mark>`;
+          results.push({ phrase: tightList.slice(i, i+cleanPhraseTokens.length).join(' '), originalPhrase, locationShort, locationTable, wordCount: tightWC, book: uiCode, chapter: row.CHAPTER, verse: row.VERSE, html: words.join(' '), isCross:false });
         }
       }
       stmt.free();
     }
 
-    // 1b. EPILOGUE search - enables "constitution"
     getEpilogueVerses().forEach(row=>{
       let original = (row.text||'').replace(/<[^>]*>/g, '');
-      let cleanForSearch = stripPunct(original).toLowerCase();
-      let match;
-      let rx2 = new RegExp(`\\b${searchWords.map(escapeRegExp).join('\\s+')}\\b`, 'gi');
-      while((match = rx2.exec(cleanForSearch))!== null){
-        const charStart = match.index;
-        const wordStart = getWordIndexAtChar(cleanForSearch, charStart);
-        const wordEnd = wordStart + searchWords.length - 1;
+      let tightList = getTightList(original);
+      let tightLower = tightList.map(w=> stripPunct(w)).filter(Boolean);
+      let tightWC = tightList.length;
+      for(let i=0; i <= tightLower.length - cleanPhraseTokens.length; i++){
+        let match=true;
+        for(let j=0;j<cleanPhraseTokens.length;j++){ if(tightLower[i+j]!==cleanPhraseTokens[j]){ match=false; break; } }
+        if(!match) continue;
+        const wordStart=i+1; const wordEnd=wordStart+cleanPhraseTokens.length-1;
         const locationShort = `EPI${row.CHAPTER}:${row.VERSE}:${wordStart}${wordEnd>wordStart?'-'+wordEnd:''}`;
-        const locationTable = `EPI${row.CHAPTER}:${row.VERSE}:1-${row.WORDCOUNT}`;
-        let words = original.split(/\s+/);
-        for(let i = wordStart-1; i <= wordEnd-1 && i < words.length; i++) words[i] = `<mark class="search-highlight">${words[i]}</mark>`;
-        results.push({ phrase: match[0], originalPhrase, locationShort, locationTable, wordCount: row.WORDCOUNT, book: "EPI", chapter: row.CHAPTER, verse: row.VERSE, html: words.join(' ') + ` <span style="opacity:0.6;font-size:0.8em">[${row.chapterTitle||''}]</span>`, isCross:false, isEpi:true });
+        const locationTable = `EPI${row.CHAPTER}:${row.VERSE}:1-${tightWC}`;
+        let words=[...tightList];
+        for(let k=wordStart-1;k<=wordEnd-1 && k<words.length;k++) words[k]=`<mark class="search-highlight">${words[k]}</mark>`;
+        results.push({ phrase: tightList.slice(i,i+cleanPhraseTokens.length).join(' '), originalPhrase, locationShort, locationTable, wordCount: tightWC, book: "EPI", chapter: row.CHAPTER, verse: row.VERSE, html: words.join(' ') + ` <span style="opacity:0.6;font-size:0.8em">[${row.chapterTitle||''}]</span>`, isCross:false, isEpi:true });
       }
     });
 
-    // 2. Continuum Cross-Verse DNA (includes EPI now)
     try{
       const {globalWords, globalMap}=buildContinuum();
-      let qLen=searchWords.length;
+      let qLen=cleanPhraseTokens.length;
       for(let i=0;i<=globalWords.length-qLen;i++){
-        let match=true;
-        for(let j=0;j<qLen;j++){ if(globalWords[i+j]!==searchWords[j]){ match=false; break; } }
+        let match=true; for(let j=0;j<qLen;j++){ if(globalWords[i+j]!==cleanPhraseTokens[j]){ match=false; break; } }
         if(!match) continue;
-        let startMap=globalMap[i];
-        let endMap=globalMap[i+qLen-1];
+        let startMap=globalMap[i]; let endMap=globalMap[i+qLen-1];
         if(startMap.BKORDER===endMap.BKORDER && startMap.CHAPTER===endMap.CHAPTER && startMap.VERSE===endMap.VERSE) continue;
         let segmentsMap={};
-        for(let k=0;k<qLen;k++){
-          let m=globalMap[i+k];
-          let key=`${m.BKORDER}-${m.CHAPTER}-${m.VERSE}`;
-          if(!segmentsMap[key]) segmentsMap[key]={...m, wordStart:m.wordPos, wordEnd:m.wordPos};
-          else segmentsMap[key].wordEnd=m.wordPos;
-        }
+        for(let k=0;k<qLen;k++){ let m=globalMap[i+k]; let key=`${m.BKORDER}-${m.CHAPTER}-${m.VERSE}`; if(!segmentsMap[key]) segmentsMap[key]={...m, wordStart:m.wordPos, wordEnd:m.wordPos}; else segmentsMap[key].wordEnd=m.wordPos; }
         let segs=Object.values(segmentsMap);
         let locationShort=compressCrossVerse(segs);
         let snippetParts=[];
         segs.forEach(seg=>{
           let txt="[?]";
-          if(seg.BKORDER===67){
-            let epi=getEpilogueVerses().find(v=>v.CHAPTER===seg.CHAPTER && v.VERSE===seg.VERSE);
-            if(epi) txt=epi.text;
-          } else if(bibleDB){
-            let vStmt=bibleDB.prepare("SELECT text FROM Verses WHERE BKORDER=? AND CHAPTER=? AND VERSE=?");
-            vStmt.bind([seg.BKORDER, seg.CHAPTER, seg.VERSE]);
-            if(vStmt.step()) txt=vStmt.getAsObject().text; vStmt.free();
-          }
-          let w=txt.replace(/<[^>]*>/g,'').split(/\s+/);
-          for(let wp=seg.wordStart-1; wp<=seg.wordEnd-1 && wp<w.length; wp++) w[wp]=`<mark class="search-highlight">${w[wp]}</mark>`;
+          if(seg.BKORDER===67){ let epi=getEpilogueVerses().find(v=>v.CHAPTER===seg.CHAPTER && v.VERSE===seg.VERSE); if(epi) txt=epi.text; }
+          else if(bibleDB){ let vStmt=bibleDB.prepare("SELECT text FROM Verses WHERE BKORDER=? AND CHAPTER=? AND VERSE=?"); vStmt.bind([seg.BKORDER, seg.CHAPTER, seg.VERSE]); if(vStmt.step()) txt=vStmt.getAsObject().text; vStmt.free(); }
+          let tightL=getTightList(txt);
+          let w=[...tightL]; for(let wp=seg.wordStart-1; wp<=seg.wordEnd-1 && wp<w.length; wp++) w[wp]=`<mark class="search-highlight">${w[wp]}</mark>`;
           snippetParts.push(w.join(' '));
         });
         let html=snippetParts.join(' <span style="opacity:0.5">/ </span> ');
-        results.push({ phrase: searchWords.join(' '), originalPhrase, locationShort, locationTable: locationShort, wordCount: qLen, book: startMap.BOOKS, chapter: startMap.CHAPTER, verse: startMap.VERSE, html, isCross:true });
+        results.push({ phrase: cleanPhraseTokens.join(' '), originalPhrase, locationShort, locationTable: locationShort, wordCount: qLen, book: startMap.BOOKS, chapter: startMap.CHAPTER, verse: startMap.VERSE, html, isCross:true });
       }
     }catch(e){ console.error("Continuum search error", e); }
-
     currentResults = results;
     await saveResults(results);
     if(uiReady) renderAndShow(document.getElementById('bookFilterSearch')?.value || 'ALL');
@@ -253,25 +233,53 @@ const SEARCH_GLASS = (() => {
   }
 
   const Location = async (locationStr) => {
-    if(!bibleDB ||!locationStr) return {data:[], summary:""};
-    const basePart = locationStr.split(':')[0] + ':' + locationStr.split(':')[1];
-    const [bookChap, versePart] = basePart.split(':');
-    const book = bookChap.match(/^[A-Za-z0-9]+/)[0];
-    const chapter = bookChap.match(/\d+$/)[0];
-    const verse = versePart;
-    let sql = "SELECT BOOKS, BKORDER, CHAPTER, VERSE, text FROM Verses WHERE BOOKS =? AND CHAPTER =?";
-    let params = [book, chapter];
-    if(verse){ sql += " AND VERSE =?"; params.push(verse); }
-    const stmt = bibleDB.prepare(sql);
-    stmt.bind(params);
-    const results = [];
-    while(stmt.step()){
-      let row = stmt.getAsObject();
-      results.push({ location: `${book}${row.CHAPTER}:${row.VERSE}`, text: row.text });
-    }
-    stmt.free();
-    const formatted = results.map(r => `${r.text}(${r.location})`).join(', ');
-    return {data: results, summary: `${formatted}: RecordCount${results.length}`};
+    if(!bibleDB ||!locationStr) return {data:[], summary:"DB not ready"};
+    const p = parseLoc(locationStr);
+    if(!p) return {data:[], summary:"Invalid location: "+locationStr};
+    let results=[]; let text="", rawFull="";
+    try{
+      if(/^Pre/i.test(p.book)){
+        try{ let stmt=bibleDB.prepare("SELECT text FROM Preface WHERE CHAPTER=? AND VERSE=? LIMIT 1"); stmt.bind([p.chap, p.verse]); if(stmt.step()){ let r=stmt.getAsObject(); text=r.text; rawFull=r.text; results.push({location:`${p.book}${p.chap}:${p.verse}`, text}); } stmt.free(); }catch(e){}
+        if(!text){ const a=getEpilogueVerses().filter(v=>v.CHAPTER===p.chap && v.VERSE===p.verse); if(a.length){ text=a[0].text; rawFull=a[0].text; results.push({location:`${p.book}${p.chap}:${p.verse}`, text}); } }
+      } else if(/^Epi/i.test(p.book)){
+        try{ let stmt=bibleDB.prepare("SELECT text FROM Epilogue WHERE CHAPTER=? AND VERSE=? LIMIT 1"); stmt.bind([p.chap, p.verse]); if(stmt.step()){ let r=stmt.getAsObject(); text=r.text; rawFull=r.text; results.push({location:`${p.book}${p.chap}:${p.verse}`, text}); } stmt.free(); }catch(e){}
+        if(!text){ const a=getEpilogueVerses().filter(v=>v.CHAPTER===p.chap && v.VERSE===p.verse); if(a.length){ text=a[0].text; rawFull=a[0].text; results.push({location:`${p.book}${p.chap}:${p.verse}`, text}); } }
+      } else {
+        let bkorder=null; if(window.bookMap&&window.bookMap[p.book]) bkorder=window.bookMap[p.book][0];
+        let stmt; if(bkorder!==null){ stmt=bibleDB.prepare("SELECT BOOKS, BKORDER, CHAPTER, VERSE, text FROM Verses WHERE BKORDER=? AND CHAPTER=? AND VERSE=? LIMIT 1"); stmt.bind([bkorder, p.chap, p.verse]); } else { stmt=bibleDB.prepare("SELECT BOOKS, BKORDER, CHAPTER, VERSE, text FROM Verses WHERE BOOKS LIKE? AND CHAPTER=? AND VERSE=? LIMIT 1"); stmt.bind([p.book+'%', p.chap, p.verse]); }
+        if(stmt.step()){ let r=stmt.getAsObject(); text=r.text; rawFull=r.text; results.push({location:`${p.book}${r.CHAPTER}:${r.VERSE}`, text:r.text}); } stmt.free();
+      }
+    }catch(e){ return {data:[], summary:"Error: "+e.message}; }
+    if(!results.length) return {data:[], summary:`${p.book}${p.chap}:${p.verse} not found`};
+    let wS=p.wS, wE=p.wE||p.wS;
+    let tightList = getTightList(rawFull||text);
+    let tightWC = tightList.length;
+    if(wS<1) wS=1; if(wE>tightList.length) wE=tightList.length; if(wE>tightWC) wE=tightWC;
+    let slice=tightList.slice(wS-1,wE).join(' ');
+    let headerAKJV=`${p.book}${p.chap}:${p.verse}:${wS}-${wE}`;
+    let headerMath=headerAKJV;
+    try{
+      if(window.HBVS && window.HBVS.getCorrectedLocation){
+        let mathPlain = rawFull;
+        if(window.HBVS.renderVerse){
+          try{
+            let rp = window.HBVS.renderVerse({TEXT:rawFull}, 'T').text||"";
+            mathPlain = rp.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim() || rawFull;
+          }catch{}
+        }
+        const corr=window.HBVS.getCorrectedLocation(rawFull, mathPlain, wS, wE, 'T');
+        headerMath=`${p.book}${p.chap}:${p.verse}:${corr.correctedStart}-${corr.correctedEnd} [m=${corr.m} i=${corr.i} n=${corr.n} j=${corr.j}]`;
+      }
+    }catch(e){}
+    let highlighted=[...tightList]; for(let i=wS-1;i<wE&&i<highlighted.length;i++) highlighted[i]=`<mark class="search-highlight">${highlighted[i]}</mark>`;
+    let copyExact=`${slice}(${headerAKJV})`;
+    let copySlice=slice;
+    let copyLocation=headerAKJV;
+    let safeExact=copyExact.replace(/`/g,"\\`").replace(/"/g,"&quot;");
+    let safeSlice=copySlice.replace(/`/g,"\\`").replace(/"/g,"&quot;");
+    let safeLoc=copyLocation.replace(/`/g,"\\`");
+    let summary=`<div><b>${headerAKJV}</b> = "${slice}" <span style="font-size:0.8em;opacity:0.6">(tightWC=${tightWC})</span></div><div style="font-size:0.85em;opacity:0.7;margin:2px 0;">${headerMath}</div><div style="margin-top:4px;">${highlighted.join(' ')}</div><div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-small" onclick="SEARCH_GLASS.copyLocationExact(\`${safeExact}\`)">📋 Copy Exact: ${headerAKJV}</button><button class="btn-small" onclick="SEARCH_GLASS.copyText(\`${safeSlice}\`)" style="background:#2E8B57;color:white;">📋 Copy Slice</button><button class="btn-small" onclick="SEARCH_GLASS.copyText(\`${safeLoc}\`)" style="background:#8B0000;color:white;">📋 Copy Loc</button><button class="btn-small" onclick="SEARCH_GLASS.copyText(\`${safeExact}\`); if(window.jumpToLocation) jumpToLocation('${headerAKJV}');">📖 Jump+Copy</button></div>`;
+    return {data: results, summary, slice, headerAKJV, headerMath, location: headerAKJV, copyExact, copySlice, copyLocation, tightWC};
   }
 
   const saveResults = (results) => new Promise((resolve) => {
@@ -291,11 +299,13 @@ const SEARCH_GLASS = (() => {
     tx.objectStore(STORE_NAME).clear();
     tx.oncomplete = () => resolve();
   });
-  const copyResult = (resultObj) => navigator.clipboard.writeText(`${resultObj.phrase}(${resultObj.locationShort})`);
+  const copyResult = (resultObj) => navigator.clipboard.writeText(`${resultObj.phrase}(${resultObj.locationShort})`).then(()=>{ if(window.showToast) showToast(`Copied: ${resultObj.phrase}(${resultObj.locationShort})`); });
+  const copyLocationExact = (text) => navigator.clipboard.writeText(text).then(()=>{ if(window.showToast) showToast(`Copied Exact: ${text.substring(0,120)}`); else alert("Copied: "+text); });
+  const copyText = (text) => navigator.clipboard.writeText(text).then(()=>{ if(window.showToast) showToast(`Copied: ${text.substring(0,120)}`); else alert("Copied: "+text); });
 
   const renderTable = (results, filterBook = 'ALL') => {
-    let filtered = filterBook === 'ALL'? results : results.filter(r => r.book === filterBook || r.book === filterBook.toUpperCase());
-    if(filtered.length === 0) return '<p class="muted">No results. Try EPI filter for Epilogue.</p>';
+    let filtered = filterBook === 'ALL'? results : results.filter(r => r.book === filterBook || r.book === filterBook.toUpperCase() || r.book === 'EPI' && filterBook==='EPI');
+    if(filtered.length === 0) return '<p class="muted">No results. Try EPI/PRE filter.</p>';
     const searchPhrase = filtered[0]?.originalPhrase || filtered[0]?.phrase || 'Phrase';
     const allLocs = filtered.map(r => r.locationShort);
     const maxShow = 5;
@@ -324,6 +334,6 @@ const SEARCH_GLASS = (() => {
     if(container) container.innerHTML = renderTable(currentResults, filterBook);
   }
 
-  return { init, Phrase, Location, loadResults, clearResults, renderTable, copyResult, renderAndShow };
+  return { init, Phrase, Location, loadResults, clearResults, renderTable, copyResult, copyLocationExact, copyText, renderAndShow };
 })();
 window.SEARCH_GLASS = SEARCH_GLASS;
