@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v7.8.184.11 SECURE-WASM</title>
+<title>Holy Bible Vector Space - the sign of the Son of man</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'">
-
 <script>
 window.Capacitor = window.Capacitor || {};
 window.Capacitor.Plugins = window.Capacitor.Plugins || {};
@@ -27,33 +28,43 @@ window.HBVS_SPLASH_READY = function(){
 };
 window.HBVS_READONLY = true;
 </script>
-
-<link rel="stylesheet" href="css/global.css?v=788411">
-<link rel="stylesheet" href="css/style.css?v=7818411">
-<link rel="stylesheet" href="css/preface.css?v=7818411">
-<link rel="stylesheet" href="css/preface-reader.css?v=7818411">
-<link rel="stylesheet" href="css/superscript.css?v=7818411">
-<link rel="stylesheet" href="css/mathkjv.css?v=7818411">
+<link rel="stylesheet" href="css/global.css?v=782002">
+<link rel="stylesheet" href="css/style.css?v=782002">
+<link rel="stylesheet" href="css/preface.css?v=782002">
+<link rel="stylesheet" href="css/preface-reader.css?v=782002">
+<link rel="stylesheet" href="css/superscript.css?v=782002">
+<link rel="stylesheet" href="css/mathkjv.css?v=782002">
 <style>
 .change-verse-nav{display:flex;justify-content:center;align-items:center;gap:14px;margin:10px 0 6px 0;}
 .change-verse-nav button{padding:8px 16px;border:2px solid var(--border);background:var(--bg2);border-radius:8px;font-weight:900;font-size:18px;min-width:44px;cursor:pointer;}
 #btn-change-verse{font-weight:800;color:var(--accent);text-decoration:underline;margin:0;cursor:pointer;}
 .security-badge{display:inline-block;background:#0a7;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:800;margin-left:8px;}
+.reader-cards .card{border:1px solid var(--border);border-radius:8px;padding:10px;margin:8px 0;background:var(--bg2)}
+.copy-exact-bar{max-width:780px;margin:10px auto;padding:8px;border:2px solid var(--accent);border-radius:12px;background:var(--bg2);display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;}
+.copy-exact-bar button{padding:8px 12px;border:2px solid var(--border);border-radius:8px;background:var(--bg);font-weight:800;cursor:pointer;}
+.copy-exact-bar button.primary{ background:#111; color:#fff; }
+#print-area{display:none;}
+@media print{
+ .no-print, #topbar, #bottombar,.copy-exact-bar,.change-verse-nav,#verse-modal,#sidemenu,#overlay{ display:none!important; }
+ #print-area{ display:block!important; margin:0!important; padding:0!important; }
+ body{ margin:0!important; padding:8px!important; }
+}
 </style>
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=7818411" alt="I Go To The Father"/>
+  <img src="assets/IGoToTheFather.png?v=782002" alt="I Go To The Father"/>
   <div style="font-size:18px;font-weight:bold;color:#8B5A2B;">HOLY BIBLE VECTOR SPACE <span class="security-badge">SECURE-WASM</span></div>
-  <p id="splash-text">Initializing HBVS v7.8.18411 - DB Read-Only + WASM + Epi3:3 Wrapper Fix</p>
+  <div style="font-size:11px;opacity:0.7;font-style:italic;margin-top:2px;color:#8B5A2B;">the sign of the Son of man</div>
+  <p id="splash-text">Initializing HBVS v7.8.202 - Phone Fixed</p>
 </div>
 <div id="overlay"></div>
 <div id="sidemenu">
   <h4>Menu</h4>
-  <p><a href="index.html">Home</a></p>
-  <p><a href="bible.html">Bible</a></p>
-  <p><a href="studyhub.html">StudyHub</a></p>
-  <p><a href="settings.html">Settings</a></p>
+  <p><a href="./index.html?v=782002">Home</a></p>
+  <p><a href="./bible.html?v=782002">Bible</a></p>
+  <p><a href="./studyhub.html?v=782002">StudyHub</a></p>
+  <p><a href="./settings.html?v=78204">Settings</a></p>
 </div>
 <div id="verse-modal" class="modal hidden">
   <div class="modal-content">
@@ -68,24 +79,20 @@ window.HBVS_READONLY = true;
   <header id="topbar">
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
-      <div class="logo-title"><img src="assets/IGoToTheFather.png?v=7818411" alt="Logo"/><div class="app-title">Holy Bible Vector Space</div></div>
+      <div class="logo-title" style="display:flex;align-items:center;gap:8px">
+        <img src="assets/IGoToTheFather.png?v=782002" alt="Logo" style="width:36px;height:36px"/>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;">
+          <div class="app-title" style="font-weight:900;color:#8B5A2B">Holy Bible Vector Space</div>
+          <div style="font-size:10px;opacity:0.65;font-style:italic;letter-spacing:0.3px;margin-top:1px;line-height:1;">the sign of the Son of man</div>
+        </div>
+      </div>
       <div class="topbar-icons header-icons">
-        <button id="btn-random" class="icon-btn" title="Random Verse">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="16 3 21 8"></polyline>
-            <line x1="4" y1="20" x2="21" y2="3"></line>
-            <polyline points="21 16 21 21 16 21"></polyline>
-            <line x1="15" y1="15" x2="21" y2="21"></line>
-            <line x1="4" y1="4" x2="9" y2="9"></line>
-          </svg>
-        </button>
-        <button id="btn-search" class="icon-btn" title="Search Phrase / Location">
-          <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/></svg>
-        </button>
+        <button id="btn-random" class="icon-btn" title="Random Verse">🔀</button>
+        <button id="btn-search" class="icon-btn" title="Search">🔍</button>
       </div>
     </div>
     <div class="subtitle" id="sub1">Bible: AKJV 1611 PCE circa 1900 [READ-ONLY]</div>
-    <div class="subtitle" id="sub2">Reader: MathKJVP - v7.8.18411 Secure WASM + Inherent Plain + Epi3:3</div>
+    <div class="subtitle" id="sub2">Reader: MathKJVP - v7.8.202 Phone Fixed</div>
     <div class="topbar-row2"><select id="bible-select"></select><select id="math-select"></select></div>
   </header>
   <main>
@@ -93,24 +100,36 @@ window.HBVS_READONLY = true;
       <p class="daily-bread">Daily Bread - Protected</p>
       <h2 class="current-ref" id="current-ref">Gen1:4</h2>
       <div class="change-verse-nav">
-        <button id="btn-prev-verse" title="Previous Verse">&lt;</button>
+        <button id="btn-prev-verse">&lt;</button>
         <p class="change-verse" id="btn-change-verse">Change Verse</p>
-        <button id="btn-next-verse" title="Next Verse">&gt;</button>
+        <button id="btn-next-verse">&gt;</button>
       </div>
       <div id="home-cards" class="cards-vertical"></div>
       <div id="reader-view" class="hidden"></div>
+      <div id="searchResults"></div>
+      <div id="search-filter-bar" style="display:none"><select id="bookFilterSearch"></select></div>
     </section>
   </main>
   <nav id="bottombar">
     <div class="active">🏠<br>Home</div>
-    <div onclick="location.href='bible.html'">📖<br>Bible</div>
-    <div onclick="location.href='studyhub.html'">🔍<br>StudyHub</div>
-    <div onclick="location.href='settings.html'">⚙️<br>Settings</div>
+    <div onclick="location.href='./bible.html?v=782002'">📖<br>Bible</div>
+    <div onclick="location.href='./studyhub.html?v=782002'">🔍<br>StudyHub</div>
+    <div onclick="location.href='./settings.html?v=782002'">⚙️<br>Settings</div>
   </nav>
 </div>
+
+<div id="print-area" style="display:none"></div>
+
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=7818411"></script>
-<script src="js/app.js?v=7818411"></script>
-<script src="js/highlight_copy.js?v=7818411"></script>
+<script src="js/hbvs_engine.js?v=78224"></script>
+<script src="js/hbvs_worker.js?v=782002"></script>
+<script src="js/search_glass.js?v=782002"></script>
+<script src="js/hbvs_reader.js?v=782002"></script>
+<script src="js/app.js?v=78224"></script>
+<script src="js/highlight_copy.js?v=78223"></script>
+<script src="js/fullscreen.js?v=782002"></script>
+<script>
+setTimeout(()=>{ if(document.getElementById('app')?.classList.contains('hidden')){ window.HBVS_SPLASH_READY(); } },4000);
+</script>
 </body>
 </html>

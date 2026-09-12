@@ -1,189 +1,118 @@
-// Highlight_Copy.js v7.8.184 FINAL - Long press + drag copy with 2m-i 2n-j FIXED tightWC
-(function(){
-  window.HighlightCopy = {
-    init: function() {
-      document.addEventListener('contextmenu', e => {
-        if(e.target.closest('.verse-text')) e.preventDefault();
-      });
+console.log("HBVS HIGHLIGHT_COPY v7.8.223 - HOME m,i,n,j sync");
 
-      function tightCount(s){
-        if(!s) return 0;
-        return s.replace(/<[^>]*>/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z']/.test(w)).length;
-      }
-      function getBookCode(){
-        if(typeof getCode === 'function') return getCode();
-        return "Gen";
-      }
-      function getDisplayChap(){
-        if(typeof ONE_CHAP_BKORDERS !== 'undefined' && typeof currentRef !== 'undefined'){
-          return ONE_CHAP_BKORDERS.includes(currentRef.bkorder)?0:currentRef.chap;
-        }
-        return (typeof currentRef!=='undefined'? currentRef.chap : 1);
-      }
-      function getVerseNum(){ return (typeof currentRef!=='undefined'? currentRef.verse : 1); }
+function tightRender(s){
+  if(!s) return "";
+  let t=s.replace(/<span[^>]*data-m[^>]*>.*?<\/span>/gi,' ');
+  t=t.replace(/<span[^>]*hilite[^>]*>.*?<\/span>/gi,' ');
+  t=t.replace(/<\/?i>/gi,' ');
+  t=t.replace(/<sup[^>]*>.*?<\/sup>/gi,' ');
+  t=t.replace(/<[^>]*>/g,' ');
+  t=t.replace(/¶/g,' ').replace(/\s+/g,' ').trim();
+  return t;
+}
+function tightCount(s){
+  if(!s) return 0;
+  return s.replace(/<[^>]*>/g,' ').replace(/¶/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z0-9']/.test(w)).length;
+}
+if(typeof window.cherryBuffer==='undefined') window.cherryBuffer=[];
+if(typeof window._hbvsHighlightBound==='undefined') window._hbvsHighlightBound=false;
 
-      function getWordRangeForVerse(verseEl){
-        const sel = window.getSelection();
-        if(!sel || sel.isCollapsed || sel.rangeCount===0) return null;
-        const range = sel.getRangeAt(0);
-        if(!verseEl.contains(range.commonAncestorContainer) && !verseEl.contains(range.startContainer) && !verseEl.contains(range.endContainer)) return null;
+function getEngineMode(m){
+  if(!m) m= (typeof selectedMath!=='undefined'?selectedMath:'akjv');
+  if(m==="mathp") return 'P';
+  if(m==="maths") return 'S';
+  if(m==="matht") return 'T';
+  return 'AKJV';
+}
+function parseHeader(h){
+  let m=h.match(/([A-Za-z]+)\s*0*([0-9]+):0*([0-9]+)/);
+  if(m) return {bk:m[1], chap:parseInt(m[2]), verse:parseInt(m[3])};
+  return null;
+}
 
-        let preRange = range.cloneRange();
-        try{
-          preRange.selectNodeContents(verseEl);
-          preRange.setEnd(range.startContainer, range.startOffset);
-        }catch{ return null; }
+function getRefsForBlockRange(verseBlock, sel){
+  if(!verseBlock||!sel||sel.rangeCount===0) return null;
+  let bEl=verseBlock.querySelector('b'); let header=bEl?bEl.innerText.trim():"";
+  let parsed=parseHeader(header);
+  if(!parsed) return null;
+  let uiCode=parsed.bk;
+  let chap=parsed.chap;
+  let verse=parsed.verse;
+  let bkorder=parseInt(verseBlock.getAttribute('data-bkorder')||'1');
+  // RAW PCE - the truth for m,i,n,j counting
+  let rawPCE = verseBlock.getAttribute('data-raw-pce') || verseBlock.getAttribute('data-raw') || "";
+  if(!rawPCE) return null;
+  let akjvWC = tightCount(rawPCE);
 
-        // FIX: use textContent to avoid <sup> numbers
-        let preText = preRange.cloneContents().textContent || preRange.toString();
-        let selText = sel.toString();
-        if(!selText.trim()) return null;
+  const range=sel.getRangeAt(0); const blockRange=document.createRange(); blockRange.selectNodeContents(verseBlock);
+  if(range.compareBoundaryPoints(Range.END_TO_START, blockRange)>=0 || range.compareBoundaryPoints(Range.START_TO_END, blockRange)<=0) return null;
 
-        let preWC = tightCount(preText);
-        let selWC = tightCount(selText);
-        if(selWC===0) return null;
+  let interText="", preText="";
+  try{
+    let r=range.cloneRange();
+    if(r.compareBoundaryPoints(Range.START_TO_START, blockRange)<0) r.setStart(blockRange.startContainer, blockRange.startOffset);
+    if(r.compareBoundaryPoints(Range.END_TO_END, blockRange)>0) r.setEnd(blockRange.endContainer, blockRange.endOffset);
+    interText=r.toString();
+    let preRange=document.createRange();
+    preRange.setStart(blockRange.startContainer, blockRange.startOffset);
+    preRange.setEnd(range.startContainer, range.startOffset);
+    preText=preRange.toString();
+  }catch(e){ interText=sel.toString(); }
+  if(header){ interText=interText.replace(header,'').trim(); preText=preText.replace(header,'').trim(); }
 
-        return {
-          mathStart: preWC+1,
-          mathEnd: preWC+selWC,
-          selText: selText,
-          preWC: preWC,
-          selWC: selWC
-        };
-      }
+  let preTight=tightRender(preText);
+  let interTight=tightRender(interText);
+  if(interTight.length<2) return null;
+  let preCount=preTight?preTight.split(/\s+/).filter(Boolean).length:0;
+  let selCount=interTight.split(/\s+/).filter(Boolean).length;
 
-      function buildRef(verseEl, info){
-        let raw = verseEl.dataset.raw;
-        let mode = verseEl.dataset.mode;
-        let mathPlain = verseEl.dataset.mathPlain || verseEl.textContent || verseEl.innerText;
-        let uiCode = getBookCode();
-        let displayChap = getDisplayChap();
-        let verseNum = getVerseNum();
-
-        // a) Tight render - ignore DB WordCount
-        if(!raw){
-          let tight = tightCount(verseEl.textContent);
-          return `${uiCode}${displayChap}:${verseNum}:${info.mathStart}-${info.mathEnd} [m=0 i=0 n=0 j=0 tight=${tight}]`;
-        }
-
-        if(mode==='akjv' || mode==='superscript'){
-          return `${uiCode}${displayChap}:${verseNum}:${info.mathStart}-${info.mathEnd} [m=0 i=0 n=0 j=0]`;
-        }
-
-        // b) Math modes: Start = Start + 2m - i  End = End + 2n - j
-        if(window.HBVS && window.HBVS.getCorrectedLocation){
-          let corr = window.HBVS.getCorrectedLocation(raw, mathPlain, info.mathStart, info.mathEnd, mode);
-          return `${uiCode}${displayChap}:${verseNum}:${corr.correctedStart}-${corr.correctedEnd} [m=${corr.m} i=${corr.i} n=${corr.n} j=${corr.j}]`;
-        }
-
-        return `${uiCode}${displayChap}:${verseNum}:${info.mathStart}-${info.mathEnd} [m=0 i=0 n=0 j=0]`;
-      }
-
-      function handleSelectionCopy(verseEl){
-        let info = getWordRangeForVerse(verseEl);
-        if(!info) return null;
-        let raw = verseEl.dataset.raw || verseEl.textContent;
-        let fullTight = tightCount(raw);
-        // If user selected almost whole verse, force 1-fullTight
-        if(info.selWC >= fullTight-1){
-          info.mathStart = 1;
-          info.mathEnd = fullTight;
-        }
-        let ref = buildRef(verseEl, info);
-        verseEl.dataset.ref = ref;
-        verseEl.style.background = 'rgba(255,215,0,0.15)';
-        setTimeout(()=> verseEl.style.background = '', 400);
-        console.log(`SELECTION ${verseEl.dataset.mode}: "${info.selText.substring(0,40)}" => ${ref} pre=${info.preWC} sel=${info.selWC} full=${fullTight}`);
-        return {ref: ref, text: info.selText};
-      }
-
-      // Desktop mouseup
-      document.addEventListener('mouseup', (e)=>{
-        const verse = e.target.closest('.verse-text');
-        if(!verse) return;
-        setTimeout(()=> handleSelectionCopy(verse), 10);
-      });
-
-      // Mobile touchend selection
-      document.addEventListener('touchend', (e)=>{
-        const verse = e.target.closest('.verse-text');
-        if(!verse) return;
-        setTimeout(()=> handleSelectionCopy(verse), 50);
-      });
-
-      let touchTimer = null;
-      function handleTouchStart(e){
-        const verse = e.target.closest('.verse-text');
-        if(!verse) return;
-        touchTimer = setTimeout(() => {
-          const sel = window.getSelection();
-          let hasSel = sel && !sel.isCollapsed && tightCount(sel.toString())>0;
-          if(hasSel){
-            let result = handleSelectionCopy(verse);
-            if(result){
-              navigator.clipboard.writeText(`${result.text}(${result.ref})`).then(()=>{
-                console.log(`COPIED SELECTION: ${result.ref}`);
-              });
-            }
-          } else {
-            // No selection = copy full verse tight - FIXED 1-31 not 1-10
-            let raw = verse.dataset.raw || verse.textContent;
-            let tight = tightCount(raw);
-            let uiCode = getBookCode();
-            let displayChap = getDisplayChap();
-            let verseNum = getVerseNum();
-            let ref = `${uiCode}${displayChap}:${verseNum}:1-${tight} [m=0 i=0 n=0 j=0]`;
-            // If math mode, get corrected
-            if(verse.dataset.mode!=='akjv' && verse.dataset.mode!=='superscript' && window.HBVS){
-              let mathPlain = verse.dataset.mathPlain || verse.textContent;
-              let corr = window.HBVS.getCorrectedLocation(raw, mathPlain, 1, tight, verse.dataset.mode);
-              ref = `${uiCode}${displayChap}:${verseNum}:${corr.correctedStart}-${corr.correctedEnd} [m=${corr.m} i=${corr.i} n=${corr.n} j=${corr.j}]`;
-            }
-            verse.dataset.ref = ref;
-            let txt = verse.textContent.trim().replace(/\s+/g,' ');
-            navigator.clipboard.writeText(`${txt}(${ref})`);
-            verse.style.background = 'var(--gold)';
-            setTimeout(()=> verse.style.background = '', 300);
-            console.log(`COPIED FULL: ${ref} tight=${tight}`);
-          }
-        }, 600);
-      }
-
-      document.addEventListener('touchstart', handleTouchStart, {passive: true});
-      document.addEventListener('touchend', ()=> { clearTimeout(touchTimer); });
-      document.addEventListener('touchmove', ()=> { clearTimeout(touchTimer); });
-
-      // Intercept copy event - inject corrected reference
-      document.addEventListener('copy', (e)=>{
-        const verse = e.target.closest?.('.verse-text') || window.getSelection()?.anchorNode?.parentElement?.closest?.('.verse-text');
-        if(!verse) return;
-        let selText = window.getSelection().toString();
-        if(!selText) return;
-        let ref = verse.dataset.ref;
-        if(!ref){
-          let info = getWordRangeForVerse(verse);
-          if(info) ref = buildRef(verse, info);
-        }
-        if(ref){
-          // Format as Slice(Ref) for StudyHub
-          e.clipboardData.setData('text/plain', `${selText.trim()}(${ref})`);
-          e.preventDefault();
-          console.log(`COPY EVENT: ${ref}`);
-        }
-      });
-    },
-    getCorrectedRef: function(verseEl, mathStart, mathEnd){
-      if(!verseEl || !window.HBVS) return null;
-      let raw = verseEl.dataset.raw;
-      let mathPlain = verseEl.dataset.mathPlain || verseEl.textContent;
-      let mode = verseEl.dataset.mode;
-      return window.HBVS.getCorrectedLocation(raw, mathPlain, mathStart, mathEnd, mode);
-    }
-  };
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ()=> window.HighlightCopy.init());
-  } else {
-    window.HighlightCopy.init();
+  let mode=getEngineMode(typeof selectedMath!=='undefined'?selectedMath:'akjv');
+  if(mode==='AKJV'){
+    let words=[]; for(let k=preCount+1;k<=preCount+selCount;k++) words.push(k);
+    return {bk:uiCode,chap,verse,bkorder,words,cleanText:interTight,corrInfo:null,preCount,selCount,mode,rawPCE};
   }
-})();
+
+  // Use Home Page engine exactly: Start = Start + 2m - i ; End = End + 2n - j
+  let mathStart=preCount+1;
+  let mathEnd=preCount+selCount;
+  let corr=null;
+  if(window.HBVS && window.HBVS.getCorrectedLocation){
+    // mathPlain not needed for counting, but pass tight inter for future
+    corr = window.HBVS.getCorrectedLocation(rawPCE, interTight, mathStart, mathEnd, mode);
+  } else {
+    // fallback if engine not ready - should not happen
+    corr = {correctedStart:mathStart, correctedEnd:mathEnd, m:0,i:0,n:0,j:0};
+  }
+
+  // corr.correctedStart = mathStart + 2m - i
+  // corr.correctedEnd = mathEnd + 2n - j
+  let words=[]; for(let k=corr.correctedStart;k<=corr.correctedEnd;k++) words.push(k);
+
+  return {bk:uiCode,chap,verse,bkorder,words,cleanText:interTight,corrInfo:corr,preCount,selCount,mode,rawPCE,mathStart,mathEnd};
+}
+
+function handleCherryPick(e){
+  const sel=window.getSelection(); if(!sel||sel.rangeCount===0||sel.isCollapsed) return;
+  if(sel.toString().trim().length<2) return;
+  const rc=document.getElementById('readerContent')||document.getElementById('reader-cards'); if(!rc) return;
+  if(!rc.contains(sel.anchorNode)) return;
+  let picks=[]; rc.querySelectorAll('.verse-block').forEach(block=>{ let p=getRefsForBlockRange(block, sel); if(p) picks.push(p); });
+  if(!picks.length) return;
+  if(!e.ctrlKey&&!e.metaKey) window.cherryBuffer=[];
+  picks.forEach(p=>{ if(!window.cherryBuffer.find(x=>x.bk===p.bk&&x.chap===p.chap&&x.verse===p.verse&&x.cleanText===p.cleanText)) window.cherryBuffer.push(p); });
+  let grouped={}; window.cherryBuffer.forEach(it=>{ let k=`${it.bk}${it.chap}:${it.verse}`; if(!grouped[k]) grouped[k]=[]; grouped[k].push(...it.words); });
+  let verseParts=[]; Object.keys(grouped).sort().forEach(k=>{ let w=[...new Set(grouped[k])].sort((a,b)=>a-b); let ranges=[], s=w[0]; for(let i=1;i<=w.length;i++){ if(i===w.length||w[i]!==w[i-1]+1){ ranges.push(s===w[i-1]?`${s}`:`${s}-${w[i-1]}`); if(i<w.length) s=w[i]; } } verseParts.push(`${k}:${ranges.join(',')}`); });
+  let compressed=verseParts[0]||"";
+  let cleanText=window.cherryBuffer.map(b=>b.cleanText).join(' ').replace(/\s+/g,' ').trim();
+  let ci=window.cherryBuffer[0]?.corrInfo;
+  let debug= ci? ` [m=${ci.m} i=${ci.i} n=${ci.n} j=${ci.j} pre=${window.cherryBuffer[0].preCount} sel=${window.cherryBuffer[0].selCount} math=${window.cherryBuffer[0].mathStart}-${window.cherryBuffer[0].mathEnd}->${ci.correctedStart}-${ci.correctedEnd}]` : "";
+  let out = window.cherryBuffer[0]?.mode==='AKJV'? `${cleanText}(${compressed})` : `${cleanText}(${compressed})${debug}`;
+  if(window.secureCopy) window.secureCopy(out).then(()=>{ if(window.showToast) showToast(`Copied ${compressed}`); }); else navigator.clipboard.writeText(out);
+  console.log("COPY", out, ci);
+}
+if(!window._hbvsHighlightBound){
+  document.addEventListener('mouseup', handleCherryPick);
+  document.addEventListener('touchend', e=>{ setTimeout(()=>handleCherryPick(e),350); });
+  window._hbvsHighlightBound=true;
+  console.log("HIGHLIGHT_COPY v7.8.223 READY - uses HBVS.getCorrectedLocation rawPCE");
+}

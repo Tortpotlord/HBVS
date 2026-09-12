@@ -4,307 +4,140 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'">
-<title>HBVS Settings v7.8.149 SECURE-WASM</title>
-
+<title>HBVS Settings v7.8.204 SECURE-WASM</title>
 <script>
-window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
-  const toast = document.getElementById('hbvs-toast') || document.createElement('div');
-  toast.id = 'hbvs-toast';
-  toast.textContent = msg;
-  if(!document.getElementById('hbvs-toast')) document.body.appendChild(toast);
-  toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'), 3000);
-};
-window.HBVS_SECURE = {
-  MAX_SIZE: 512*1024,
-  MAX_LINES: 5000,
-  validateFile: function(file){
-    if(!file) throw "No file selected";
-    if(file.size > this.MAX_SIZE) throw "File too large >512KB";
-    if(!file.name.toLowerCase().endsWith('.txt')) throw "Only.txt allowed";
-    if(file.type && file.type!=='text/plain' && file.type!=='') throw "Invalid MIME: "+file.type;
-    return true;
-  },
-  sanitize: function(text){
-    let clean = text.replace(/<[^>]*>/g,'');
-    clean = clean.replace(/javascript:/gi,'[blocked]');
-    clean = clean.replace(/onerror\s*=|onload\s*=|<script/i,'[blocked]');
-    if(/DROP\s+TABLE|DELETE\s+FROM\s+Verses|INSERT\s+INTO\s+Verses/i.test(clean)){
-      throw "SQL injection blocked - Bible Text read-only";
-    }
-    return clean.substring(0,500000);
-  },
-  validateStructure: function(arr){
-    if(!Array.isArray(arr)) throw "Invalid JSON";
-    if(arr.length>5000) throw "Too many verses";
-    arr.forEach(v=>{
-      if(typeof v.CHAPTER!=='number' || typeof v.VERSE!=='number') throw "Bad CHAPTER/VERSE";
-      if(typeof v.text!=='string' || v.text.length>5000) throw "Text too long";
-    });
-    return true;
-  }
-};
-window.HBVS_READONLY = true;
+window.SafeNotify = window.SafeNotify || function(msg){const t=document.getElementById('hbvs-toast')||document.createElement('div');t.id='hbvs-toast';t.textContent=msg;if(!document.getElementById('hbvs-toast'))document.body.appendChild(t);t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);};
+window.HBVS_SECURE={MAX_SIZE:512*1024,validateFile:function(f){if(!f)throw"No file";if(f.size>this.MAX_SIZE)throw"File >512KB";if(!f.name.toLowerCase().endsWith('.txt'))throw"Only.txt";return true;},sanitize:function(t){let c=t.replace(/<[^>]*>/g,'');c=c.replace(/javascript:/gi,'[blocked]');c=c.replace(/onerror\s*=|onload\s*=|<script/i,'[blocked]');if(/DROP\s+TABLE|DELETE\s+FROM\s+Verses|INSERT\s+INTO\s+Verses/i.test(c))throw"SQL blocked";return c.substring(0,500000);},validateStructure:function(a){if(!Array.isArray(a))throw"Invalid JSON";if(a.length>5000)throw"Too many";a.forEach(v=>{if(typeof v.CHAPTER!=='number'||typeof v.VERSE!=='number')throw"Bad";});return true;}};
 </script>
-
-<link rel="stylesheet" href="css/global.css?v=78149">
-<link rel="stylesheet" href="css/style.css?v=78149">
-<link rel="stylesheet" href="css/preface.css?v=78149">
-
+<link rel="stylesheet" href="css/global.css?v=78149"><link rel="stylesheet" href="css/style.css?v=78149"><link rel="stylesheet" href="css/preface.css?v=78149">
 <style>
-.card { max-width: 780px; margin: 1.2rem auto; padding: 1.2rem 2.2rem; border: 2px solid var(--border); background: var(--card); border-radius: 12px; }
-.section-label { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 10px 0; }
-.setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.setting-row label { font-weight: 700; }
-.setting-row select,.setting-row input[type="range"],.setting-row input[type="file"] { padding: 8px; border-radius: 6px; border: 2px solid var(--border); background: var(--bg2); color: var(--text); min-width: 160px; }
-.btn-export { padding: 10px 16px; border: 2px solid var(--accent); background: var(--accent); color: #fff; border-radius: 8px; cursor: pointer; font-weight: 800; margin-top: 10px; }
-.btn-secondary { background: var(--bg2); color: var(--text); border-color: var(--border); }
-#epilogue-textarea { width:100%; min-height:260px; padding:12px; border:2px solid var(--border); border-radius:8px; background:var(--bg2); color:var(--text); font-family:monospace; font-size:13px; white-space:pre-wrap; }
-#epilogue-preview { margin-top:15px; border:2px solid var(--border); border-radius:8px; padding:12px; max-height:450px; overflow:auto; background:var(--bg); }
-.spec-box { background:var(--bg2); border:2px dashed var(--border); border-radius:8px; padding:12px; font-family:monospace; font-size:12.5px; line-height:1.5; margin:10px 0; }
-.spec-box b { color:var(--accent); }
-details > summary { cursor:pointer; font-weight:800; font-size:13px; color:var(--accent); }
-.security-badge { display:inline-block; background:#0a7; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:800; margin-left:8px; }
+.card{max-width:820px;margin:1.2rem auto;padding:1.2rem 2.2rem;border:2px solid var(--border);background:var(--card);border-radius:12px;}
+.section-label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px 0;}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+.setting-row label{font-weight:700;}
+.setting-row select,.setting-row input[type="range"],.setting-row input[type="file"]{padding:8px;border-radius:6px;border:2px solid var(--border);background:var(--bg2);color:var(--text);min-width:160px;}
+.btn-export{padding:10px 16px;border:2px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;cursor:pointer;font-weight:800;margin-top:10px;}
+.btn-secondary{background:var(--bg2);color:var(--text);border-color:var(--border);}
+#epilogue-textarea{width:100%;min-height:260px;padding:12px;border:2px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:monospace;font-size:13px;}
+#epilogue-preview{margin-top:15px;border:2px solid var(--border);border-radius:8px;padding:12px;max-height:450px;overflow:auto;background:var(--bg);}
+.spec-box{background:var(--bg2);border:2px dashed var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:12.5px;line-height:1.5;margin:10px 0;}
+.spec-box b{color:var(--accent);} details>summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--accent);}
+.security-badge{display:inline-block;background:#0a7;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:800;margin-left:8px;}
+.warranty-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;}
+.warranty-box{background:var(--card);max-width:640px;max-height:85vh;overflow:auto;border-radius:14px;padding:22px;border:3px solid var(--accent);}
+.warranty-scroll{border:2px solid var(--border);border-radius:8px;padding:12px;height:260px;overflow:auto;background:var(--bg);font-size:13px;line-height:1.6;text-align:justify;}
+.doc-card{border:2px solid var(--border);border-radius:10px;padding:12px;margin:10px 0;background:var(--bg);}
+.doc-card h4{margin:0 0 6px 0;color:var(--accent);} kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;}
+.md-view{white-space:pre-wrap;font-family:monospace;font-size:12.5px;line-height:1.6;max-height:500px;overflow:auto;background:var(--bg);border:2px solid var(--border);border-radius:8px;padding:12px;}
 </style>
 </head>
 <body>
-
-<div id="app">
-  <header id="topbar">
-    <div class="topbar-row1">
-      <a href="index.html" style="font-size:24px;text-decoration:none;color:var(--accent);">←</a>
-      <div class="logo-title"><div class="app-title">HBVS SETTINGS v7.8.149 <span class="security-badge">SECURE-WASM</span></div></div>
+<div id="warranty-overlay" class="warranty-overlay" style="display:none;">
+  <div class="warranty-box">
+    <h2>HBVS TOOLKIT v7.8.204 — No Warranty Agreement</h2>
+    <div class="warranty-scroll" id="warranty-full-text">
+<b>1. NO WARRANTY:</b> HBVS MathKJV Toolkit is provided "AS IS" without warranty.<br><br>
+<b>2. BIBLE TEXT:</b> KJV public domain. Math mapping (m,i,n,j) is interpretive aid.<br><br>
+<b>3. NO LIABILITY:</b> Author not liable for damages.<br><br>
+<b>4. READ-ONLY DB:</b> C:\HBVS\hbvs_data_v2.db is read-only. Epilogue is localStorage only.<br><br>
+<b>5. SECURE CONTEXT:</b> No tracking. No data leaves device.<br><br>
+<b>6. ACCEPTANCE:</b> By Accepting you agree.
     </div>
-  </header>
-
-  <main>
-    <div class="card">
-      <div class="section-label">APPEARANCE</div>
-      <div class="setting-row"><label>Theme</label><select id="theme-select"></select></div>
-      <div class="setting-row"><label>Font Family</label><select id="font-select"></select></div>
-      <div class="setting-row"><label>Font Size: <span id="font-size-label">16</span>px</label><input type="range" id="font-size" min="12" max="32" value="16"></div>
-
-      <div class="section-label">EPILOGUE BOOK 67 - DYNAMIC + 5 Security + WASM CSP Fix</div>
-
-      <details open>
-        <summary>📘 EPILOGUE FORMAT SPEC + SECURITY (Click)</summary>
-        <div class="spec-box">
-<b>Security:</b> File <512KB,.txt only, HTML stripped, SQL blocked, DB read-only, localStorage isolated<br>
-<b>CSP:</b> wasm-unsafe-eval allowed for sql.js<br><br>
-<b>#</b> = Book Title<br>
-<b>##</b> = Chapter<br>
-<b>###</b> = Sub-Title<br>
-<b>Blank line</b> = New Verse<br>
-<b>¶</b> = Force New Paragraph<br>
-<b>Example:</b><br>
-# UNIVERSAL DECLARATION<br>
-## PREAMBLE<br>
-Whereas recognition...<br><br>
-## ARTICLE 1<br>
-All human beings are born free...<br>
-¶ New verse.
-        </div>
-      </details>
-
-      <div class="setting-row"><label>Show Epilogue Book</label><input type="checkbox" id="epilogue-toggle"></div>
-      <div class="setting-row"><label>Import *.txt (SECURE)</label><input type="file" id="epilogue-file" accept=".txt"></div>
-
-      <textarea id="epilogue-textarea" placeholder="# BOOK TITLE
-## CHAPTER 1
-Your text here...
-Use ¶ to force new paragraph"></textarea>
-
-      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
-        <button class="btn-export" id="btn-save-epilogue">💾 Save Epilogue (Secure)</button>
-        <button class="btn-export btn-secondary" id="btn-preview-epilogue">👁️ Preview S3/S4</button>
-        <button class="btn-export btn-secondary" id="btn-export-epilogue">📤 Export Epilogue.json</button>
-        <button class="btn-export btn-secondary" id="btn-clear-epilogue">🗑️ Clear</button>
-      </div>
-      <div id="epilogue-status" style="margin-top:8px;font-size:12px;font-weight:700;"></div>
-
-      <div class="section-label">Live Preview (Preface S3/S4)</div>
-      <div id="epilogue-preview">No Epilogue loaded.</div>
-    </div>
-  </main>
+    <div style="display:flex;gap:10px;margin-top:12px;"><input type="checkbox" id="warranty-check"><label for="warranty-check" style="font-weight:700;">I accept No Warranty Agreement</label></div>
+    <button class="btn-export" id="btn-accept-warranty" disabled style="width:100%;margin-top:10px;">✓ I Accept — Continue</button>
+  </div>
 </div>
+<div id="app">
+<header id="topbar"><div class="topbar-row1"><a href="index.html" style="font-size:24px;text-decoration:none;color:var(--accent);">←</a><div class="logo-title"><div class="app-title">HBVS SETTINGS v7.8.204 <span class="security-badge">SECURE-WASM</span></div></div></div></header>
+<main>
+<div class="card">
+<div class="section-label">APPEARANCE</div>
+<div class="setting-row"><label>Theme</label><select id="theme-select"></select></div>
+<div class="setting-row"><label>Font Family</label><select id="font-select"></select></div>
+<div class="setting-row"><label>Font Size: <span id="font-size-label">16</span>px</label><input type="range" id="font-size" min="12" max="32" value="16"></div>
 
-<script src="js/layout.js?v=78149"></script>
-<script src="js/epilogue.js?v=78149"></script>
+<div class="section-label">LEGAL</div>
+<div class="setting-row"><label>No Warranty Accepted</label><span id="warranty-status">Checking...</span></div>
+<button class="btn-export btn-secondary" id="btn-view-warranty">📜 View Agreement</button>
 
+<div class="section-label">AUDIO PLAYBACK</div>
+<div class="setting-row"><label>Enable TTS Audio</label><input type="checkbox" id="audio-toggle"></div>
+<div class="setting-row"><label>Voice</label><select id="audio-voice"><option value="system">System Default</option><option value="male">Male</option><option value="female">Female</option></select></div>
+<div class="setting-row"><label>Speed: <span id="audio-speed-label">1.0</span>x</label><input type="range" id="audio-speed" min="0.5" max="2.0" step="0.1" value="1.0"></div>
+<div class="setting-row"><label>Auto-play Chapter</label><input type="checkbox" id="audio-autoplay"></div>
+<div class="setting-row"><label>Highlight While Speaking</label><input type="checkbox" id="audio-highlight"></div>
+
+<div class="section-label">APP DOCUMENTATION — Full Render v7.8.204 — DB in Root</div>
+
+<details open><summary>📘 FULL README.md (150 lines) — Rendered from C:\HBVS\README.md</summary>
+<div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-readme">🔄 Load README.md</button><div id="readme-render" class="md-view">Click Load to render full README.md from root. File location: C:\HBVS\README.md — DB is C:\HBVS\hbvs_data_v2.db in root, not in db\</div></div>
+</details>
+
+<details open><summary>📖 FULL USER_MANUAL.md (300 lines) — Rendered from C:\HBVS\docs\USER_MANUAL.md</summary>
+<div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-manual">🔄 Load USER_MANUAL.md</button><div id="manual-render" class="md-view">Click Load to render full USER_MANUAL.md. Location: C:\HBVS\docs\USER_MANUAL.md</div></div>
+</details>
+
+<details open><summary>🔣 FULL MATHKJV_HERMENEUTICS.md — Rendered from C:\HBVS\docs\MATHKJV_HERMENEUTICS.md</summary>
+<div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-herm">🔄 Load MATHKJV_HERMENEUTICS.md</button><div id="herm-render" class="md-view">Click Load to render MathKJV hermeneutics. Location: C:\HBVS\docs\MATHKJV_HERMENEUTICS.md</div></div>
+</details>
+
+<div class="section-label">EPILOGUE BOOK 67 - DYNAMIC + 5 Security + WASM CSP Fix</div>
+<details open><summary>📘 EPILOGUE FORMAT SPEC + SECURITY</summary><div class="spec-box"><b>DB:</b> C:\HBVS\hbvs_data_v2.db (root, read-only)<br><b>Security:</b> <512KB,.txt only, HTML stripped, SQL blocked<br><b>#</b>=Book Title<br><b>##</b>=Chapter<br><b>###</b>=Sub-Title<br><b>Blank</b>=New Verse<br><b>¶</b>=Force Paragraph</div></details>
+<div class="setting-row"><label>Show Epilogue Book</label><input type="checkbox" id="epilogue-toggle"></div>
+<div class="setting-row"><label>Import *.txt (SECURE)</label><input type="file" id="epilogue-file" accept=".txt"></div>
+<textarea id="epilogue-textarea" placeholder="# BOOK TITLE
+## CHAPTER 1
+Your text here..."></textarea>
+<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+<button class="btn-export" id="btn-save-epilogue">💾 Save Epilogue</button>
+<button class="btn-export btn-secondary" id="btn-preview-epilogue">👁️ Preview</button>
+<button class="btn-export btn-secondary" id="btn-export-epilogue">📤 Export Epilogue.json</button>
+<button class="btn-export btn-secondary" id="btn-clear-epilogue">🗑️ Clear</button>
+</div>
+<div id="epilogue-status" style="margin-top:8px;font-size:12px;font-weight:700;"></div>
+<div class="section-label">Live Preview (Preface S3/S4)</div>
+<div id="epilogue-preview">No Epilogue loaded.</div>
+</div>
+</main>
+</div>
+<script src="js/layout.js?v=78149"></script><script src="js/epilogue.js?v=78149"></script>
 <script>
-console.log("HBVS SETTINGS v7.8.149 SECURE-WASM LOADED");
-const THEMES = [
-  {id:'light', name:'Light'}, {id:'dark', name:'Dark'}, {id:'sepia', name:'Sepia'},
-  {id:'parchment', name:'Parchment'}, {id:'amber', name:'Amber'}, {id:'sand', name:'Sand'},
-  {id:'forest', name:'Forest'}, {id:'ocean', name:'Ocean'}, {id:'midnight', name:'Midnight'}, {id:'rose', name:'Rose'}
-];
-const FONTS = [
-  {id:'serif', name:'Serif'}, {id:'sans', name:'Sans'}, {id:'mono', name:'Mono'},
-  {id:'georgia', name:'Georgia'}, {id:'garamond', name:'Garamond'}, {id:'lora', name:'Lora'},
-  {id:'merriweather', name:'Merriweather'}, {id:'roboto', name:'Roboto'},
-  {id:'open-sans', name:'Open Sans'}, {id:'cormorant', name:'Cormorant Garamond'}
-];
-const SETTINGS = {
-  theme: localStorage.getItem('hbvs_theme') || 'light',
-  font: localStorage.getItem('hbvs_font') || 'serif',
-  fontSize: localStorage.getItem('hbvs_fontSize') || '16',
-  epilogueOn: localStorage.getItem('hbvs_epilogueOn') === 'true'
-};
-function applySettings(){
-  document.documentElement.setAttribute('data-theme', SETTINGS.theme);
-  document.documentElement.setAttribute('data-font', SETTINGS.font);
-  document.documentElement.style.setProperty('--font-size', SETTINGS.fontSize + 'px');
-}
-function txtToEpilogueJSON(rawText){
-  rawText = window.HBVS_SECURE.sanitize(rawText);
-  if(window.parseRawEpilogue) return window.parseRawEpilogue(rawText);
-  const lines = rawText.split(/\r?\n/);
-  let result=[], chapter=1, verse=0;
-  let currentChapterTitle = "PREAMBLE";
-  function pushVerse(text, isTitleType){
-    if(!text.trim()) return;
-    text.split('¶').forEach(part=>{
-      part = part.trim().replace(/\s+/g,' ').trim();
-      if(!part) return;
-      part = part.replace(/<[^>]*>/g,'').substring(0,5000);
-      result.push({
-        "BOOK":"EPILOGUE","BN":"EPI","CHAPTER":chapter,"VERSE":verse,
-        "BKORDER":67,"BKCHAPVERSE":`EPI${chapter}:${verse}`,
-        "WORDCOUNT":part.split(/\s+/).length,
-        "text":part,
-        "type": isTitleType || "verse",
-        "chapterTitle": currentChapterTitle
-      });
-      verse++;
-    });
-  }
-  for(let rawLine of lines){
-    let line = rawLine.trim();
-    if(!line){ verse++; continue; }
-    if(line.startsWith('# ')){ pushVerse(line.replace(/^#\s+/,'').trim(), 'bookTitle'); continue; }
-    if(line.startsWith('## ')){
-      chapter++; verse=0;
-      currentChapterTitle = line.replace(/^##\s+/,'').trim().substring(0,200);
-      pushVerse(currentChapterTitle, 'chapter'); continue;
-    }
-    if(line.startsWith('### ')){ pushVerse(line.replace(/^###\s+/,'').trim(), 'subtitle'); continue; }
-    pushVerse(line, 'verse');
-  }
-  window.HBVS_SECURE.validateStructure(result);
-  return result;
-}
-function downloadJSON(filename, data){
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-function renderPreview() {
-  const jsonStr = localStorage.getItem('hbvs_epilogueJSON');
-  if(!jsonStr){ document.getElementById('epilogue-preview').innerHTML='No Epilogue loaded.'; return; }
-  const verses = JSON.parse(jsonStr);
-  let html='<div class="preface-reader epilogue-reader">';
-  let currentCh = -1;
-  verses.forEach(v=>{
-    if(v.CHAPTER!== currentCh){
-      currentCh = v.CHAPTER;
-      if(v.type!== 'bookTitle') html+=`<div class="preface-chapter-header" style="font-weight:900;color:var(--accent);margin-top:18px;border-bottom:2px solid var(--border);padding-bottom:6px;">${v.chapterTitle || 'CHAPTER '+v.CHAPTER}</div>`;
-    }
-    if(v.type==='bookTitle'){
-      html+=`<div class="preface-header" style="text-align:center;font-weight:900;font-size:1.3em;margin:14px 0;">${v.text}</div>`;
-    } else if(v.type==='chapter'){
-      if(v.VERSE!==0) html+=`<div class="preface-title-centered" style="text-align:center;font-weight:800;margin:10px 0;">${v.text}</div>`;
-    } else if(v.type==='subtitle'){
-      html+=`<div class="preface-article-header" style="font-weight:bold;color:var(--accent);margin-top:12px;">${v.text}</div>`;
-    } else {
-      html+=`<div class="preface-para" style="margin:8px 0;text-align:justify;">${v.text}</div>`;
-    }
-  });
-  html+='</div>';
-  html+=`<div style="margin-top:12px;font-size:11px;color:var(--muted);">🔒 ${verses.length} verses, ${new Set(verses.map(v=>v.CHAPTER)).size} chapters | DB read-only | WASM CSP ok</div>`;
-  document.getElementById('epilogue-preview').innerHTML=html;
-}
-document.addEventListener('DOMContentLoaded', ()=>{
-  applySettings();
-  const themeSelect = document.getElementById('theme-select');
-  themeSelect.innerHTML = THEMES.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
-  themeSelect.value = SETTINGS.theme;
-  themeSelect.onchange = (e)=>{ SETTINGS.theme=e.target.value; localStorage.setItem('hbvs_theme',e.target.value); applySettings(); }
-  const fontSelect = document.getElementById('font-select');
-  fontSelect.innerHTML = FONTS.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
-  fontSelect.value = SETTINGS.font;
-  fontSelect.onchange = (e)=>{ SETTINGS.font=e.target.value; localStorage.setItem('hbvs_font',e.target.value); applySettings(); }
-  document.getElementById('font-size').value = SETTINGS.fontSize;
-  document.getElementById('font-size-label').innerText = SETTINGS.fontSize;
-  document.getElementById('font-size').oninput = (e)=>{ SETTINGS.fontSize=e.target.value; document.getElementById('font-size-label').innerText=e.target.value; localStorage.setItem('hbvs_fontSize',e.target.value); applySettings(); }
-  document.getElementById('epilogue-toggle').checked = SETTINGS.epilogueOn;
-  document.getElementById('epilogue-toggle').onchange = (e)=>{ SETTINGS.epilogueOn=e.target.checked; localStorage.setItem('hbvs_epilogueOn',e.target.checked); }
-  const existingRaw = localStorage.getItem('epilogue_raw') || localStorage.getItem('hbvs_epilogueRaw');
-  if(existingRaw) document.getElementById('epilogue-textarea').value = existingRaw;
-  renderPreview();
-  document.getElementById('epilogue-file').onchange = async (e)=>{
-    const file = e.target.files[0]; if(!file) return;
-    try{
-      window.HBVS_SECURE.validateFile(file);
-      const rawText = await file.text();
-      const sanitized = window.HBVS_SECURE.sanitize(rawText);
-      document.getElementById('epilogue-textarea').value = sanitized;
-      const json = txtToEpilogueJSON(sanitized);
-      localStorage.setItem('hbvs_epilogueJSON', JSON.stringify(json));
-      localStorage.setItem('epilogue_raw', sanitized);
-      localStorage.setItem('hbvs_epilogueRaw', sanitized);
-      localStorage.setItem('hbvs_epilogue_text', sanitized);
-      localStorage.setItem('hbvs_epilogue_hash', btoa(sanitized.substring(0,100)));
-      document.getElementById('epilogue-status').innerText = `✅ Secure loaded ${json.length} verses from ${file.name}`;
-      SafeNotify(`Secure loaded: ${json.length} verses`, 'success');
-      renderPreview();
-    }catch(err){
-      document.getElementById('epilogue-status').innerText = `❌ Blocked: ${err}`;
-      SafeNotify(`Blocked: ${err}`, 'error');
-      e.target.value='';
-    }
-  }
-  document.getElementById('btn-save-epilogue').onclick = ()=>{
-    try{
-      const raw = document.getElementById('epilogue-textarea').value;
-      if(!raw.trim()){ SafeNotify('Paste text first', 'error'); return; }
-      const sanitized = window.HBVS_SECURE.sanitize(raw);
-      const json = txtToEpilogueJSON(sanitized);
-      localStorage.setItem('hbvs_epilogueJSON', JSON.stringify(json));
-      localStorage.setItem('epilogue_raw', sanitized);
-      localStorage.setItem('hbvs_epilogueRaw', sanitized);
-      localStorage.setItem('hbvs_epilogue_text', sanitized);
-      localStorage.setItem('hbvs_epilogue_hash', btoa(sanitized.substring(0,100)));
-      localStorage.setItem('hbvs_epilogueOn', 'true');
-      document.getElementById('epilogue-toggle').checked = true;
-      document.getElementById('epilogue-status').innerText = `✅ Secure saved ${json.length} verses`;
-      SafeNotify(`Secure saved ${json.length} verses`, 'success');
-      renderPreview();
-    }catch(err){
-      document.getElementById('epilogue-status').innerText = `❌ ${err}`;
-      SafeNotify(`Blocked: ${err}`, 'error');
-    }
-  }
-  document.getElementById('btn-preview-epilogue').onclick = renderPreview;
-  document.getElementById('btn-export-epilogue').onclick = ()=>{
-    const jsonStr = localStorage.getItem('hbvs_epilogueJSON');
-    if(!jsonStr){ SafeNotify('Load or Save first', 'error'); return; }
-    downloadJSON('Epilogue.json', JSON.parse(jsonStr));
-    SafeNotify('Epilogue.json exported', 'success');
-  }
-  document.getElementById('btn-clear-epilogue').onclick = ()=>{
-    if(!confirm('Clear Epilogue? Bible DB untouched.')) return;
-    localStorage.removeItem('hbvs_epilogueJSON');
-    localStorage.removeItem('epilogue_raw');
-    localStorage.removeItem('hbvs_epilogueRaw');
-    localStorage.removeItem('hbvs_epilogue_text');
-    localStorage.removeItem('hbvs_epilogue_hash');
-    document.getElementById('epilogue-textarea').value='';
-    document.getElementById('epilogue-preview').innerHTML='Cleared - Bible DB untouched';
-    document.getElementById('epilogue-status').innerText='Cleared';
-    SafeNotify('Epilogue cleared - Bible protected', 'info');
-  }
+console.log("HBVS SETTINGS v7.8.204 LOADED — DB root: hbvs_data_v2.db");
+const THEMES=[{id:'light',name:'Light'},{id:'dark',name:'Dark'},{id:'sepia',name:'Sepia'},{id:'parchment',name:'Parchment'},{id:'amber',name:'Amber'},{id:'sand',name:'Sand'},{id:'forest',name:'Forest'},{id:'ocean',name:'Ocean'},{id:'midnight',name:'Midnight'},{id:'rose',name:'Rose'}];
+const FONTS=[{id:'serif',name:'Serif'},{id:'sans',name:'Sans'},{id:'mono',name:'Mono'},{id:'georgia',name:'Georgia'},{id:'garamond',name:'Garamond'},{id:'lora',name:'Lora'},{id:'merriweather',name:'Merriweather'},{id:'roboto',name:'Roboto'},{id:'open-sans',name:'Open Sans'},{id:'cormorant',name:'Cormorant Garamond'}];
+const SETTINGS={theme:localStorage.getItem('hbvs_theme')||'light',font:localStorage.getItem('hbvs_font')||'serif',fontSize:localStorage.getItem('hbvs_fontSize')||'16',epilogueOn:localStorage.getItem('hbvs_epilogueOn')==='true'};
+function applySettings(){document.documentElement.setAttribute('data-theme',SETTINGS.theme);document.documentElement.setAttribute('data-font',SETTINGS.font);document.documentElement.style.setProperty('--font-size',SETTINGS.fontSize+'px');}
+function txtToEpilogueJSON(rawText){rawText=window.HBVS_SECURE.sanitize(rawText);if(window.parseRawEpilogue)return window.parseRawEpilogue(rawText);const lines=rawText.split(/\r?\n/);let result=[],chapter=1,verse=0;let curTitle="PREAMBLE";function pushVerse(text,isTitleType){if(!text.trim())return;text.split('¶').forEach(part=>{part=part.trim().replace(/\s+/g,' ').trim();if(!part)return;result.push({"BOOK":"EPILOGUE","BN":"EPI","CHAPTER":chapter,"VERSE":verse,"BKORDER":67,"BKCHAPVERSE":`EPI${chapter}:${verse}`,"WORDCOUNT":part.split(/\s+/).length,"text":part,"type":isTitleType||"verse","chapterTitle":curTitle});verse++;});}
+for(let rawLine of lines){let line=rawLine.trim();if(!line){verse++;continue;}if(line.startsWith('# ')){pushVerse(line.replace(/^#\s+/,'').trim(),'bookTitle');continue;}if(line.startsWith('## ')){chapter++;verse=0;curTitle=line.replace(/^##\s+/,'').trim().substring(0,200);pushVerse(curTitle,'chapter');continue;}if(line.startsWith('### ')){pushVerse(line.replace(/^###\s+/,'').trim(),'subtitle');continue;}pushVerse(line,'verse');}window.HBVS_SECURE.validateStructure(result);return result;}
+function downloadJSON(f,d){const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);}
+function renderPreview(){const j=localStorage.getItem('hbvs_epilogueJSON');if(!j){document.getElementById('epilogue-preview').innerHTML='No Epilogue loaded.';return;}const verses=JSON.parse(j);let html='<div class="preface-reader">';let cur=-1;verses.forEach(v=>{if(v.CHAPTER!==cur){cur=v.CHAPTER;if(v.type!=='bookTitle')html+=`<div style="font-weight:900;color:var(--accent);margin-top:18px;border-bottom:2px solid var(--border);">${v.chapterTitle}</div>`;}if(v.type==='bookTitle')html+=`<div style="text-align:center;font-weight:900;font-size:1.3em;margin:14px 0;">${v.text}</div>`;else if(v.type==='chapter'){if(v.VERSE!==0)html+=`<div style="text-align:center;font-weight:800;margin:10px 0;">${v.text}</div>`;}else if(v.type==='subtitle')html+=`<div style="font-weight:bold;color:var(--accent);margin-top:12px;">${v.text}</div>`;else html+=`<div style="margin:8px 0;text-align:justify;">${v.text}</div>`;});html+='</div>';document.getElementById('epilogue-preview').innerHTML=html;}
+async function loadMD(url, elId){try{const r=await fetch(url+'?v='+Date.now());if(!r.ok)throw"Not found "+url;const t=await r.text();document.getElementById(elId).textContent=t;SafeNotify('Loaded '+url);}catch(e){document.getElementById(elId).textContent='Failed to load '+url+': '+e+'\n\nMake sure file exists at C:\\HBVS\\'+url;}}
+document.addEventListener('DOMContentLoaded',()=>{
+applySettings();
+const accepted=localStorage.getItem('hbvs_warrantyAccepted')==='true';const overlay=document.getElementById('warranty-overlay');const statusEl=document.getElementById('warranty-status');const check=document.getElementById('warranty-check');const btnAccept=document.getElementById('btn-accept-warranty');
+if(!accepted)overlay.style.display='flex';statusEl.textContent=accepted?'✅ Accepted '+(localStorage.getItem('hbvs_warrantyDate')||''):'❌ Not yet';
+check.onchange=()=>{btnAccept.disabled=!check.checked;};btnAccept.onclick=()=>{localStorage.setItem('hbvs_warrantyAccepted','true');localStorage.setItem('hbvs_warrantyDate',new Date().toISOString());overlay.style.display='none';statusEl.textContent='✅ Accepted';SafeNotify('Warranty accepted');};
+document.getElementById('btn-view-warranty').onclick=()=>{overlay.style.display='flex';};
+const at=document.getElementById('audio-toggle'),av=document.getElementById('audio-voice'),as=document.getElementById('audio-speed'),aa=document.getElementById('audio-autoplay'),ah=document.getElementById('audio-highlight'),sl=document.getElementById('audio-speed-label');
+if(at){at.checked=localStorage.getItem('hbvs_audio_enabled')==='true';av.value=localStorage.getItem('hbvs_audio_voice')||'system';as.value=localStorage.getItem('hbvs_audio_speed')||'1.0';aa.checked=localStorage.getItem('hbvs_audio_autoplay')==='true';ah.checked=localStorage.getItem('hbvs_audio_highlight')!=='false';sl.textContent=as.value;at.onchange=e=>localStorage.setItem('hbvs_audio_enabled',e.target.checked);av.onchange=e=>localStorage.setItem('hbvs_audio_voice',e.target.value);as.oninput=e=>{sl.textContent=e.target.value;localStorage.setItem('hbvs_audio_speed',e.target.value);};aa.onchange=e=>localStorage.setItem('hbvs_audio_autoplay',e.target.checked);ah.onchange=e=>localStorage.setItem('hbvs_audio_highlight',e.target.checked);}
+const ts=document.getElementById('theme-select');ts.innerHTML=THEMES.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');ts.value=SETTINGS.theme;ts.onchange=e=>{SETTINGS.theme=e.target.value;localStorage.setItem('hbvs_theme',e.target.value);applySettings();};
+const fs=document.getElementById('font-select');fs.innerHTML=FONTS.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');fs.value=SETTINGS.font;fs.onchange=e=>{SETTINGS.font=e.target.value;localStorage.setItem('hbvs_font',e.target.value);applySettings();};
+document.getElementById('font-size').value=SETTINGS.fontSize;document.getElementById('font-size-label').innerText=SETTINGS.fontSize;document.getElementById('font-size').oninput=e=>{SETTINGS.fontSize=e.target.value;document.getElementById('font-size-label').innerText=e.target.value;localStorage.setItem('hbvs_fontSize',e.target.value);applySettings();};
+document.getElementById('epilogue-toggle').checked=SETTINGS.epilogueOn;document.getElementById('epilogue-toggle').onchange=e=>{SETTINGS.epilogueOn=e.target.checked;localStorage.setItem('hbvs_epilogueOn',e.target.checked);};
+const ex=localStorage.getItem('epilogue_raw')||localStorage.getItem('hbvs_epilogueRaw');if(ex)document.getElementById('epilogue-textarea').value=ex;renderPreview();
+document.getElementById('epilogue-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{window.HBVS_SECURE.validateFile(file);const raw=await file.text();const s=window.HBVS_SECURE.sanitize(raw);document.getElementById('epilogue-textarea').value=s;const j=txtToEpilogueJSON(s);localStorage.setItem('hbvs_epilogueJSON',JSON.stringify(j));localStorage.setItem('epilogue_raw',s);localStorage.setItem('hbvs_epilogueRaw',s);document.getElementById('epilogue-status').innerText=`✅ ${j.length} verses`;renderPreview();}catch(err){document.getElementById('epilogue-status').innerText=`❌ ${err}`;e.target.value='';}};
+document.getElementById('btn-save-epilogue').onclick=()=>{try{const raw=document.getElementById('epilogue-textarea').value;if(!raw.trim())return;const s=window.HBVS_SECURE.sanitize(raw);const j=txtToEpilogueJSON(s);localStorage.setItem('hbvs_epilogueJSON',JSON.stringify(j));localStorage.setItem('epilogue_raw',s);localStorage.setItem('hbvs_epilogueRaw',s);localStorage.setItem('hbvs_epilogueOn','true');document.getElementById('epilogue-toggle').checked=true;document.getElementById('epilogue-status').innerText=`✅ ${j.length} verses`;renderPreview();}catch(err){document.getElementById('epilogue-status').innerText=`❌ ${err}`;}};
+document.getElementById('btn-preview-epilogue').onclick=renderPreview;
+document.getElementById('btn-export-epilogue').onclick=()=>{const j=localStorage.getItem('hbvs_epilogueJSON');if(!j)return;downloadJSON('Epilogue.json',JSON.parse(j));};
+document.getElementById('btn-clear-epilogue').onclick=()=>{if(!confirm('Clear Epilogue?'))return;localStorage.removeItem('hbvs_epilogueJSON');localStorage.removeItem('epilogue_raw');localStorage.removeItem('hbvs_epilogueRaw');document.getElementById('epilogue-textarea').value='';document.getElementById('epilogue-preview').innerHTML='Cleared';document.getElementById('epilogue-status').innerText='Cleared';};
+// MD LOADERS
+document.getElementById('btn-load-readme').onclick=()=>loadMD('README.md','readme-render');
+document.getElementById('btn-load-manual').onclick=()=>loadMD('docs/USER_MANUAL.md','manual-render');
+document.getElementById('btn-load-herm').onclick=()=>loadMD('docs/MATHKJV_HERMENEUTICS.md','herm-render');
+// auto-load all 3 on open
+loadMD('README.md','readme-render');
+loadMD('docs/USER_MANUAL.md','manual-render');
+loadMD('docs/MATHKJV_HERMENEUTICS.md','herm-render');
 });
 </script>
 </body>

@@ -3,224 +3,191 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HBVS Bible Reader v7.8.184.11 SECURE-WASM</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'">
-
-<script>
-window.Capacitor = window.Capacitor || {};
-window.Capacitor.Plugins = window.Capacitor.Plugins || {};
-if(!window.Capacitor.Plugins.App){
-  window.Capacitor.Plugins.App = {
-    triggerEvent: function(evt, data){ console.log("[CAP FAKE] triggerEvent:", evt); },
-    addListener: function(){ return { remove: function(){} }; },
-    removeAllListeners: function(){}
-  };
-}
-window.Capacitor.isNativePlatform = window.Capacitor.isNativePlatform || function(){ return false; };
-window.Capacitor.getPlatform = window.Capacitor.getPlatform || function(){ return 'web'; };
-window.HBVS_READONLY = true;
-</script>
-
-<script>
-window.SafeNotify = window.SafeNotify || function(msg, type = 'info'){
-  console.log(`[SafeNotify ${type}]`, msg);
-  const toast = document.getElementById('hbvs-toast') || document.createElement('div');
-  toast.id = 'hbvs-toast';
-  toast.textContent = msg;
-  if(!document.getElementById('hbvs-toast')) document.body.appendChild(toast);
-  toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'), 2500);
-};
-</script>
-
-<link rel="stylesheet" href="css/global.css?v=7818411">
-<link rel="stylesheet" href="css/style.css?v=7818411">
-<link rel="stylesheet" href="css/mathkjv.css?v=7818411">
-<link rel="stylesheet" href="css/superscript.css?v=7818411">
-<link rel="stylesheet" href="css/preface.css?v=7818411">
-<link rel="stylesheet" href="css/preface-reader.css?v=7818411">
-
+<title>HBVS READER - the sign of the Son of man</title>
+<link rel="stylesheet" href="css/global.css?v=782016">
+<link rel="stylesheet" href="css/style.css?v=782016">
+<link rel="stylesheet" href="css/preface.css?v=782016">
+<link rel="stylesheet" href="css/mathkjv.css?v=782016">
+<link rel="stylesheet" href="css/superscript.css?v=782016">
 <style>
-#settingsTab.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
-#settingsTab label{font-weight:bold;}
-#settingsTab select, #settingsTab input[type="range"]{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);color:var(--text);}
-#settingsTab.toggle{display:flex;gap:10px;}
-#searchTab.search-bar{display:flex;gap:8px;margin-bottom:12px;}
-#searchTab input{flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);}
-#searchTab button{padding:8px 12px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;}
-mark.search-highlight{background:yellow;color:#000;padding:0 2px;border-radius:2px;}
-.search-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;}
-.search-table th,.search-table td{border:1px solid var(--border);padding:6px;text-align:left;vertical-align:top;}
-.search-table th{background:var(--bg2);}
-.search-table.ref-col{width:220px;white-space:nowrap;cursor:pointer;}
-.section-label{font-weight:bold;margin:12px 0 6px 0;color:var(--accent);}
-.btn-small{padding:4px 8px;font-size:12px;border:none;border-radius:4px;cursor:pointer;}
-.btn-danger{background:#c00;color:#fff;}
-#search-filter-bar{margin:8px 0;display:none;}
-#search-filter-bar select{padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);color:var(--text);}
-.reader-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-.reader-tools span{cursor:pointer;font-size:18px;padding:4px 6px;border-radius:4px;}
-.reader-tools span:hover{background:var(--bg2);}
-.security-badge{display:inline-block;background:#0a7;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:800;margin-left:8px;}
+#bibleTab{padding:10px}
+.chip{padding:8px 14px;border:1px solid var(--border);background:var(--bg);border-radius:18px;cursor:pointer;font-weight:700}
+.chip.big{min-width:64px;min-height:42px}
+.chip.active,.grid-btn.active{background:var(--accent);color:#fff}
+.book-card{padding:14px;border:2px solid var(--border);border-radius:12px;background:var(--bg2);font-weight:800;cursor:pointer}
+.grid-btn{padding:8px 10px;border:1px solid var(--border);background:var(--bg);border-radius:8px;cursor:pointer;font-weight:700}
+#bookGrid,#chapterGrid,#verseGrid{display:grid;gap:8px}
+#bookGrid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
+#chapterGrid{grid-template-columns:repeat(auto-fill,minmax(60px,1fr))}
+#verseGrid{grid-template-columns:repeat(auto-fill,minmax(55px,1fr))}
+#bible-grid{display:none}
+#search-page{border:2px solid var(--accent);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--bg)}
+#searchInput{width:100%;padding:12px;border:2px solid var(--border);border-radius:8px}
+.reader-toolbar{position:sticky;top:0;z-index:50;display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px;margin:12px 0}
+#readerView{margin-top:16px;border-top:2px solid var(--border);padding-top:10px}
+.btn-small{padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;font-weight:600}
+#topbar{position:sticky;top:0;z-index:100;background:var(--bg);transition:transform 0.3s}
+#topbar.hidden-bar{transform:translateY(-100%)}
+#bottombar{transition:transform 0.3s}
+#bottombar.hidden-bar{transform:translateY(100%)}
+.logo-img{width:32px;height:32px;border-radius:6px;object-fit:cover}
+.logo-title{font-weight:900;font-size:16px}
+.subtitle{padding:2px 10px 6px 52px;font-size:12px;opacity:0.8;font-style:italic}
+#hbvs-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:8px;opacity:0;transition:opacity.3s;z-index:9999}
+#hbvs-toast.show{opacity:1}
+.verse-block{ transition: all 0.2s ease; cursor:pointer; }
+.verse-block.picked{ background:#e8f5e9; border-left:4px solid #0a7; }
+.grid-btn.picked{background:#0a7!important;color:#fff!important;border-color:#0a7!important;}
 </style>
-
 </head>
 <body>
-<div id="splash">
-  <img src="assets/IGoToTheFather.png?v=7818411" alt="Splash Logo"/>
-  <p id="splash-text">Loading Reader v7.8.184 SECURE-WASM - Inherent Plain + Epi3:3 Wrapper...</p>
-</div>
-<div id="overlay"></div>
+<div id="splash"><p id="splash-text">HBVS READER v7.8.216 - Gen22:2 n=2/3 fix + Ref parse</p></div>
 <div id="app" class="hidden">
   <header id="topbar">
-    <div class="topbar-row1">
-      <a href="index.html" style="font-size:24px;text-decoration:none;color:var(--accent);">←</a>
-      <div class="logo-title"><div class="app-title">HBVS READER <span class="security-badge">SECURE</span></div></div>
-      <div class="topbar-icons">
-        <button id="btn-tab-reader" title="Reader">📖</button>
-        <button id="btn-tab-search" title="Search">🔍</button>
-        <button id="btn-view-toggle" title="Toggle Card/Table View">📋</button>
+    <div class="topbar-row1" style="display:flex;gap:8px;align-items:center;padding:8px 10px">
+      <button class="hamburger" onclick="location.href='index.html'">←</button>
+      <img src="assets/IGoToTheFather.png" class="logo-img" alt="logo" onerror="this.style.display='none';document.getElementById('fallbackLogo').style.display='inline-flex'">
+      <span id="fallbackLogo" style="display:none;width:32px;height:32px;background:#111;color:#fff;border-radius:6px;align-items:center;justify-content:center;font-weight:900">✝️</span>
+      <div style="display:flex;flex-direction:column">
+        <div class="logo-title">HBVS READER</div>
+        <div style="font-size:9px;opacity:0.6">Holy Bible Vector Space</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button id="bible-view-toggle" class="btn-small">View</button>
+        <button class="btn-small" onclick="openSearchPage()">🔍</button>
+        <button class="btn-small" onclick="openReaderTab()">📖</button>
+        <button id="btn-view-toggle-main" class="btn-small">📋/📖</button>
+        <button class="btn-small" onclick="toggleFullScreenReader()">⛶</button>
       </div>
     </div>
-    <div class="topbar-row2">
-      <select id="bible-select"></select>
-      <select id="math-select"></select>
-    </div>
+    <div class="subtitle">the sign of the Son of man</div>
   </header>
-  <main>
 
-    <div id="readerTab">
-      <input type="text" id="bookFilter" placeholder="Filter Book: Gen, Exo, Psa, Jde... 68 total" />
-      <div class="section-label">BOOK - HEIGHT</div><div id="bookGrid" class="bible-grid"></div>
-      <div class="section-label">CHAPTER - DEPTH</div><div id="chapterGrid" class="bible-grid"></div>
-      <div class="section-label">VERSE - LENGTH</div><div id="verseGrid" class="bible-grid"></div>
-
-      <div id="readerView" class="reader-view hidden">
-        <div class="reader-header">
-          <div class="reader-title" id="readerTitle"></div>
-          <div class="reader-tools">
-            <span id="btn-prev-chap" title="Prev Chapter"><</span>
-            <span id="btn-all-chap" title="All Chapter">ALL</span>
-            <span id="btn-next-chap" title="Next Chapter">></span>
-            <span id="btn-refresh" title="Refresh Page">🔄</span>
-            <span id="btn-audio" title="Play Audio">🔊</span>
-            <span id="btn-copy-reader" title="Copy">📋</span>
-            <span id="btn-share" title="Share">📤</span>
-            <span onclick="window.print()" title="Print">🖨️</span>
+  <main style="padding:10px">
+    <section id="bibleTab">
+      <div id="search-page" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <b>🔍 SEARCH GLASS</b>
+          <div style="display:flex;gap:6px">
+            <button class="btn-small" onclick="openReaderTab()">📖 Reader</button>
+            <button class="btn-small" onclick="closeSearchPage()">✕</button>
           </div>
         </div>
-        <div id="readerContent"></div>
-      </div>
-    </div>
-
-    <div id="searchTab" class="hidden">
-      <div class="section-label">SEARCH - FIND ALL WHOLE WORDS - DB READ-ONLY - Epi3:3 READY</div>
-      <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Enter Phrase OR Location: Gen22:2:32-41 OR Epi3:3:1-25" />
-        <button id="btn-search">🔍 Search</button>
-        <button id="btn-clear-search" class="btn-small btn-danger">Clear</button>
-      </div>
-      <div id="search-filter-bar">
-        <label for="bookFilterSearch">Filter by Book: </label>
-        <select id="bookFilterSearch"><option value="ALL">ALL</option></select>
-      </div>
-      <div id="searchResults"></div>
-    </div>
-
-    <div id="settingsTab" class="hidden">
-      <div class="section-label">SETTINGS</div>
-      <div class="setting-row">
-        <label>Theme</label>
-        <div class="toggle">
-          <button id="btn-theme-light">Light</button>
-          <button id="btn-theme-dark">Dark</button>
+        <input type="text" id="searchInput" placeholder="Phrase or Gen1:1">
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button id="btn-search" class="btn-small">Search</button>
+          <button id="btn-clear-search" class="btn-small">Clear</button>
+          <select id="bookFilterSearch"></select>
+          <select id="mathFilterSearch"><option value="akjv">AKJV</option><option value="P">P</option><option value="S">S</option><option value="T">T</option><option value="superscript">Super</option></select>
         </div>
+        <div id="searchResults" style="margin-top:12px;max-height:70vh;overflow-y:auto"></div>
       </div>
-      <div class="section-row">
-        <label>Font Family</label>
-        <select id="font-select">
-          <option value="serif">Serif</option>
-          <option value="sans">Sans</option>
-        </select>
-      </div>
-      <div class="section-row">
-        <label>Font Size: <span id="font-size-label">16</span>px</label>
-        <input type="range" id="font-size" min="14" max="20" value="16">
-      </div>
-      <div class="section-row">
-        <label>Show Epilogue Book</label>
-        <input type="checkbox" id="epilogue-toggle">
-      </div>
-      <div class="section-row">
-        <label>Load Epilogue Override (Secure - sanitized)</label>
-        <input type="file" id="epilogue-file" accept=".txt">
-      </div>
-    </div>
 
+      <div id="bible-nav-page">
+        <div class="grid-section"><h3>📚 Books (Height)</h3><div id="bookGrid"></div></div>
+        <div class="grid-section"><h3>📖 Chapters (Depth) <button id="btn-prev-chap" class="btn-small">←</button> <button id="btn-next-chap" class="btn-small">→</button> <button id="btn-all-chap" class="btn-small">All (Breadth)</button></h3><div id="chapterGrid"></div></div>
+        <div class="grid-section"><h3>🔢 Verses (Length) <span style="font-size:11px;opacity:0.5">Tap=pick whole verse, Drag=subset</span></h3><div id="verseGrid"></div></div>
+        <div id="bible-grid"></div>
+      </div>
+
+      <div id="readerView" class="hidden">
+        <div class="reader-toolbar">
+          <b id="readerTitle" style="margin-right:auto">HBVS READER</b>
+          <div style="display:flex;gap:6px;align-items:center">
+            <select id="bible-select"></select>
+            <select id="math-select"></select>
+            <button id="btn-copy-exact" class="btn-small" style="background:#111;color:#fff;font-weight:800" title="Copy ONLY selected verses Ref+Text for StudyHub">📋 Ref+Text</button>
+          </div>
+        </div>
+        <div id="readerContent" style="padding:12px;line-height:1.7"></div>
+        <div id="reader-view" style="display:none"><div id="reader-cards"></div></div>
+      </div>
+    </section>
   </main>
+
+  <nav id="bottombar">
+    <div onclick="location.href='index.html'">🏠<br>Home</div>
+    <div class="active">📖<br>HBVS</div>
+    <div onclick="openSearchPage()">🔍<br>Search</div>
+    <div onclick="location.href='settings.html'">⚙️<br>Settings</div>
+  </nav>
 </div>
 
-<script src="js/layout.js?v=7818411"></script>
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=7818411"></script>
-<script src="js/search_glass.js?v=7818411"></script>
-<script src="js/highlight_copy.js?v=7818411"></script>
-<script src="js/bible.js?v=7818411"></script>
-
+<script src="js/hbvs_engine.js?v=78224"></script>
+<script src="js/hbvs_worker.js?v=782016"></script>
+<script src="js/search_glass.js?v=782016"></script>
+<script src="js/bible.js?v=78222"></script>
+<script src="js/highlight_copy.js?v=78223"></script>
 <script>
-document.addEventListener('DOMContentLoaded', ()=>{
-  function initTabs(){
-    if(window.SearchGlass) SearchGlass.init();
-    if(window.HighlightCopy) HighlightCopy.init();
-
-    const btnReader = document.getElementById('btn-tab-reader');
-    const btnSearch = document.getElementById('btn-tab-search');
-    const btnViewToggle = document.getElementById('btn-view-toggle');
-    const readerTab = document.getElementById('readerTab');
-    const searchTab = document.getElementById('searchTab');
-    const settingsTab = document.getElementById('settingsTab');
-
-    function setActiveTab(tab){
-      [readerTab, searchTab, settingsTab].forEach(t=>t && t.classList.add('hidden'));
-      [btnReader, btnSearch].forEach(b=> b && (b.style.opacity = '0.5'));
-      if(tab === 'reader'){ readerTab && readerTab.classList.remove('hidden'); btnReader && (btnReader.style.opacity = '1'); }
-      if(tab === 'search'){ searchTab && searchTab.classList.remove('hidden'); btnSearch && (btnSearch.style.opacity = '1'); }
-      if(tab === 'settings'){ settingsTab && settingsTab.classList.remove('hidden'); }
-    }
-
-    if(btnViewToggle) btnViewToggle.onclick = () => {
-      if(window.bibleApp && typeof window.bibleApp.toggleView === 'function'){
-        window.bibleApp.toggleView();
-      } else {
-        SafeNotify("bible.js not loaded yet", "warn");
+let lastScroll=0, isFullReader=false;
+function openSearchPage(){document.getElementById('search-page').style.display='block';document.getElementById('bible-nav-page').style.display='none';document.getElementById('searchInput').focus();}
+function closeSearchPage(){document.getElementById('search-page').style.display='none';document.getElementById('bible-nav-page').style.display='block';}
+function openReaderTab(){closeSearchPage();document.getElementById('readerView').scrollIntoView({behavior:'smooth'});}
+function toggleFullScreenReader(){
+  isFullReader=!isFullReader;
+  const nav=document.getElementById('bible-nav-page');
+  const tb=document.getElementById('topbar'), bb=document.getElementById('bottombar');
+  if(isFullReader){nav.style.display='none';document.getElementById('search-page').style.display='none';tb.classList.add('hidden-bar');bb.classList.add('hidden-bar');}
+  else{nav.style.display='block';tb.classList.remove('hidden-bar');bb.classList.remove('hidden-bar');}
+}
+window.addEventListener('scroll',()=>{
+  let st=window.pageYOffset; let tb=document.getElementById('topbar'), bb=document.getElementById('bottombar');
+  let readerTop=document.getElementById('readerView')?.offsetTop||1200;
+  if(st>readerTop-120){
+    if(st>lastScroll && st>400){tb.classList.add('hidden-bar');bb.classList.add('hidden-bar');}
+    else{tb.classList.remove('hidden-bar');bb.classList.remove('hidden-bar');}
+  } else {tb.classList.remove('hidden-bar');bb.classList.remove('hidden-bar');}
+  lastScroll=st;
+},{passive:true});
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('btn-view-toggle-main')?.addEventListener('click',()=>document.getElementById('bible-view-toggle')?.click());
+  // FIXED observer: store PCE raw for correct n counting
+  const obs=new MutationObserver(()=>{
+    document.querySelectorAll('#readerContent.verse-block, #reader-cards.verse-block').forEach(block=>{
+      let bEl=block.querySelector('b');
+      let bText=bEl?.innerText?.trim()||"";
+      // Parse Gen 22:2 etc
+      let m=bText.match(/([A-Za-z0-9]+)\s*0*([0-9]+):0*([0-9]+)/);
+      if(m){
+        if(!block.getAttribute('data-bk')) block.setAttribute('data-bk', m[1]);
+        if(!block.getAttribute('data-chap')) block.setAttribute('data-chap', m[2]);
+        if(!block.getAttribute('data-verse')) block.setAttribute('data-verse', m[3]);
+        block.setAttribute('data-ref', `${m[1]}${m[2]}:${m[3]}`);
+        // bkorder for Genesis=1
+        if(!block.getAttribute('data-bkorder')){
+          if(typeof bookMap!=='undefined'){
+            let key=Object.keys(bookMap).find(k=>k.toLowerCase()===m[1].toLowerCase());
+            if(key) block.setAttribute('data-bkorder', bookMap[key][0]);
+            else block.setAttribute('data-bkorder', '1');
+          } else {
+            block.setAttribute('data-bkorder', '1');
+          }
+        }
       }
-    }
-
-    if(btnReader) btnReader.onclick = () => setActiveTab('reader');
-    if(btnSearch) btnSearch.onclick = () => setActiveTab('search');
-    setActiveTab('reader');
-
-    if(localStorage.getItem('hbvs_openSearchInput')==='true'){
-      localStorage.removeItem('hbvs_openSearchInput');
-      setActiveTab('search');
-      setTimeout(()=> document.getElementById('searchInput')?.focus(), 300);
-    }
-
-    const splash=document.getElementById('splash');
-    const app=document.getElementById('app');
-    if(splash) splash.style.display='none';
-    if(app) app.classList.remove('hidden');
-  }
-
-  if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
-    setTimeout(initTabs, 200);
-  } else {
-    initTabs();
-  }
+      // Store PCE raw (AKJV) separately for counting of's
+      if(typeof getFullVerseFromDB==='function'){
+        try{
+          let bkorder=parseInt(block.getAttribute('data-bkorder')||'1');
+          let chap=parseInt(block.getAttribute('data-chap')||'0');
+          let verse=parseInt(block.getAttribute('data-verse')||'0');
+          if(chap&&verse){
+            let pceRaw=getFullVerseFromDB(bkorder,chap,verse);
+            if(pceRaw) block.setAttribute('data-raw-pce', pceRaw);
+          }
+        }catch(e){}
+      }
+      if(!block.getAttribute('data-raw')){
+        let raw=block.innerText.replace(bText,'').trim();
+        block.setAttribute('data-raw', raw);
+      }
+    });
+  });
+  const rc=document.getElementById('readerContent');
+  const rcds=document.getElementById('reader-cards');
+  if(rc) obs.observe(rc, {childList:true, subtree:true});
+  if(rcds) obs.observe(rcds, {childList:true, subtree:true});
 });
 </script>
-<script src="js/epilogue.js?v=7818411"></script>
-
 </body>
 </html>
