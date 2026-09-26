@@ -3,141 +3,240 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'">
-<title>HBVS Settings v7.8.204 SECURE-WASM</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'">
+<title>HBVS Settings v7.8.208 - Headings Unescaped</title>
 <script>
 window.SafeNotify = window.SafeNotify || function(msg){const t=document.getElementById('hbvs-toast')||document.createElement('div');t.id='hbvs-toast';t.textContent=msg;if(!document.getElementById('hbvs-toast'))document.body.appendChild(t);t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);};
 window.HBVS_SECURE={MAX_SIZE:512*1024,validateFile:function(f){if(!f)throw"No file";if(f.size>this.MAX_SIZE)throw"File >512KB";if(!f.name.toLowerCase().endsWith('.txt'))throw"Only.txt";return true;},sanitize:function(t){let c=t.replace(/<[^>]*>/g,'');c=c.replace(/javascript:/gi,'[blocked]');c=c.replace(/onerror\s*=|onload\s*=|<script/i,'[blocked]');if(/DROP\s+TABLE|DELETE\s+FROM\s+Verses|INSERT\s+INTO\s+Verses/i.test(c))throw"SQL blocked";return c.substring(0,500000);},validateStructure:function(a){if(!Array.isArray(a))throw"Invalid JSON";if(a.length>5000)throw"Too many";a.forEach(v=>{if(typeof v.CHAPTER!=='number'||typeof v.VERSE!=='number')throw"Bad";});return true;}};
 </script>
-<link rel="stylesheet" href="css/global.css?v=78149"><link rel="stylesheet" href="css/style.css?v=78149"><link rel="stylesheet" href="css/preface.css?v=78149">
+<link rel="stylesheet" href="css/global.css?v=78208"><link rel="stylesheet" href="css/style.css?v=78208"><link rel="stylesheet" href="css/preface.css?v=78208">
+<link rel="stylesheet" href="css/katex.min.css?v=78208">
+<script src="js/marked.min.js?v=78208"></script>
+<script src="js/katex.min.js?v=78208"></script>
+<script src="js/auto-render.min.js?v=78208"></script>
 <style>
-.card{max-width:820px;margin:1.2rem auto;padding:1.2rem 2.2rem;border:2px solid var(--border);background:var(--card);border-radius:12px;}
-.section-label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px 0;}
-.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
-.setting-row label{font-weight:700;}
+:root{ --child-rose-bg:#FFF5F7; --child-rose-card:#FFFFFF; --child-amber-bg:#FFFBEB; --child-sand-bg:#FDF6E3; }
+html[data-theme="rose"]{ --bg:#FFF5F7; --bg2:#FFE4E8; --card:#FFFFFF; --border:#FFC2CC; --text:#5A2A32; --accent:#C94C5E; --muted:#9A6A73; }
+html[data-theme="amber"]{ --bg:#FFFBEB; --bg2:#FEF3C7; --card:#FFFFFF; --border:#FCD34D; --text:#78350F; --accent:#D97706; --muted:#B45309; }
+html[data-theme="sand"]{ --bg:#FDF6E3; --bg2:#F5E6C8; --card:#FFFEF7; --border:#E7C98A; --text:#5C4A2A; --accent:#A67C2E; --muted:#8B7355; }
+html[data-theme="child-warm"]{ --bg:#FFF5F7; --bg2:#FFFBEB; --card:#FFFEF7; --border:#F8BBAA; --text:#5A2A32; --accent:#E76F51; --muted:#9A6A73; }
+html[data-theme="parchment"]{ --bg:#FAF6ED; --bg2:#F0E6D3; --card:#FFFDFA; --border:#D4C4A8; --text:#4A3C2A; --accent:#8B5A2B; --muted:#8B7D6B; }
+.card{max-width:860px;margin:1.2rem auto;padding:1.2rem 2.2rem;border:2px solid var(--border);background:var(--card);border-radius:12px;}
+.section-label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:22px 0 10px 0;border-top:1px solid var(--border);padding-top:14px;}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:12px;}
+.setting-row label{font-weight:700;flex:1;}
 .setting-row select,.setting-row input[type="range"],.setting-row input[type="file"]{padding:8px;border-radius:6px;border:2px solid var(--border);background:var(--bg2);color:var(--text);min-width:160px;}
 .btn-export{padding:10px 16px;border:2px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;cursor:pointer;font-weight:800;margin-top:10px;}
 .btn-secondary{background:var(--bg2);color:var(--text);border-color:var(--border);}
 #epilogue-textarea{width:100%;min-height:260px;padding:12px;border:2px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:monospace;font-size:13px;}
 #epilogue-preview{margin-top:15px;border:2px solid var(--border);border-radius:8px;padding:12px;max-height:450px;overflow:auto;background:var(--bg);}
 .spec-box{background:var(--bg2);border:2px dashed var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:12.5px;line-height:1.5;margin:10px 0;}
-.spec-box b{color:var(--accent);} details>summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--accent);}
+.spec-box b{color:var(--accent);} details>summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--accent);padding:8px 0;}
 .security-badge{display:inline-block;background:#0a7;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:800;margin-left:8px;}
 .warranty-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;}
 .warranty-box{background:var(--card);max-width:640px;max-height:85vh;overflow:auto;border-radius:14px;padding:22px;border:3px solid var(--accent);}
 .warranty-scroll{border:2px solid var(--border);border-radius:8px;padding:12px;height:260px;overflow:auto;background:var(--bg);font-size:13px;line-height:1.6;text-align:justify;}
 .doc-card{border:2px solid var(--border);border-radius:10px;padding:12px;margin:10px 0;background:var(--bg);}
-.doc-card h4{margin:0 0 6px 0;color:var(--accent);} kbd{background:var(--bg2);border:1px solid var(--border);border-bottom-width:2px;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;}
-.md-view{white-space:pre-wrap;font-family:monospace;font-size:12.5px;line-height:1.6;max-height:500px;overflow:auto;background:var(--bg);border:2px solid var(--border);border-radius:8px;padding:12px;}
+.doc-card h4{margin:0 0 6px 0;color:var(--accent);}
+.md-view{white-space:normal!important;font-family:Georgia,serif;font-size:14.5px;line-height:1.75;max-height:700px;overflow:auto;background:var(--bg);border:2px solid var(--border);border-radius:8px;padding:0;}
+.md-body{padding:16px;}
+html body #app.md-body ul,.md-body ul{list-style:disc outside!important;margin:14px 0 14px 32px!important;padding-left:28px!important;display:block!important;}
+html body #app.md-body ol,.md-body ol{list-style:decimal outside!important;margin:14px 0 14px 32px!important;padding-left:28px!important;display:block!important;}
+html body #app.md-body li,.md-body li{display:list-item!important;list-style:inherit!important;margin:6px 0!important;padding-left:4px!important;white-space:normal!important;}
+.md-body h1{font-size:1.9em!important;font-weight:900!important;color:#800020!important;border-bottom:3px solid #800020!important;padding-bottom:6px!important;margin:24px 0 12px 0!important;line-height:1.2!important;display:block!important;}
+.md-body h2{font-size:1.55em!important;font-weight:800!important;color:var(--accent)!important;border-bottom:2px solid var(--border)!important;padding-bottom:4px!important;margin:22px 0 10px 0!important;display:block!important;}
+.md-body h3{font-size:1.28em!important;font-weight:700!important;color:#800020!important;margin:18px 0 8px 0!important;display:block!important;background:var(--bg2);padding:6px 10px;border-left:4px solid #800020;border-radius:4px;}
+.md-body h4{font-size:1.12em!important;font-weight:700!important;font-style:italic!important;margin:16px 0 6px 0!important;display:block!important;}
+.md-body h5{font-size:1em!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:1px!important;color:var(--accent)!important;margin:14px 0 6px 0!important;display:block!important;}
+.md-body h6{font-size:0.9em!important;font-weight:700!important;color:var(--muted)!important;margin:12px 0 4px 0!important;display:block!important;}
+.md-body p{margin:10px 0;}
+.md-header{padding:12px 14px 8px 14px;background:var(--card);border-bottom:3px solid #800020;border-radius:8px 8px 0 0;text-align:center;cursor:pointer;}
+.about-footer{margin-top:30px;text-align:center;padding:20px;border-top:3px solid var(--accent);color:var(--muted);font-size:13px;line-height:1.6;}
+.about-footer b{color:var(--text);}
+.switch{position:relative;display:inline-block;width:52px;height:28px;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:28px;transition:.3s;}
+.slider:before{position:absolute;content:"";height:20px;width:20px;left:4px;bottom:4px;background:white;border-radius:50%;transition:.3s;}
+input:checked +.slider{background:var(--accent);}
+input:checked +.slider:before{transform:translateX(24px);}
+.engine-desc{font-size:11px;color:var(--muted);font-weight:400;margin-top:4px;line-height:1.4;}
 </style>
 </head>
 <body>
 <div id="warranty-overlay" class="warranty-overlay" style="display:none;">
   <div class="warranty-box">
-    <h2>HBVS TOOLKIT v7.8.204 — No Warranty Agreement</h2>
-    <div class="warranty-scroll" id="warranty-full-text">
-<b>1. NO WARRANTY:</b> HBVS MathKJV Toolkit is provided "AS IS" without warranty.<br><br>
-<b>2. BIBLE TEXT:</b> KJV public domain. Math mapping (m,i,n,j) is interpretive aid.<br><br>
-<b>3. NO LIABILITY:</b> Author not liable for damages.<br><br>
-<b>4. READ-ONLY DB:</b> C:\HBVS\hbvs_data_v2.db is read-only. Epilogue is localStorage only.<br><br>
-<b>5. SECURE CONTEXT:</b> No tracking. No data leaves device.<br><br>
-<b>6. ACCEPTANCE:</b> By Accepting you agree.
-    </div>
-    <div style="display:flex;gap:10px;margin-top:12px;"><input type="checkbox" id="warranty-check"><label for="warranty-check" style="font-weight:700;">I accept No Warranty Agreement</label></div>
-    <button class="btn-export" id="btn-accept-warranty" disabled style="width:100%;margin-top:10px;">✓ I Accept — Continue</button>
+    <h2>HBVS TOOLKIT v7.8.208 — No Warranty</h2>
+    <div class="warranty-scroll"><b>1. NO WARRANTY:</b> AS IS.<br><br><b>2. BIBLE:</b> KJV public domain.<br><br><b>3. NO LIABILITY.</b><br><br><b>4. DB:</b> hbvs_data_v2.db read-only.<br><br><b>5. SECURE.</b><br><br><b>6. ACCEPTANCE:</b> By Accepting you agree.</div>
+    <div style="display:flex;gap:10px;margin-top:12px;"><input type="checkbox" id="warranty-check"><label for="warranty-check" style="font-weight:700;">I accept</label></div>
+    <button class="btn-export" id="btn-accept-warranty" disabled style="width:100%;margin-top:10px;">✓ I Accept</button>
   </div>
 </div>
 <div id="app">
-<header id="topbar"><div class="topbar-row1"><a href="index.html" style="font-size:24px;text-decoration:none;color:var(--accent);">←</a><div class="logo-title"><div class="app-title">HBVS SETTINGS v7.8.204 <span class="security-badge">SECURE-WASM</span></div></div></div></header>
+<header id="topbar"><div class="topbar-row1"><a href="index.html" style="font-size:24px;text-decoration:none;color:var(--accent);">←</a><div class="logo-title"><div class="app-title">HBVS SETTINGS v7.8.208 <span class="security-badge">HEADINGS FIXED</span></div></div></div></header>
 <main>
 <div class="card">
 <div class="section-label">APPEARANCE</div>
-<div class="setting-row"><label>Theme</label><select id="theme-select"></select></div>
+<div class="setting-row"><label>Theme (Home Page Only)</label><select id="theme-select"></select></div>
 <div class="setting-row"><label>Font Family</label><select id="font-select"></select></div>
 <div class="setting-row"><label>Font Size: <span id="font-size-label">16</span>px</label><input type="range" id="font-size" min="12" max="32" value="16"></div>
-
+<div class="section-label">ENGINE MODE</div>
+<div class="setting-row"><label>Clean / Verbose Engine<div class="engine-desc">Clean hides [m=,i=,n=,j=] on Cards & Reader</div></label><div style="display:flex;align-items:center;gap:10px;"><span id="engine-label" style="font-weight:800;font-size:12px;">CLEAN</span><label class="switch"><input type="checkbox" id="engine-toggle"><span class="slider"></span></label></div></div>
 <div class="section-label">LEGAL</div>
 <div class="setting-row"><label>No Warranty Accepted</label><span id="warranty-status">Checking...</span></div>
 <button class="btn-export btn-secondary" id="btn-view-warranty">📜 View Agreement</button>
-
-<div class="section-label">AUDIO PLAYBACK</div>
-<div class="setting-row"><label>Enable TTS Audio</label><input type="checkbox" id="audio-toggle"></div>
+<div class="section-label">AUDIO</div>
+<div class="setting-row"><label>Enable TTS</label><input type="checkbox" id="audio-toggle"></div>
 <div class="setting-row"><label>Voice</label><select id="audio-voice"><option value="system">System Default</option><option value="male">Male</option><option value="female">Female</option></select></div>
 <div class="setting-row"><label>Speed: <span id="audio-speed-label">1.0</span>x</label><input type="range" id="audio-speed" min="0.5" max="2.0" step="0.1" value="1.0"></div>
-<div class="setting-row"><label>Auto-play Chapter</label><input type="checkbox" id="audio-autoplay"></div>
+<div class="setting-row"><label>Auto-play</label><input type="checkbox" id="audio-autoplay"></div>
 <div class="setting-row"><label>Highlight While Speaking</label><input type="checkbox" id="audio-highlight"></div>
-
-<div class="section-label">APP DOCUMENTATION — Full Render v7.8.204 — DB in Root</div>
-
-<details open><summary>📘 FULL README.md (150 lines) — Rendered from C:\HBVS\README.md</summary>
-<div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-readme">🔄 Load README.md</button><div id="readme-render" class="md-view">Click Load to render full README.md from root. File location: C:\HBVS\README.md — DB is C:\HBVS\hbvs_data_v2.db in root, not in db\</div></div>
+<div class="section-label">DOCUMENTATION</div>
+<details><summary>📘 README.md</summary><div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-readme">🔄 Load README.md</button><div id="readme-render" class="md-view">Click Load.</div></div></details>
+<details><summary>📖 USER_MANUAL.md</summary><div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-manual">🔄 Load USER_MANUAL.md</button><div id="manual-render" class="md-view">Click Load.</div></div></details>
+<details><summary>🔣 MATHKJV_HERMENEUTICS.md</summary><div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-herm">🔄 Load MATHKJV_HERMENEUTICS.md</button><div id="herm-render" class="md-view">Click Load.</div></div></details>
+<details><summary>📂 COURSES — StudyHub Seeds (5 files) — click to open</summary>
+<div class="doc-card">
+<button class="btn-export btn-secondary" id="btn-load-mind">📘 The_Mind_Of_Christ.md</button><div id="mind-render" class="md-view" style="margin-bottom:10px">Click Load.</div>
+<button class="btn-export btn-secondary" id="btn-load-arim">📘 Arimathaea.md</button><div id="arim-render" class="md-view" style="margin-bottom:10px">Click Load.</div>
+<button class="btn-export btn-secondary" id="btn-load-time">📘 Process_Of_Time.md</button><div id="time-render" class="md-view" style="margin-bottom:10px">Click Load.</div>
+<button class="btn-export btn-secondary" id="btn-load-scrip">📘 Scrip.md</button><div id="scrip-render" class="md-view" style="margin-bottom:10px">Click Load.</div>
+<button class="btn-export btn-secondary" id="btn-load-reasons">📘 Your_Strong_Reasons.md</button><div id="reasons-render" class="md-view">Click Load.</div>
+</div>
 </details>
-
-<details open><summary>📖 FULL USER_MANUAL.md (300 lines) — Rendered from C:\HBVS\docs\USER_MANUAL.md</summary>
-<div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-manual">🔄 Load USER_MANUAL.md</button><div id="manual-render" class="md-view">Click Load to render full USER_MANUAL.md. Location: C:\HBVS\docs\USER_MANUAL.md</div></div>
-</details>
-
-<details open><summary>🔣 FULL MATHKJV_HERMENEUTICS.md — Rendered from C:\HBVS\docs\MATHKJV_HERMENEUTICS.md</summary>
-<div class="doc-card"><button class="btn-export btn-secondary" id="btn-load-herm">🔄 Load MATHKJV_HERMENEUTICS.md</button><div id="herm-render" class="md-view">Click Load to render MathKJV hermeneutics. Location: C:\HBVS\docs\MATHKJV_HERMENEUTICS.md</div></div>
-</details>
-
-<div class="section-label">EPILOGUE BOOK 67 - DYNAMIC + 5 Security + WASM CSP Fix</div>
-<details open><summary>📘 EPILOGUE FORMAT SPEC + SECURITY</summary><div class="spec-box"><b>DB:</b> C:\HBVS\hbvs_data_v2.db (root, read-only)<br><b>Security:</b> <512KB,.txt only, HTML stripped, SQL blocked<br><b>#</b>=Book Title<br><b>##</b>=Chapter<br><b>###</b>=Sub-Title<br><b>Blank</b>=New Verse<br><b>¶</b>=Force Paragraph</div></details>
-<div class="setting-row"><label>Show Epilogue Book</label><input type="checkbox" id="epilogue-toggle"></div>
+<details><summary>📘 EPILOGUE FORMAT SPEC</summary><div class="spec-box"><b>#</b>=Book Title<br><b>##</b>=Chapter<br><b>###</b>=Sub-Title<br><b>Blank</b>=New Verse<br><b>¶</b>=Force Paragraph<br><b>Omer:</b> Preface+Epilogue ≤ 79084</div></details>
+<div class="section-label">EPILOGUE — 67th Book</div>
+<div class="setting-row"><label>Show Epilogue Book in Grid</label><input type="checkbox" id="epilogue-toggle"></div>
 <div class="setting-row"><label>Import *.txt (SECURE)</label><input type="file" id="epilogue-file" accept=".txt"></div>
 <textarea id="epilogue-textarea" placeholder="# BOOK TITLE
 ## CHAPTER 1
-Your text here..."></textarea>
+Your text..."></textarea>
 <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
 <button class="btn-export" id="btn-save-epilogue">💾 Save Epilogue</button>
 <button class="btn-export btn-secondary" id="btn-preview-epilogue">👁️ Preview</button>
-<button class="btn-export btn-secondary" id="btn-export-epilogue">📤 Export Epilogue.json</button>
+<button class="btn-export btn-secondary" id="btn-export-epilogue">📤 Export</button>
 <button class="btn-export btn-secondary" id="btn-clear-epilogue">🗑️ Clear</button>
 </div>
 <div id="epilogue-status" style="margin-top:8px;font-size:12px;font-weight:700;"></div>
-<div class="section-label">Live Preview (Preface S3/S4)</div>
+<div class="section-label">Live Preview</div>
 <div id="epilogue-preview">No Epilogue loaded.</div>
+<div class="about-footer"><b>About this App</b><br>HBVS MathKJV Toolkit — Holy Bible Vector Space<br>© Tortpotlord 2028 Intellibible®<br><span style="font-size:11px;">v7.8.208 Headings Unescaped www</span></div>
 </div>
 </main>
 </div>
-<script src="js/layout.js?v=78149"></script><script src="js/epilogue.js?v=78149"></script>
+<script src="js/layout.js?v=78208"></script><script src="js/epilogue.js?v=78208"></script>
 <script>
-console.log("HBVS SETTINGS v7.8.204 LOADED — DB root: hbvs_data_v2.db");
-const THEMES=[{id:'light',name:'Light'},{id:'dark',name:'Dark'},{id:'sepia',name:'Sepia'},{id:'parchment',name:'Parchment'},{id:'amber',name:'Amber'},{id:'sand',name:'Sand'},{id:'forest',name:'Forest'},{id:'ocean',name:'Ocean'},{id:'midnight',name:'Midnight'},{id:'rose',name:'Rose'}];
+console.log("HBVS SETTINGS v7.8.208 Headings Unescaped + Collapsed Courses");
+const THEMES=[
+{id:'light',name:'Light - Warm Eternal'},
+{id:'child-warm',name:'Child-Warm (Rose+Amber+Sand) - Recommended'},
+{id:'rose',name:'Rose Warm - #1'},
+{id:'amber',name:'Amber - Kids Warm - #2'},
+{id:'sand',name:'Sand - Kids - #3'},
+{id:'parchment',name:'Parchment Warm'},
+{id:'sepia',name:'Sepia'},
+{id:'dark',name:'Dark'},
+{id:'forest',name:'Forest'},{id:'ocean',name:'Ocean'},{id:'midnight',name:'Midnight'}
+];
 const FONTS=[{id:'serif',name:'Serif'},{id:'sans',name:'Sans'},{id:'mono',name:'Mono'},{id:'georgia',name:'Georgia'},{id:'garamond',name:'Garamond'},{id:'lora',name:'Lora'},{id:'merriweather',name:'Merriweather'},{id:'roboto',name:'Roboto'},{id:'open-sans',name:'Open Sans'},{id:'cormorant',name:'Cormorant Garamond'}];
 const SETTINGS={theme:localStorage.getItem('hbvs_theme')||'light',font:localStorage.getItem('hbvs_font')||'serif',fontSize:localStorage.getItem('hbvs_fontSize')||'16',epilogueOn:localStorage.getItem('hbvs_epilogueOn')==='true'};
-function applySettings(){document.documentElement.setAttribute('data-theme',SETTINGS.theme);document.documentElement.setAttribute('data-font',SETTINGS.font);document.documentElement.style.setProperty('--font-size',SETTINGS.fontSize+'px');}
-function txtToEpilogueJSON(rawText){rawText=window.HBVS_SECURE.sanitize(rawText);if(window.parseRawEpilogue)return window.parseRawEpilogue(rawText);const lines=rawText.split(/\r?\n/);let result=[],chapter=1,verse=0;let curTitle="PREAMBLE";function pushVerse(text,isTitleType){if(!text.trim())return;text.split('¶').forEach(part=>{part=part.trim().replace(/\s+/g,' ').trim();if(!part)return;result.push({"BOOK":"EPILOGUE","BN":"EPI","CHAPTER":chapter,"VERSE":verse,"BKORDER":67,"BKCHAPVERSE":`EPI${chapter}:${verse}`,"WORDCOUNT":part.split(/\s+/).length,"text":part,"type":isTitleType||"verse","chapterTitle":curTitle});verse++;});}
+let ENGINE_MODE = localStorage.getItem('hbvs_engineMode') || 'clean';
+function applySettings(){ document.documentElement.setAttribute('data-theme','light'); document.documentElement.setAttribute('data-font',SETTINGS.font); document.documentElement.style.setProperty('--font-size',SETTINGS.fontSize+'px'); }
+function txtToEpilogueJSON(rawText){rawText=window.HBVS_SECURE.sanitize(rawText);if(window.parseRawEpilogue)return window.parseRawEpilogue(rawText);const lines=rawText.split(/\r?\n/);let result=[],chapter=1,verse=0;let curTitle="PREAMBLE";function pushVerse(text,isTitleType){if(!text.trim())return;text.split('¶').forEach(part=>{part=part.trim().replace(/\s+/g,' ').trim();if(!part)return;result.push({"BOOK":"EPILOGUE","BN":"EPI","BOOKS":"EPI","CHAPTER":chapter,"VERSE":verse,"BKORDER":67,"BKCHAPVERSE":`EPI${chapter}:${verse}`,"WORDCOUNT":part.split(/\s+/).length,"text":part,"type":isTitleType||"verse","chapterTitle":curTitle});verse++;});}
 for(let rawLine of lines){let line=rawLine.trim();if(!line){verse++;continue;}if(line.startsWith('# ')){pushVerse(line.replace(/^#\s+/,'').trim(),'bookTitle');continue;}if(line.startsWith('## ')){chapter++;verse=0;curTitle=line.replace(/^##\s+/,'').trim().substring(0,200);pushVerse(curTitle,'chapter');continue;}if(line.startsWith('### ')){pushVerse(line.replace(/^###\s+/,'').trim(),'subtitle');continue;}pushVerse(line,'verse');}window.HBVS_SECURE.validateStructure(result);return result;}
 function downloadJSON(f,d){const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);}
 function renderPreview(){const j=localStorage.getItem('hbvs_epilogueJSON');if(!j){document.getElementById('epilogue-preview').innerHTML='No Epilogue loaded.';return;}const verses=JSON.parse(j);let html='<div class="preface-reader">';let cur=-1;verses.forEach(v=>{if(v.CHAPTER!==cur){cur=v.CHAPTER;if(v.type!=='bookTitle')html+=`<div style="font-weight:900;color:var(--accent);margin-top:18px;border-bottom:2px solid var(--border);">${v.chapterTitle}</div>`;}if(v.type==='bookTitle')html+=`<div style="text-align:center;font-weight:900;font-size:1.3em;margin:14px 0;">${v.text}</div>`;else if(v.type==='chapter'){if(v.VERSE!==0)html+=`<div style="text-align:center;font-weight:800;margin:10px 0;">${v.text}</div>`;}else if(v.type==='subtitle')html+=`<div style="font-weight:bold;color:var(--accent);margin-top:12px;">${v.text}</div>`;else html+=`<div style="margin:8px 0;text-align:justify;">${v.text}</div>`;});html+='</div>';document.getElementById('epilogue-preview').innerHTML=html;}
-async function loadMD(url, elId){try{const r=await fetch(url+'?v='+Date.now());if(!r.ok)throw"Not found "+url;const t=await r.text();document.getElementById(elId).textContent=t;SafeNotify('Loaded '+url);}catch(e){document.getElementById(elId).textContent='Failed to load '+url+': '+e+'\n\nMake sure file exists at C:\\HBVS\\'+url;}}
-document.addEventListener('DOMContentLoaded',()=>{
+var MD_CACHE = {};
+function getAppHeaderHtml(){
+  var stamp = new Date().toLocaleString();
+  return '<div class="md-header" data-refresh="1" title="Double-click header to refresh LaTeX">'
+    + '<img src="assets/IGoToTheFather.png?v=78208" style="width:56px;height:56px;object-fit:contain;background:transparent;border:0;display:block;margin:0 auto 4px auto" onerror="this.style.display=\'none\'">'
+    + '<div style="font-weight:900;font-size:17px;line-height:1">Holy Bible Vector Space</div>'
+    + '<div style="font-style:italic;font-size:11px;opacity:.7">the sign of the Son of man</div>'
+    + '<div style="font-size:9px;opacity:.45;margin-top:2px">'+stamp+' — dblclick to refresh</div></div>';
+}
+function renderMDWithLatex(raw, elId){
+  var el = document.getElementById(elId);
+  if(!el) return;
+  // 1. Protect $$...$$ and $...$ first
+  var mathStore=[];
+  var protectedText=raw.replace(/\$\$([\s\S]+?)\$\$/g,function(m){var k='__MATHBLK'+mathStore.length+'__';mathStore.push({k:k,raw:m, isBlk:true, math:m.slice(2,-2)});return '\n\n'+k+'\n\n';}).replace(/\$([^\n$]{1,500}?)\$/g,function(m){if(m.indexOf('__MATHBLK')>=0) return m; var k='__MATHINL'+mathStore.length+'__';mathStore.push({k:k,raw:m, isBlk:false, math:m.slice(1,-1)});return k;});
+  // 2. Un-escape VSCode escapes
+  var cleaned=protectedText.replace(/\\#/g,'#').replace(/\\-/g,'-').replace(/\\\*/g,'*').replace(/\\>/g,'>').replace(/\\\[/g,'[').replace(/\\\]/g,']');
+  cleaned=cleaned.replace(/\r\n/g,'\n');
+  // 3. FORCE HEADINGS - manually convert # to <hN> BEFORE marked, so it always works
+  cleaned=cleaned.replace(/^[ \t]*#{1,6}[ \t]+.*$/gm, function(line){
+    var trimmed=line.trim();
+    var m=trimmed.match(/^(#{1,6})[ \t]+(.*)$/);
+    if(!m) return line;
+    var level=m[1].length;
+    var title=m[2].trim();
+    return '\n\n<H'+level+'>'+title+'</H'+level+'>\n\n';
+  });
+  // 4. Lists - ensure blank line before
+  cleaned=cleaned.replace(/([^\n])\n([-*+]\s)/g,'$1\n\n$2').replace(/([^\n])\n(\d+\.\s)/g,'$1\n\n$2');
+  // 5. Restore math placeholders for final render
+  mathStore.forEach(function(s){cleaned=cleaned.split(s.k).join(s.raw);});
+  var store=[];
+  var txt=cleaned.replace(/\$\$([\s\S]+?)\$\$/g,function(m,math){var k='\n\n__BLK'+store.length+'__\n\n';store.push({k:k.trim(),math:math,disp:true,raw:m});return k;}).replace(/\$([^\n$]{1,500}?)\$/g,function(m,math){if(math.indexOf('__BLK')>=0) return m; if(math.trim().length===0) return m; var k='__INL'+store.length+'__';store.push({k:k,math:math.trim(),disp:false,raw:m});return k;});
+  // 6. Preserve manual H tags from being escaped by marked
+  txt=txt.replace(/<H([1-6])>([\s\S]*?)<\/H\1>/g,function(_,lvl,inner){return '\n\n__HEAD'+lvl+'__'+inner+'__ENDHEAD__\n\n';});
+  if(window.marked){marked.setOptions({gfm:true,breaks:false,smartLists:true,smartypants:false,mangle:false,headerIds:false});}
+  var html=window.marked?marked.parse(txt):txt;
+  // Restore manual headings with styled HTML
+  html=html.replace(/__HEAD([1-6])__([\s\S]*?)__ENDHEAD__/g,function(_,lvl,inner){return '<h'+lvl+'>'+inner+'</h'+lvl+'>';});
+  // 7. KaTeX
+  for(var i=0;i<store.length;i++){var s=store[i];try{var r=katex.renderToString(s.math,{displayMode:s.disp,throwOnError:false,strict:false});html=html.split(s.k).join(r);}catch(e){html=html.split(s.k).join(s.raw);}}
+  html=html.replace(/<ul>/g,'<ul style="list-style:disc outside!important;margin:14px 0 14px 32px!important;padding-left:28px!important;display:block!important">').replace(/<ol>/g,'<ol style="list-style:decimal outside!important;margin:14px 0 14px 32px!important;padding-left:28px!important;display:block!important">').replace(/<li>/g,'<li style="display:list-item!important;list-style:inherit!important;margin:6px 0!important;padding-left:4px!important;white-space:normal!important">');
+  el.innerHTML=getAppHeaderHtml()+'<div class="md-body">'+html+'</div>';
+  var hdr=el.querySelector('.md-header');if(hdr){hdr.addEventListener('dblclick',function(){var c=MD_CACHE[elId];if(c){renderMDWithLatex(c.raw,elId);SafeNotify('LaTeX refreshed');}});}
+}
+async function loadMD(url, elId){
+  var el = document.getElementById(elId);
+  try{
+    var r = await fetch(url+'?v='+Date.now());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var raw = await r.text();
+    MD_CACHE[elId] = {raw:raw, url:url};
+    renderMDWithLatex(raw, elId);
+    SafeNotify('Loaded '+url);
+  }catch(e){
+    el.innerHTML = getAppHeaderHtml() + '<div class="md-body" style="color:#800020">Failed '+url+': '+e.message+'</div>';
+  }
+}
+const CANON_WORDS=790841; const OMER_MAX=79084;
+function tightCountLocal(t){return (t||"").replace(/<[^>]*>/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z0-9']/.test(w)).length;}
+function checkOmerLocal(epiWords){let preWords=parseInt(localStorage.getItem('hbvs_preface_words')||'12579',10);let total=preWords+epiWords;return {ok: total <= OMER_MAX, total, preWords, remaining: OMER_MAX-total, msg: `Preface ${preWords.toLocaleString()} + Epilogue ${epiWords.toLocaleString()} = ${total.toLocaleString()} ≤ ${OMER_MAX.toLocaleString()}` };}
+function injectGrid67(){if(!window.bookMap) window.bookMap={}; if(!window.bookMap['Epilogue']) window.bookMap['Epilogue']=[67,'Epi']; localStorage.setItem('hbvs_epilogue_in_grid','true'); localStorage.setItem('hbvs_canon_total_words',CANON_WORDS); window.dispatchEvent(new CustomEvent('hbvs-epilogue-updated')); if(window.renderBookGrid) try{window.renderBookGrid();}catch(e){} SafeNotify('Epilogue appended as 67th Book');}
+document.addEventListener('DOMContentLoaded',function(){
 applySettings();
-const accepted=localStorage.getItem('hbvs_warrantyAccepted')==='true';const overlay=document.getElementById('warranty-overlay');const statusEl=document.getElementById('warranty-status');const check=document.getElementById('warranty-check');const btnAccept=document.getElementById('btn-accept-warranty');
+var accepted=localStorage.getItem('hbvs_warrantyAccepted')==='true';var overlay=document.getElementById('warranty-overlay');var statusEl=document.getElementById('warranty-status');var check=document.getElementById('warranty-check');var btnAccept=document.getElementById('btn-accept-warranty');
 if(!accepted)overlay.style.display='flex';statusEl.textContent=accepted?'✅ Accepted '+(localStorage.getItem('hbvs_warrantyDate')||''):'❌ Not yet';
-check.onchange=()=>{btnAccept.disabled=!check.checked;};btnAccept.onclick=()=>{localStorage.setItem('hbvs_warrantyAccepted','true');localStorage.setItem('hbvs_warrantyDate',new Date().toISOString());overlay.style.display='none';statusEl.textContent='✅ Accepted';SafeNotify('Warranty accepted');};
-document.getElementById('btn-view-warranty').onclick=()=>{overlay.style.display='flex';};
-const at=document.getElementById('audio-toggle'),av=document.getElementById('audio-voice'),as=document.getElementById('audio-speed'),aa=document.getElementById('audio-autoplay'),ah=document.getElementById('audio-highlight'),sl=document.getElementById('audio-speed-label');
-if(at){at.checked=localStorage.getItem('hbvs_audio_enabled')==='true';av.value=localStorage.getItem('hbvs_audio_voice')||'system';as.value=localStorage.getItem('hbvs_audio_speed')||'1.0';aa.checked=localStorage.getItem('hbvs_audio_autoplay')==='true';ah.checked=localStorage.getItem('hbvs_audio_highlight')!=='false';sl.textContent=as.value;at.onchange=e=>localStorage.setItem('hbvs_audio_enabled',e.target.checked);av.onchange=e=>localStorage.setItem('hbvs_audio_voice',e.target.value);as.oninput=e=>{sl.textContent=e.target.value;localStorage.setItem('hbvs_audio_speed',e.target.value);};aa.onchange=e=>localStorage.setItem('hbvs_audio_autoplay',e.target.checked);ah.onchange=e=>localStorage.setItem('hbvs_audio_highlight',e.target.checked);}
-const ts=document.getElementById('theme-select');ts.innerHTML=THEMES.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');ts.value=SETTINGS.theme;ts.onchange=e=>{SETTINGS.theme=e.target.value;localStorage.setItem('hbvs_theme',e.target.value);applySettings();};
-const fs=document.getElementById('font-select');fs.innerHTML=FONTS.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');fs.value=SETTINGS.font;fs.onchange=e=>{SETTINGS.font=e.target.value;localStorage.setItem('hbvs_font',e.target.value);applySettings();};
-document.getElementById('font-size').value=SETTINGS.fontSize;document.getElementById('font-size-label').innerText=SETTINGS.fontSize;document.getElementById('font-size').oninput=e=>{SETTINGS.fontSize=e.target.value;document.getElementById('font-size-label').innerText=e.target.value;localStorage.setItem('hbvs_fontSize',e.target.value);applySettings();};
-document.getElementById('epilogue-toggle').checked=SETTINGS.epilogueOn;document.getElementById('epilogue-toggle').onchange=e=>{SETTINGS.epilogueOn=e.target.checked;localStorage.setItem('hbvs_epilogueOn',e.target.checked);};
-const ex=localStorage.getItem('epilogue_raw')||localStorage.getItem('hbvs_epilogueRaw');if(ex)document.getElementById('epilogue-textarea').value=ex;renderPreview();
-document.getElementById('epilogue-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{window.HBVS_SECURE.validateFile(file);const raw=await file.text();const s=window.HBVS_SECURE.sanitize(raw);document.getElementById('epilogue-textarea').value=s;const j=txtToEpilogueJSON(s);localStorage.setItem('hbvs_epilogueJSON',JSON.stringify(j));localStorage.setItem('epilogue_raw',s);localStorage.setItem('hbvs_epilogueRaw',s);document.getElementById('epilogue-status').innerText=`✅ ${j.length} verses`;renderPreview();}catch(err){document.getElementById('epilogue-status').innerText=`❌ ${err}`;e.target.value='';}};
-document.getElementById('btn-save-epilogue').onclick=()=>{try{const raw=document.getElementById('epilogue-textarea').value;if(!raw.trim())return;const s=window.HBVS_SECURE.sanitize(raw);const j=txtToEpilogueJSON(s);localStorage.setItem('hbvs_epilogueJSON',JSON.stringify(j));localStorage.setItem('epilogue_raw',s);localStorage.setItem('hbvs_epilogueRaw',s);localStorage.setItem('hbvs_epilogueOn','true');document.getElementById('epilogue-toggle').checked=true;document.getElementById('epilogue-status').innerText=`✅ ${j.length} verses`;renderPreview();}catch(err){document.getElementById('epilogue-status').innerText=`❌ ${err}`;}};
+check.onchange=function(){btnAccept.disabled=!check.checked;};btnAccept.onclick=function(){localStorage.setItem('hbvs_warrantyAccepted','true');localStorage.setItem('hbvs_warrantyDate',new Date().toISOString());overlay.style.display='none';statusEl.textContent='✅ Accepted';SafeNotify('Warranty accepted');};
+document.getElementById('btn-view-warranty').onclick=function(){overlay.style.display='flex';};
+var engToggle=document.getElementById('engine-toggle');var engLabel=document.getElementById('engine-label');
+function updateEngineUI(){ engToggle.checked = (ENGINE_MODE==='verbose'); engLabel.textContent = ENGINE_MODE.toUpperCase(); }
+updateEngineUI();
+engToggle.onchange=function(e){ ENGINE_MODE = e.target.checked? 'verbose' : 'clean'; localStorage.setItem('hbvs_engineMode',ENGINE_MODE); updateEngineUI(); SafeNotify('Engine: '+ENGINE_MODE.toUpperCase()); };
+var at=document.getElementById('audio-toggle'),av=document.getElementById('audio-voice'),as=document.getElementById('audio-speed'),aa=document.getElementById('audio-autoplay'),ah=document.getElementById('audio-highlight'),sl=document.getElementById('audio-speed-label');
+if(at){at.checked=localStorage.getItem('hbvs_audio_enabled')==='true';av.value=localStorage.getItem('hbvs_audio_voice')||'system';as.value=localStorage.getItem('hbvs_audio_speed')||'1.0';aa.checked=localStorage.getItem('hbvs_audio_autoplay')==='true';ah.checked=localStorage.getItem('hbvs_audio_highlight')!=='false';sl.textContent=as.value;at.onchange=function(e){localStorage.setItem('hbvs_audio_enabled',e.target.checked);};av.onchange=function(e){localStorage.setItem('hbvs_audio_voice',e.target.value);};as.oninput=function(e){sl.textContent=e.target.value;localStorage.setItem('hbvs_audio_speed',e.target.value);};aa.onchange=function(e){localStorage.setItem('hbvs_audio_autoplay',e.target.checked);};ah.onchange=function(e){localStorage.setItem('hbvs_audio_highlight',e.target.checked);};}
+var ts=document.getElementById('theme-select');ts.innerHTML=THEMES.map(function(t){return '<option value="'+t.id+'">'+t.name+'</option>';}).join('');ts.value=localStorage.getItem('hbvs_theme')||'light';ts.onchange=function(e){localStorage.setItem('hbvs_theme',e.target.value); SafeNotify('Theme '+e.target.value+' saved for Home Page. Settings stays Light.'); window.dispatchEvent(new CustomEvent('hbvs-theme-changed',{detail:e.target.value}));};
+var fs=document.getElementById('font-select');fs.innerHTML=FONTS.map(function(f){return '<option value="'+f.id+'">'+f.name+'</option>';}).join('');fs.value=SETTINGS.font;fs.onchange=function(e){SETTINGS.font=e.target.value;localStorage.setItem('hbvs_font',e.target.value);applySettings();};
+document.getElementById('font-size').value=SETTINGS.fontSize;document.getElementById('font-size-label').innerText=SETTINGS.fontSize;document.getElementById('font-size').oninput=function(e){SETTINGS.fontSize=e.target.value;document.getElementById('font-size-label').innerText=e.target.value;localStorage.setItem('hbvs_fontSize',e.target.value);applySettings();};
+document.getElementById('epilogue-toggle').checked=SETTINGS.epilogueOn;document.getElementById('epilogue-toggle').onchange=function(e){SETTINGS.epilogueOn=e.target.checked;localStorage.setItem('hbvs_epilogueOn',e.target.checked); if(e.target.checked) injectGrid67();};
+var ex=localStorage.getItem('epilogue_raw')||localStorage.getItem('hbvs_epilogueRaw');if(ex)document.getElementById('epilogue-textarea').value=ex;renderPreview();
+document.getElementById('epilogue-file').onchange=function(e){ var file=e.target.files[0]; if(!file) return; (async function(){ try{window.HBVS_SECURE.validateFile(file);var raw=await file.text();var s=window.HBVS_SECURE.sanitize(raw);document.getElementById('epilogue-textarea').value=s;var j=txtToEpilogueJSON(s);var epiWords=j.reduce(function(a,v){return a+(v.WORDCOUNT||tightCountLocal(v.text));},0);var omer=checkOmerLocal(epiWords);if(!omer.ok){document.getElementById('epilogue-status').innerText='❌ OMER BLOCK: '+omer.msg;return;}localStorage.setItem('hbvs_epilogueJSON',JSON.stringify(j));localStorage.setItem('epilogue_raw',s);localStorage.setItem('hbvs_epilogueRaw',s);localStorage.setItem('hbvs_epilogue_words',epiWords);localStorage.setItem('hbvs_canon_total_words',CANON_WORDS);localStorage.setItem('hbvs_epilogueOn','true');document.getElementById('epilogue-toggle').checked=true;injectGrid67();document.getElementById('epilogue-status').innerText='✅ '+j.length+' verses | '+omer.msg;renderPreview();}catch(err){document.getElementById('epilogue-status').innerText='❌ '+err;e.target.value='';} })(); };
+document.getElementById('btn-save-epilogue').onclick=function(){try{var raw=document.getElementById('epilogue-textarea').value;if(!raw.trim())return;var s=window.HBVS_SECURE.sanitize(raw);var j=txtToEpilogueJSON(s);var epiWords=j.reduce(function(a,v){return a+(v.WORDCOUNT||tightCountLocal(v.text));},0);var omer=checkOmerLocal(epiWords);if(!omer.ok){document.getElementById('epilogue-status').innerText='❌ BLOCKED: '+omer.msg;return;}localStorage.setItem('hbvs_epilogueJSON',JSON.stringify(j));localStorage.setItem('epilogue_raw',s);localStorage.setItem('hbvs_epilogueRaw',s);localStorage.setItem('hbvs_epilogue_words',epiWords);localStorage.setItem('hbvs_canon_total_words',CANON_WORDS);localStorage.setItem('hbvs_epilogueOn','true');localStorage.setItem('hbvs_epilogue_in_grid','true');document.getElementById('epilogue-toggle').checked=true;injectGrid67();document.getElementById('epilogue-status').innerText='✅ '+j.length+' verses | '+omer.msg;renderPreview();}catch(err){document.getElementById('epilogue-status').innerText='❌ '+err;}};
 document.getElementById('btn-preview-epilogue').onclick=renderPreview;
-document.getElementById('btn-export-epilogue').onclick=()=>{const j=localStorage.getItem('hbvs_epilogueJSON');if(!j)return;downloadJSON('Epilogue.json',JSON.parse(j));};
-document.getElementById('btn-clear-epilogue').onclick=()=>{if(!confirm('Clear Epilogue?'))return;localStorage.removeItem('hbvs_epilogueJSON');localStorage.removeItem('epilogue_raw');localStorage.removeItem('hbvs_epilogueRaw');document.getElementById('epilogue-textarea').value='';document.getElementById('epilogue-preview').innerHTML='Cleared';document.getElementById('epilogue-status').innerText='Cleared';};
-// MD LOADERS
-document.getElementById('btn-load-readme').onclick=()=>loadMD('README.md','readme-render');
-document.getElementById('btn-load-manual').onclick=()=>loadMD('docs/USER_MANUAL.md','manual-render');
-document.getElementById('btn-load-herm').onclick=()=>loadMD('docs/MATHKJV_HERMENEUTICS.md','herm-render');
-// auto-load all 3 on open
-loadMD('README.md','readme-render');
-loadMD('docs/USER_MANUAL.md','manual-render');
-loadMD('docs/MATHKJV_HERMENEUTICS.md','herm-render');
+document.getElementById('btn-export-epilogue').onclick=function(){var j=localStorage.getItem('hbvs_epilogueJSON');if(!j)return;downloadJSON('Epilogue.json',JSON.parse(j));};
+document.getElementById('btn-clear-epilogue').onclick=function(){if(!confirm('Clear Epilogue?'))return;localStorage.removeItem('hbvs_epilogueJSON');localStorage.removeItem('epilogue_raw');localStorage.removeItem('hbvs_epilogueRaw');localStorage.removeItem('hbvs_epilogue_in_grid');localStorage.removeItem('hbvs_epilogue_words');document.getElementById('epilogue-textarea').value='';document.getElementById('epilogue-preview').innerHTML='Cleared';document.getElementById('epilogue-status').innerText='Cleared';};
+document.getElementById('btn-load-readme').onclick=function(){loadMD('README.md','readme-render');};
+document.getElementById('btn-load-manual').onclick=function(){loadMD('docs/USER_MANUAL.md','manual-render');};
+document.getElementById('btn-load-herm').onclick=function(){loadMD('docs/MATHKJV_HERMENEUTICS.md','herm-render');};
+document.getElementById('btn-load-mind').onclick=function(){loadMD('docs/courses/The_Mind_Of_Christ.md','mind-render');};
+document.getElementById('btn-load-arim').onclick=function(){loadMD('docs/courses/Arimathaea.md','arim-render');};
+document.getElementById('btn-load-time').onclick=function(){loadMD('docs/courses/Process_Of_Time.md','time-render');};
+document.getElementById('btn-load-scrip').onclick=function(){loadMD('docs/courses/Scrip.md','scrip-render');};
+document.getElementById('btn-load-reasons').onclick=function(){loadMD('docs/courses/Your_Strong_Reasons.md','reasons-render');};
 });
 </script>
 </body>

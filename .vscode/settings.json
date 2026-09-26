@@ -1,0 +1,14 @@
+{
+  "editor.wordWrap": "on",
+  "editor.quickSuggestions": {
+    "other": false,
+    "comments": false,
+    "strings": false
+  },
+  "markdown.extension.syntax.escapedCharacters": [],
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": false,
+    "editor.suggestOnTriggerCharacters": false
+  }
+}
