@@ -1,0 +1,16 @@
+# Minimal Example: LaTeX + Footnotes
+
+Inline math example: Einstein said $E = mc^2$.[^einstein]
+
+Block math example:
+
+$$
+\int_0^\infty e^{-x} \, dx = 1
+$$
+
+Another inline formula: $\frac{a}{b} + \sqrt{x}$.[^formula]
+
+---
+
+[^einstein]: This footnote explains Einstein’s famous energy–mass equivalence.
+[^formula]: This footnote describes a simple fraction plus square root.

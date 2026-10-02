@@ -1,149 +1,100 @@
-/* HBVS PREFACE-READER.CSS v7.8.140 - PDF WYSIWYG + TITLE ISOLATION + EPI SPEC */
-:root{--burgundy:#8B0000;--tomato:#B22222;--gold:#B8860B;--accent:#2f2718;--font-serif:"Minion Pro","Times New Roman",serif;}
+/* HBVS PREFACE-READER v7.8.275 - HIGH CONTRAST BODY + PREFACE COLOR CHAPTER - BLACK BAR FIX */
+:root{--burgundy:#8B0000;--text:#000000;--font-serif:Georgia,"Times New Roman",serif;}
 
 .preface-reader,.epilogue-reader{
-  font-family:var(--font-serif);
-  font-size:11px;
-  line-height:1.85;
-  color:#2f2718;
-  background:#fdfaf3;
-  padding:24px 18px;
-  max-width:800px;
-  margin:0 auto;
-  display:block;
+  font-family: var(--font-serif);
+  font-size: 19px !important;
+  line-height: 1.9 !important;
+  color: #000000 !important;
+  background: #ffffff !important;
+  padding: 28px 22px !important;
+  max-width: 850px;
+  margin: 0 auto;
+  display: block;
+  border: 1px solid #d4c8a8 !important;
+  border-left: 4px solid #8B0000 !important;
+  letter-spacing: 0.2px;
+  font-weight: 400;
 }
 
-/* === S1 PAGE 1 - DEDICATION - CENTERED === */
-.s1-pdf{
-  background:white!important;
-  padding:60px 40px!important;
-  text-align:center!important;
-  max-width:700px!important;
-  margin:0 auto!important;
-  display:block!important;
-  width:100%!important;
-}
-.s1-h1{font-size:28px!important;font-weight:900!important;letter-spacing:3px!important;text-transform:uppercase!important;margin-bottom:18px!important;line-height:1.2!important;text-align:center!important;display:block;clear:both;}
-.s1-h2{font-size:16px!important;font-weight:400!important;margin-bottom:22px!important;text-align:center!important;display:block;clear:both;}
-.s1-h3{font-size:12px!important;line-height:1.6!important;margin-bottom:4px!important;text-align:center!important;display:block;}
-.s1-h4{font-size:11px!important;line-height:1.5!important;margin-top:12px!important;color:#555!important;text-align:center!important;display:block;}
+/* Hide line numbers */
+.preface-reader table th,.preface-reader .verse-num,.preface-reader .verse-block > b{display:none!important;}
+.preface-reader .verse-block{border:none!important;margin:0!important;}
 
-/* === S2 - TO THE MOST HIGH AND MIGHTY PRINCE - TITLE ISOLATED v140 === */
-.s2-pdf{padding:40px 60px!important;background:white!important;}
-.s2-title-block{
-  text-align:center!important;
-  margin:20px 0 36px 0!important;
-  padding-bottom:18px!important;
-  border-bottom:2px double var(--burgundy)!important;
-  display:block!important;
-  clear:both!important;
-  page-break-after:avoid;
-}
-.s2-l1{font-size:11px!important;letter-spacing:1.8px!important;text-transform:uppercase!important;margin-bottom:6px!important;display:block;}
-.s2-l2{font-size:32px!important;font-weight:700!important;letter-spacing:5px!important;line-height:1.1!important;margin:6px 0!important;text-transform:uppercase!important;display:block;color:var(--burgundy)!important;}
-.s2-l3{font-size:12px!important;font-style:italic!important;text-transform:uppercase!important;margin-bottom:18px!important;display:block;}
-.s2-l4,.s2-l5{font-size:11.5px!important;text-transform:uppercase!important;letter-spacing:1px!important;line-height:1.4!important;display:block;}
-.s2-l6,.s2-l7{font-size:11px!important;text-align:center!important;display:block;}
-.s2-l7{margin-bottom:30px!important;}
-.s2-para{
-  text-indent:1.5em!important;
-  text-align:justify!important;
-  margin:0 0 0.9em 0!important;
-  line-height:1.85!important;
-  display:block!important;
-  clear:both;
-}
-.s2-first-para{text-indent:0!important;}
-.s2-first-para::first-letter{
-  font-size:34px!important;
-  font-weight:700!important;
-  float:left!important;
-  margin:5px 7px 0 0!important;
-  line-height:0.75!important;
-  color:var(--burgundy)!important;
-}
+/* S1 - DEDICATION */
+.s1-pdf{background:#fff!important;padding:40px 20px!important;text-align:center!important;}
+.s1-h1{font-size:32px!important;font-weight:900!important;color:#000!important;line-height:1.3!important;}
+.s1-h2{font-size:22px!important;font-weight:700!important;color:#000!important;}
+.s1-h3,.s1-h4{font-size:18px!important;color:#111!important;}
 
-/* === S3 PAGES 5-15 - TITLE DRAG FIX === */
-.s3-pdf{padding:30px 50px!important;background:white!important;}
-.s3-header,.s3-title,.s3-chapter{
-  font-size:12px!important;
-  font-weight:700!important;
-  text-align:center!important;
-  text-transform:uppercase!important;
-  letter-spacing:2px!important;
-  margin:24px 0 16px 0!important;
-  display:block!important;
-  clear:both!important;
-  border-bottom:1px solid #d4c8a8!important;
-  padding-bottom:8px!important;
-  page-break-after:avoid;
-}
-.s3-title{font-size:11px!important;font-style:italic!important;text-align:center!important;margin:0 40px 20px 40px!important;line-height:1.6!important;text-transform:none!important;letter-spacing:normal!important;}
-.s3-para{
-  text-indent:1.5em!important;
-  text-align:justify!important;
-  margin:0 0 1em 0!important;
-  line-height:1.85!important;
-  display:block!important;
-}
+/* S2 - EPISTLE DEDICATORY */
+.s2-pdf{padding:30px 20px!important;background:#fff!important;}
+.s2-title-block{border-bottom:3px solid #8B0000!important;padding-bottom:16px!important;margin-bottom:24px!important;background:#fff8e7!important;padding:16px!important;}
+.s2-l1,.s2-l2,.s2-l3,.s2-l4,.s2-l5,.s2-l6,.s2-l7{color:#000!important;font-size:18px!important;}
+.s2-l2{font-size:28px!important;font-weight:900!important;color:#8B0000!important;}
+.s2-para{font-size:19px!important;color:#000!important;text-align:left!important;text-indent:0!important;margin:0 0 16px 0!important;line-height:1.9!important;}
+.s2-first-para::first-letter{font-size:38px!important;color:#8B0000!important;}
 
-/* === S4 PAGE 16 FINAL === */
-.s4-pdf{padding:30px 50px!important;background:white!important;}
-.s4-header-block{text-align:center!important;margin:0 0 24px 0!important;display:block;clear:both;border-bottom:1px solid #d4c8a8!important;padding-bottom:12px!important;}
-.s4-h0{font-size:12px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:2px!important;margin-bottom:4px!important;display:block;}
-.s4-h1{font-size:11px!important;margin-bottom:2px!important;display:block;}
-.s4-h2{font-size:11px!important;font-style:italic!important;margin-bottom:18px!important;display:block;}
-.s4-para{text-indent:1.5em!important;text-align:justify!important;margin:0 0 1em 0!important;line-height:1.85!important;display:block;clear:both;}
-.s4-verse{text-indent:0!important;text-align:left!important;margin:0 0 0.6em 0!important;display:block;}
+/* S3 - TRANSLATORS TO READER - SAME COLOR FOR EPILOGUE */
+.s3-pdf{padding:26px 20px!important;background:#fff!important;}
+.s3-header,.s3-title,.s3-chapter{color:#8B0000!important;font-size:20px!important;font-weight:900!important;border-bottom:1px solid #d4c8a8!important;padding-bottom:10px!important;margin:28px 0 16px 0!important;background:transparent!important;padding:12px 0!important;text-align:center!important;}
+.s3-para{font-size:19px!important;color:#000!important;text-align:left!important;text-indent:0!important;margin:0 0 16px 0!important;line-height:1.9!important;font-weight:400!important;}
 
-/* === EPILOGUE SPEC # ## ### - SYNCED === */
+/* S4 */
+.s4-pdf{padding:26px 20px!important;background:#fff!important;}
+.s4-header-block{border-bottom:2px solid #8B0000!important;background:#fff8e7!important;padding:12px!important;}
+.s4-h0,.s4-h1,.s4-h2{color:#8B0000!important;font-size:19px!important;}
+.s4-para,.s4-verse{font-size:19px!important;color:#000!important;text-align:left!important;margin:0 0 14px 0!important;line-height:1.9!important;}
+
+/* EPILOGUE - FIXED - SAME COLOUR AS PREFACE S3/S4 - NO BLACK BAR */
 .epilogue-reader .preface-header{
-  font-size:16px!important;font-weight:900!important;text-align:center!important;color:var(--burgundy)!important;
-  margin:22px 0 12px 0!important;display:block!important;clear:both!important;border-bottom:2px solid var(--burgundy)!important;padding-bottom:8px!important;
+  font-size:24px!important;
+  font-weight:900!important;
+  color:#8B0000!important;
+  background:transparent!important;
+  border:none!important;
+  border-bottom:2px double #8B0000!important;
+  padding:12px 0!important;
+  margin:30px 0 20px 0!important;
+  text-align:center!important;
 }
 .epilogue-reader .preface-chapter-header{
-  font-size:13px!important;font-weight:800!important;text-align:center!important;color:var(--burgundy)!important;
-  margin:20px 0 12px 0!important;display:block!important;clear:both!important;border-bottom:1px solid #d4c8a8!important;padding-bottom:6px!important;
-}
-.epilogue-reader .preface-article-header{font-weight:800!important;color:var(--burgundy)!important;margin:16px 0 8px 0!important;font-size:11.5px!important;display:block!important;}
-.epilogue-reader .preface-para{text-indent:1.5em!important;text-align:justify!important;margin:0 0 1em 0!important;line-height:1.85!important;display:block!important;}
-.epilogue-reader .preface-para:first-of-type{text-indent:0!important;}
-
-/* === COLOR FIX - MUST HAVE SPACE === */
-.hbvs-output.akjv.fw-eq,.hbvs-output.akjv.fw-arrow,.hbvs-output.akjv.fw-paren{color:inherit!important;font-weight:400!important;}
-.hbvs-output.mathp.fw-eq,.hbvs-output.mathp.fw-arrow,.hbvs-output.mathp.fw-paren{color:#8B0000!important;font-weight:700!important;}
-.hbvs-output.maths.fw-eq,.hbvs-output.maths.fw-arrow,.hbvs-output.maths.fw-paren{color:#B22222!important;font-weight:700!important;}
-.hbvs-output.matht.fw-eq,.hbvs-output.matht.fw-arrow,.hbvs-output.matht.fw-paren{color:#B8860B!important;font-weight:700!important;}
-.hbvs-output.superscript.fw-eq{color:#8B0000!important;font-weight:700!important;}
-.hbvs-output.superscript.fw-arrow{color:#483D8B!important;font-weight:700!important;}
-.hbvs-output.superscript.fw-paren{color:#2F4F4F!important;font-weight:700!important;}
-.para-end{color:#8B0000!important;font-weight:700!important;margin-left:3px;}
-
-/* === CRITICAL: PREVENT TITLE DRAG === */
-.preface-reader > div{page-break-inside:avoid;}
-.s2-title-block + .s2-para, .s3-title + .s3-para, .s3-header + .s3-para{margin-top:18px!important;}
-
-body::after{content:"CSS v78140 LOADED - TITLE FIXED";position:fixed;bottom:0;right:0;background:darkred;color:white;z-index:9999;padding:3px 8px;font-size:10px;}
-/* FIX 7.8.141 - through line must NOT have dropcap */
-.s2-l7 { 
-  text-align:center!important; 
-  font-style:italic!important; 
-  text-indent:0!important; 
-  display:block!important;
-}
-.s2-l7::first-letter { 
-  font-size:11px!important; 
-  float:none!important; 
-  font-weight:400!important; 
-  color:inherit!important; 
-  margin:0!important; 
-}
-.s2-first-para { text-indent:0!important; }
-.s2-first-para::first-letter {
-  font-size:34px!important;
-  font-weight:700!important;
-  float:left!important;
-  margin:5px 7px 0 0!important;
-  line-height:0.75!important;
+  font-size:21px!important;
+  font-weight:900!important;
   color:#8B0000!important;
+  background:transparent!important;
+  border:none!important;
+  border-bottom:1px solid #d4c8a8!important;
+  padding:12px 0!important;
+  margin:28px 0 16px 0!important;
+  text-align:center!important;
+  letter-spacing:1px!important;
+  text-transform:uppercase!important;
 }
+.epilogue-reader .preface-article-header{
+  font-size:19px!important;
+  font-weight:800!important;
+  color:#8B0000!important;
+  background:transparent!important;
+  border:none!important;
+  border-left:3px solid #8B000033!important;
+  padding:8px 0 8px 12px!important;
+  margin:22px 0 12px 0!important;
+}
+.epilogue-reader .preface-para{
+  font-size:19px!important;
+  color:#000!important;
+  line-height:1.9!important;
+  text-align:left!important;
+  text-indent:0!important;
+  margin:0 0 16px 0!important;
+  padding:4px 0!important;
+  border:none!important;
+  background:transparent!important;
+}
+.epilogue-reader .preface-para:last-child{border-bottom:none!important;}
+
+.verse-block[data-verse="0"]{font-size:16px!important;color:#000!important;opacity:1!important;background:#fff8e7!important;padding:8px!important;}
+.para-end{display:none!important;}
+
+#readerContent.preface-reader,#readerContent.epilogue-reader{max-width:100%!important;padding-left:16px!important;padding-right:16px!important;border-left:4px solid #8B0000!important;}

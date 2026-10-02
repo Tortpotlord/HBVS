@@ -1,181 +1,115 @@
-// js/epilogue.js - BOOK 67 DYNAMIC - v7.8.139 SPEC COMPLIANT
-// SPEC:
-// # = Book Title
-// ## = Chapter
-// ### = Sub-Title / Article
-// Blank line = New Verse
-// ¶ = Force New Paragraph
-// Body keeps original case
+// js/epilogue.js v78238.6 BASELINE - Grid 67 + Omer 79084 + Single Bottom Bar
+console.log("EPILOGUE v78238.6 - Grid 67 FIX");
 
-let EPILOGUE_VERSES = [];
+(function(){
+  const CANON_WORDS = 790841;
+  const OMER_MAX = 79084;
+  const tightCount = t => (t||"").replace(/<[^>]*>/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z0-9']/.test(w)).length;
 
-// === NEW SPEC PARSER ===
-function parseRawEpilogue(rawText) {
-  const verses = [];
-  let chapter = 1;
-  let verse = 0;
-  let currentChapterTitle = "INTRO";
-  let id = 1;
+  window.EPILOGUE_HTML = localStorage.getItem('hbvs_epilogue_html') || "";
 
-  function pushVerse(text, type) {
-    if (!text) return;
-    // Split by ¶ BEFORE saving
-    const parts = text.split('¶');
-    parts.forEach(part => {
-      part = part.trim().replace(/\s+/g, ' ').trim();
-      if (!part) return;
-      verses.push({
-        id: id++,
-        BOOKS: "EPILOGUE",
-        BOOK: "EPILOGUE",
-        BN: "EPI",
-        BKORDER: 67,
-        CHAPTER: chapter,
-        VERSE: verse++,
-        BKCHAPVERSE: `EPI${chapter}:${verse-1}`,
-        WORDCOUNT: part.split(/\s+/).length,
-        text: part, // preserve original case
-        type: type, // bookTitle | chapter | subtitle | verse
-        chapterTitle: currentChapterTitle
+  function checkOmer(epiWords){
+    let preWords = parseInt(localStorage.getItem('hbvs_preface_words')||'12579',10);
+    let total = preWords + epiWords;
+    return {ok: total <= OMER_MAX, total, preWords, remaining: OMER_MAX-total, msg:`Preface ${preWords} + Epilogue ${epiWords} = ${total} ≤ ${OMER_MAX}`};
+  }
+
+  function injectIntoBookMap(){
+    if(!window.bookMap) window.bookMap = {};
+    window.bookMap['Epilogue'] = [67, 'Epi'];
+    if(localStorage.getItem('hbvs_prefaceJSON') && !window.bookMap['Preface']){
+      window.bookMap['Preface'] = [0, 'Pre'];
+    }
+    localStorage.setItem('hbvs_epilogue_in_grid','true');
+    localStorage.setItem('hbvs_canon_total_words',CANON_WORDS);
+    window.dispatchEvent(new CustomEvent('hbvs-epilogue-updated', {detail:{order:67}}));
+    // Re-render grid via layout.js - this is the fix
+    if(window.renderBookGrid) window.renderBookGrid();
+  }
+
+  window.loadEpilogue = function(){
+    const rc = document.getElementById('readerContent') || document.getElementById('bible-content') || document.getElementById('verse-list');
+    const rt = document.getElementById('readerTitle') || document.getElementById('book-title');
+    if(rt) rt.textContent = "Epilogue (Epi) [Order 67]";
+    if(!rc) { window.location.href='bible.html?book=EPI&bkorder=67'; return; }
+
+    try{
+      let j = localStorage.getItem('hbvs_epilogueJSON');
+      if(!j){
+        rc.innerHTML = window.EPILOGUE_HTML || "<p>No Epilogue loaded. Go to Settings > Import *.txt</p><p>Omer: Preface 12579 + Epilogue 15063 = 27642 ≤ 79084 | Canon 790841</p>";
+        return;
+      }
+      let verses = JSON.parse(j);
+      let html = `<div class="epilogue-reader" style="padding:12px"><div style="font-size:10px;opacity:.6;font-family:monospace;margin-bottom:10px">Order 67 | Epilogue (Epi) | ${verses.length} verses | ${localStorage.getItem('hbvs_epilogue_words')||''} words | Omer ${checkOmer(parseInt(localStorage.getItem('hbvs_epilogue_words')||'0')).total} ≤ ${OMER_MAX}</div>`;
+      let curCh=-1;
+      verses.forEach(v=>{
+        if(v.CHAPTER!==curCh){ curCh=v.CHAPTER; if(v.type!=='bookTitle') html+=`<h3 style="margin:18px 0 8px;border-bottom:2px solid #800020;color:#800020">Chapter ${v.CHAPTER}: ${v.chapterTitle||''}</h3>`; }
+        if(v.type==='bookTitle') html+=`<h1 style="text-align:center;margin:16px 0">${v.text}</h1>`;
+        else if(v.type==='subtitle') html+=`<h4 style="color:#800020;margin:12px 0 4px">${v.text}</h4>`;
+        else if(v.type!=='chapter' || v.VERSE!==0) html+=`<p style="text-align:justify;margin:8px 0"><sup style="font-weight:800;color:#800020">${v.CHAPTER}:${v.VERSE}</sup> ${v.text}</p>`;
       });
-    });
+      html+=`</div>`; rc.innerHTML=html;
+    }catch(e){ rc.innerHTML=`<p>Error: ${e}</p>`; }
   }
 
-  const lines = rawText.split(/\r?\n/);
+  window.saveEpilogueFromSettings = function(textOrJson){
+    if(!textOrJson) return alert("No text");
+    let verses;
+    if(typeof textOrJson==='string'){
+      if(window.parseRawEpilogue) verses=window.parseRawEpilogue(textOrJson);
+      else {
+        let raw = window.HBVS_SECURE? window.HBVS_SECURE.sanitize(textOrJson):textOrJson;
+        let ch=1, vs=0; verses=[]; let curTitle="Epilogue";
+        raw.split(/\r?\n/).forEach(line=>{
+          line=line.trim(); if(!line){vs++;return;}
+          if(line.startsWith('# ')){verses.push({BOOK:"EPILOGUE",BN:"EPI",BOOKS:"EPI",CHAPTER:ch,VERSE:vs,BKORDER:67,text:line.slice(2),type:"bookTitle",chapterTitle:curTitle,WORDCOUNT:tightCount(line.slice(2))}); vs++; return;}
+          if(line.startsWith('## ')){ch++;vs=0;curTitle=line.slice(3).trim();verses.push({BOOK:"EPILOGUE",BN:"EPI",BOOKS:"EPI",CHAPTER:ch,VERSE:vs,BKORDER:67,text:curTitle,type:"chapter",chapterTitle:curTitle,WORDCOUNT:tightCount(curTitle)}); vs++; return;}
+          verses.push({BOOK:"EPILOGUE",BN:"EPI",BOOKS:"EPI",CHAPTER:ch,VERSE:vs,BKORDER:67,text:line,type:"verse",chapterTitle:curTitle,WORDCOUNT:tightCount(line)}); vs++;
+        });
+      }
+    } else verses=textOrJson;
 
-  for (let rawLine of lines) {
-    let line = rawLine.trim();
+    let epiWords=verses.reduce((s,v)=>s+(v.WORDCOUNT||tightCount(v.text)),0);
+    let omer=checkOmer(epiWords);
+    if(!omer.ok){ alert(`❌ OMER VIOLATION\n${omer.msg}\nTotal ${omer.total} > ${OMER_MAX}\nReduce by ${omer.total-OMER_MAX} words`); return false; }
 
-    // Blank line = verse break marker - we keep verse counting clean
-    if (!line) {
-      // Don't push empty, but increment verse to create visual gap
-      // Represent as gap by incrementing
-      continue;
-    }
+    localStorage.setItem('hbvs_epilogueJSON',JSON.stringify(verses));
+    localStorage.setItem('hbvs_epilogue_html',verses.map(v=>v.text).join("<br>"));
+    localStorage.setItem('hbvs_epilogue_raw',typeof textOrJson==='string'?textOrJson:JSON.stringify(verses));
+    localStorage.setItem('hbvs_epilogueRaw',typeof textOrJson==='string'?textOrJson:JSON.stringify(verses));
+    localStorage.setItem('hbvs_epilogue_words',epiWords);
+    localStorage.setItem('hbvs_epilogueOn','true');
+    localStorage.setItem('hbvs_canon_total_words',CANON_WORDS);
+    localStorage.setItem('hbvs_epilogue_in_grid','true');
 
-    if (line.startsWith('# ')) {
-      // Book Title - reset
-      chapter = 1;
-      verse = 0;
-      currentChapterTitle = line.replace(/^#\s+/, '').trim();
-      pushVerse(currentChapterTitle, 'bookTitle');
-      continue;
-    }
-    if (line.startsWith('## ')) {
-      // New Chapter
-      chapter++;
-      verse = 0;
-      currentChapterTitle = line.replace(/^##\s+/, '').trim();
-      pushVerse(currentChapterTitle, 'chapter');
-      continue;
-    }
-    if (line.startsWith('### ')) {
-      // Subtitle / Article
-      let sub = line.replace(/^###\s+/, '').trim();
-      pushVerse(sub, 'subtitle');
-      continue;
-    }
+    injectIntoBookMap();
 
-    // Regular body - NO auto-uppercase, keep as-is
-    // Allow inline ¶ to split into multiple verses
-    pushVerse(line, 'verse');
+    let prev=document.getElementById('epiloguePreview')||document.getElementById('epilogue-preview');
+    if(prev) prev.innerHTML=`✅ Epilogue (Epi) Order 67 - ${verses.length} verses, ${epiWords.toLocaleString()} words<br>${omer.msg}`;
+    let status=document.getElementById('epilogue-status');
+    if(status) status.innerHTML=`✅ ${verses.length} verses → Grid 67 Epilogue (Epi) | ${omer.msg} | Remaining ${omer.remaining}`;
+    if(window.SafeNotify) window.SafeNotify(`Epilogue (Epi) Order 67 saved - ${omer.msg}`);
+    return true;
   }
 
-  // If no chapters detected (plain old file without #), fallback to single chapter
-  if (verses.length && verses.every(v => v.type === 'verse')) {
-    verses.forEach((v, i) => {
-      v.CHAPTER = 1;
-      v.chapterTitle = "EPILOGUE";
-    });
+  function append67(){
+    // Fallback if renderBookGrid not available - now checks both grid IDs
+    let grid=document.getElementById('bookGrid')||document.getElementById('bible-grid');
+    if(!grid) return;
+    if(grid.querySelector('[data-order="67"]')||document.getElementById('btn-67')) return;
+    // If bookMap already has Epilogue, let layout.js handle rendering - don't duplicate
+    if(window.bookMap && window.bookMap['Epilogue']) { if(window.renderBookGrid) window.renderBookGrid(); return; }
+    let btn=document.createElement('button');
+    btn.id='btn-67'; btn.dataset.book='EPI'; btn.dataset.order='67';
+    btn.className=grid.querySelector('button')?.className||'book-btn';
+    btn.textContent='Epilogue (Epi)'; btn.style.background='#800020'; btn.style.color='#fff'; btn.style.fontWeight='800';
+    btn.onclick=window.loadEpilogue; grid.appendChild(btn);
   }
 
-  return verses;
-}
-
-// === Load / Save ===
-function loadEpilogueFromRaw(rawText) {
-  EPILOGUE_VERSES = parseRawEpilogue(rawText);
-  try {
-    localStorage.setItem('hbvs_epilogueJSON', JSON.stringify(EPILOGUE_VERSES));
-    localStorage.setItem('epilogue_raw', rawText);
-    localStorage.setItem('hbvs_epilogueRaw', rawText);
-    localStorage.setItem('hbvs_epilogue_text', rawText);
-    localStorage.setItem('epilogue_verses', JSON.stringify(EPILOGUE_VERSES)); // legacy
-  } catch(e) { console.warn('Storage full', e); }
-  return EPILOGUE_VERSES;
-}
-
-function initEpilogue() {
-  const saved = localStorage.getItem('hbvs_epilogueJSON') || localStorage.getItem('epilogue_verses');
-  if (saved) {
-    try { EPILOGUE_VERSES = JSON.parse(saved); } catch(e){}
-  }
-  return EPILOGUE_VERSES;
-}
-
-function getEpilogueChapter(ch) {
-  if (!EPILOGUE_VERSES.length) initEpilogue();
-  return EPILOGUE_VERSES.filter(v => v.CHAPTER === ch).sort((a,b) => a.VERSE - b.VERSE);
-}
-
-function getAllEpilogueChapters() {
-  if (!EPILOGUE_VERSES.length) initEpilogue();
-  return [...new Set(EPILOGUE_VERSES.map(v => v.CHAPTER))].sort((a,b)=>a-b);
-}
-
-// === RENDERER - PREFACE S3/S4 EXACT - FIXED ===
-function renderEpilogue(ch) {
-  const verses = getEpilogueChapter(ch);
-  if (!verses.length) {
-    return `<div class="preface-empty" style="padding:20px;text-align:center;">
-      <p>No Epilogue loaded. Go to Settings > Epilogue to import.txt</p>
-      <p style="font-size:12px;color:var(--muted);margin-top:8px;">Use SPEC: # Title, ## Chapter, ### Subtitle, ¶ force paragraph</p>
-    </div>`;
-  }
-
-  let html = '<div class="preface-reader epilogue-reader">';
-
-  verses.forEach(v => {
-    let t = v.text; // keep original case
-    const bkv = v.BKCHAPVERSE;
-
-    if (v.type === 'bookTitle') {
-      html += `<div class="preface-header" data-bkv="${bkv}" style="text-align:center;font-weight:900;font-size:1.35em;margin:18px 0;">${t}</div>`;
-    } else if (v.type === 'chapter') {
-      html += `<div class="preface-chapter-header" data-bkv="${bkv}" style="font-weight:900;color:var(--accent);margin-top:20px;border-bottom:2px solid var(--border);padding-bottom:6px;text-align:center;">${t}</div>`;
-    } else if (v.type === 'subtitle') {
-      html += `<div class="preface-article-header" data-bkv="${bkv}" style="font-weight:800;color:var(--accent);margin-top:14px;font-size:1.05em;">${t}</div>`;
-    } else {
-      // verse - body
-      html += `<div class="preface-para" data-bkv="${bkv}" style="margin:10px 0;text-align:justify;line-height:1.6;">${t}</div>`;
-    }
+  document.addEventListener('DOMContentLoaded',()=>{
+    if(localStorage.getItem('hbvs_epilogue_in_grid')==='true') injectIntoBookMap();
+    setTimeout(append67,900);
   });
-
-  html += '</div>';
-  return html;
-}
-
-function importEpilogueFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const txt = e.target.result;
-    loadEpilogueFromRaw(txt);
-    if (window.SafeNotify) SafeNotify(`Epilogue: ${EPILOGUE_VERSES.length} verses loaded`, 'success');
-    if (window.renderCurrentChapter) window.renderCurrentChapter();
-    else location.reload();
-  };
-  reader.readAsText(file, 'UTF-8');
-}
-
-// Expose
-if (typeof window!== 'undefined') {
-  window.parseRawEpilogue = parseRawEpilogue;
-  window.loadEpilogueFromRaw = loadEpilogueFromRaw;
-  window.getEpilogueChapter = getEpilogueChapter;
-  window.getAllEpilogueChapters = getAllEpilogueChapters;
-  window.renderEpilogue = renderEpilogue;
-  window.importEpilogueFile = importEpilogueFile;
-  initEpilogue();
-}
+  window.addEventListener('hbvs-epilogue-updated',()=>{ setTimeout(()=>{ if(window.renderBookGrid) window.renderBookGrid(); else append67(); },100); });
+  setTimeout(()=>{ if(localStorage.getItem('hbvs_epilogue_in_grid')==='true') injectIntoBookMap(); },1300);
+})();

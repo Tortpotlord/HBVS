@@ -1,118 +1,191 @@
-console.log("HBVS HIGHLIGHT_COPY v7.8.223 - HOME m,i,n,j sync");
+console.log("HIGHLIGHT_COPY v7.8.281 FINAL SUBSET LOCKED 32-41 WS=Card=Table");
 
 function tightRender(s){
-  if(!s) return "";
-  let t=s.replace(/<span[^>]*data-m[^>]*>.*?<\/span>/gi,' ');
-  t=t.replace(/<span[^>]*hilite[^>]*>.*?<\/span>/gi,' ');
-  t=t.replace(/<\/?i>/gi,' ');
-  t=t.replace(/<sup[^>]*>.*?<\/sup>/gi,' ');
-  t=t.replace(/<[^>]*>/g,' ');
-  t=t.replace(/¶/g,' ').replace(/\s+/g,' ').trim();
-  return t;
+  if(!s)return"";let t=s.replace(/<span[^>]*data-m[^>]*>.*?<\/span>/gi,' ');
+  t=t.replace(/<sup[^>]*>.*?<\/sup>/gi,' ');t=t.replace(/<\/?i>/gi,' ');
+  t=t.replace(/<[^>]*>/g,' ').replace(/¶/g,' ').replace(/\s+/g,' ').trim();return t;
 }
-function tightCount(s){
-  if(!s) return 0;
-  return s.replace(/<[^>]*>/g,' ').replace(/¶/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z0-9']/.test(w)).length;
-}
-if(typeof window.cherryBuffer==='undefined') window.cherryBuffer=[];
-if(typeof window._hbvsHighlightBound==='undefined') window._hbvsHighlightBound=false;
+function clean(s){return (s||"").replace(/<\/?i>/gi,'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().replace(/\s+([,.;:!?])/g,'$1');}
 
-function getEngineMode(m){
-  if(!m) m= (typeof selectedMath!=='undefined'?selectedMath:'akjv');
-  if(m==="mathp") return 'P';
-  if(m==="maths") return 'S';
-  if(m==="matht") return 'T';
-  return 'AKJV';
-}
-function parseHeader(h){
-  let m=h.match(/([A-Za-z]+)\s*0*([0-9]+):0*([0-9]+)/);
-  if(m) return {bk:m[1], chap:parseInt(m[2]), verse:parseInt(m[3])};
+function getRawFromDB(bkorder, chap, verse){
+  try{
+    let db = window.DB_INSTANCE||window.DB;
+    if(!db) return null;
+    let stmt = db.prepare("SELECT text FROM Verses WHERE BKORDER=? AND CHAPTER=? AND VERSE=?");
+    stmt.bind([bkorder, chap, verse]);
+    if(stmt.step()){ let r=stmt.getAsObject().text; stmt.free(); return r; }
+    stmt.free();
+  }catch(e){}
   return null;
 }
+function words(s){ return (s||"").trim().split(/\s+/).filter(Boolean); }
 
-function getRefsForBlockRange(verseBlock, sel){
-  if(!verseBlock||!sel||sel.rangeCount===0) return null;
-  let bEl=verseBlock.querySelector('b'); let header=bEl?bEl.innerText.trim():"";
-  let parsed=parseHeader(header);
-  if(!parsed) return null;
-  let uiCode=parsed.bk;
-  let chap=parsed.chap;
-  let verse=parsed.verse;
-  let bkorder=parseInt(verseBlock.getAttribute('data-bkorder')||'1');
-  // RAW PCE - the truth for m,i,n,j counting
-  let rawPCE = verseBlock.getAttribute('data-raw-pce') || verseBlock.getAttribute('data-raw') || "";
-  if(!rawPCE) return null;
-  let akjvWC = tightCount(rawPCE);
+// Find where subset starts inside full PCE - returns 0-based index
+function findWordStart(fullText, subText){
+  let fullW = words(tightRender(fullText));
+  let subW = words(tightRender(subText));
+  if(!subW.length) return 0;
+  // try exact subsequence match (case-insensitive, punctuation stripped)
+  let norm = w=>w.toLowerCase().replace(/[^a-z0-9']/g,'');
+  let fullN = fullW.map(norm);
+  let subN = subW.map(norm);
+  for(let i=0;i<=fullN.length-subN.length;i++){
+    let ok=true;
+    for(let j=0;j<subN.length;j++){ if(fullN[i+j]!==subN[j]){ ok=false; break; } }
+    if(ok) return i;
+  }
+  // fallback: find first word
+  let first = subN[0];
+  let idx = fullN.indexOf(first);
+  return idx>=0?idx:0;
+}
 
-  const range=sel.getRangeAt(0); const blockRange=document.createRange(); blockRange.selectNodeContents(verseBlock);
-  if(range.compareBoundaryPoints(Range.END_TO_START, blockRange)>=0 || range.compareBoundaryPoints(Range.START_TO_END, blockRange)<=0) return null;
+function ensureToast(){
+  let t=document.getElementById('hbvs-copy-tip');
+  if(!t){
+    t=document.createElement('div');t.id='hbvs-copy-tip';
+    t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#800020;color:#fff;padding:10px 18px;border-radius:22px;font-size:13px;font-weight:700;z-index:999999;opacity:0;pointer-events:none;transition:opacity.25s';
+    document.body.appendChild(t);
+  }
+  return t;
+}
+function showTip(m){ let t=ensureToast();t.innerText=m;t.style.opacity='1'; setTimeout(()=>{t.style.opacity='0';},2400); }
 
-  let interText="", preText="";
-  try{
-    let r=range.cloneRange();
-    if(r.compareBoundaryPoints(Range.START_TO_START, blockRange)<0) r.setStart(blockRange.startContainer, blockRange.startOffset);
-    if(r.compareBoundaryPoints(Range.END_TO_END, blockRange)>0) r.setEnd(blockRange.endContainer, blockRange.endOffset);
-    interText=r.toString();
-    let preRange=document.createRange();
-    preRange.setStart(blockRange.startContainer, blockRange.startOffset);
-    preRange.setEnd(range.startContainer, range.startOffset);
-    preText=preRange.toString();
-  }catch(e){ interText=sel.toString(); }
-  if(header){ interText=interText.replace(header,'').trim(); preText=preText.replace(header,'').trim(); }
+function getDataForSelection(sel){
+  if(!sel||sel.rangeCount===0||sel.isCollapsed)return null;
+  let rc=document.getElementById('readerContent');if(!rc||!rc.contains(sel.anchorNode))return null;
+  let ui = typeof getCode==='function'?getCode():'';
+  let ch = typeof currentRef!=='undefined'?currentRef.chap:1;
+  let bk = typeof currentRef!=='undefined'?currentRef.bkorder:1;
 
-  let preTight=tightRender(preText);
-  let interTight=tightRender(interText);
-  if(interTight.length<2) return null;
-  let preCount=preTight?preTight.split(/\s+/).filter(Boolean).length:0;
-  let selCount=interTight.split(/\s+/).filter(Boolean).length;
+  // === WITHOUT SEAM - SUBSET CORRECTION ===
+  let wsEl = sel.anchorNode.parentElement?.closest?.('.ws-continuum') || sel.focusNode?.parentElement?.closest?.('.ws-continuum');
+  if(wsEl && rc.contains(wsEl)){
+    try{
+      let range=sel.getRangeAt(0).cloneRange();
+      let br=document.createRange(); br.selectNodeContents(wsEl);
+      if(range.compareBoundaryPoints(Range.START_TO_START,br)<0) range.setStart(br.startContainer,br.startOffset);
+      if(range.compareBoundaryPoints(Range.END_TO_END,br)>0) range.setEnd(br.endContainer,br.endOffset);
+      let txt=range.toString().trim(); if(!txt) return null;
+      let tight=tightRender(txt); if(!tight) return null;
 
-  let mode=getEngineMode(typeof selectedMath!=='undefined'?selectedMath:'akjv');
-  if(mode==='AKJV'){
-    let words=[]; for(let k=preCount+1;k<=preCount+selCount;k++) words.push(k);
-    return {bk:uiCode,chap,verse,bkorder,words,cleanText:interTight,corrInfo:null,preCount,selCount,mode,rawPCE};
+      let sups=[...wsEl.querySelectorAll('.verse-sup')];
+      let firstV=null, firstSupEl=null;
+      sups.forEach(sup=>{
+        try{ if(range.intersectsNode(sup)){ let v=parseInt(sup.innerText); if(!isNaN(v)&&firstV===null){ firstV=v; firstSupEl=sup; } } }catch(e){}
+      });
+      if(firstV===null){
+        // find sup just before selection
+        let minDist=Infinity;
+        sups.forEach(sup=>{
+          try{
+            let r=document.createRange(); r.selectNodeContents(wsEl); r.setEnd(range.startContainer, range.startOffset);
+            if(r.toString().includes(sup.innerText)||true){
+              let dist = range.startOffset;
+              if(sup.compareDocumentPosition(range.startContainer) & Node.DOCUMENT_POSITION_PRECEDING) {}
+            }
+          }catch(e){}
+        });
+        // simplest: last sup whose position < selection
+        for(let i=sups.length-1;i>=0;i--){
+          if(sups[i].compareDocumentPosition(range.startContainer) & Node.DOCUMENT_POSITION_FOLLOWING || sups[i].compareDocumentPosition(range.startContainer)===0){
+            continue;
+          } else {
+            firstV=parseInt(sups[i].innerText); firstSupEl=sups[i]; break;
+          }
+        }
+        if(firstV===null && sups.length) { firstV=parseInt(sups[0].innerText)||1; firstSupEl=sups[0]; }
+      }
+
+      let rawPCE = getRawFromDB(bk, ch, firstV);
+      if(!rawPCE){
+        try{ let map=JSON.parse(wsEl.getAttribute('data-raw-map')||'{}'); if(map[firstV]) rawPCE=map[firstV]; }catch(e){}
+      }
+      if(!rawPCE) rawPCE=tight;
+
+      // LOCK: find subset start in rawPCE, not DOM count
+      let startIdx = findWordStart(rawPCE, tight);
+      let selCount = words(tight).length;
+
+      let mode=(typeof selectedMath!=='undefined'?selectedMath:'akjv'); if(mode==="mathp")mode='P';else if(mode==="maths")mode='S';else if(mode==="matht")mode='T';else mode='AKJV';
+      let corr={correctedStart:startIdx+1,correctedEnd:startIdx+selCount,m:0,i:0,n:0,j:0};
+      if(window.HBVS?.getCorrectedLocation){
+        corr=window.HBVS.getCorrectedLocation(rawPCE,tight,startIdx+1,startIdx+selCount,mode);
+      }
+
+      let ref4 = `${ui}${ch}:${firstV}:${corr.correctedStart}-${corr.correctedEnd}`;
+      let verbose=localStorage.getItem('hbvs_engineMode')==='verbose';
+      let ref = verbose?`${ref4}[m=${corr.m||0},i=${corr.i||0},n=${corr.n||0},j=${corr.j||0}]`:ref4;
+      return {text:clean(tight),ref,ref4,rawCount:1,isWS:true,verse:firstV};
+    }catch(e){ console.warn("WS subset fail",e); return null; }
   }
 
-  // Use Home Page engine exactly: Start = Start + 2m - i ; End = End + 2n - j
-  let mathStart=preCount+1;
-  let mathEnd=preCount+selCount;
-  let corr=null;
-  if(window.HBVS && window.HBVS.getCorrectedLocation){
-    // mathPlain not needed for counting, but pass tight inter for future
-    corr = window.HBVS.getCorrectedLocation(rawPCE, interTight, mathStart, mathEnd, mode);
-  } else {
-    // fallback if engine not ready - should not happen
-    corr = {correctedStart:mathStart, correctedEnd:mathEnd, m:0,i:0,n:0,j:0};
+  // === CARD / TABLE ===
+  let blocks=[...rc.querySelectorAll('.verse-block,[data-verse]')].filter(b=>{
+    try{return sel.intersectsNode(b);}catch(e){return false;}
+  }).filter(b=>!b.classList.contains('ws-continuum'));
+
+  if(!blocks.length){
+    let blk=sel.anchorNode.parentElement?.closest?.('.verse-block')||sel.anchorNode.parentElement?.closest?.('[data-verse]');
+    if(blk) blocks=[blk]; else return null;
   }
+  blocks=blocks.filter(b=>b.hasAttribute('data-verse') || b.classList.contains('verse-block'));
 
-  // corr.correctedStart = mathStart + 2m - i
-  // corr.correctedEnd = mathEnd + 2n - j
-  let words=[]; for(let k=corr.correctedStart;k<=corr.correctedEnd;k++) words.push(k);
-
-  return {bk:uiCode,chap,verse,bkorder,words,cleanText:interTight,corrInfo:corr,preCount,selCount,mode,rawPCE,mathStart,mathEnd};
+  let parts=[],refs=[],miFirst=null;
+  blocks.forEach(block=>{
+    let vNum = parseInt(block.getAttribute('data-verse'));
+    if(isNaN(vNum)){ let innerV = block.querySelector('[data-verse]'); if(innerV) vNum = parseInt(innerV.getAttribute('data-verse')); }
+    if(isNaN(vNum)) vNum = (typeof currentRef!=='undefined'?currentRef.verse:1);
+    let raw=block.getAttribute('data-raw-pce')||block.getAttribute('data-raw')||block.innerText||"";
+    let bEl=block.querySelector('b');let hdr=bEl?bEl.innerText.trim():"";
+    let range=sel.getRangeAt(0).cloneRange();
+    let br=document.createRange();try{br.selectNodeContents(block);}catch(e){return;}
+    if(range.compareBoundaryPoints(Range.START_TO_START,br)<0)range.setStart(br.startContainer,br.startOffset);
+    if(range.compareBoundaryPoints(Range.END_TO_END,br)>0)range.setEnd(br.endContainer,br.endOffset);
+    let txt=range.toString().replace(hdr,'').trim();if(!txt)return;
+    let tight=tightRender(txt);if(!tight)return;
+    let preTxt="";try{let preR=document.createRange();preR.setStart(br.startContainer,br.startOffset);preR.setEnd(sel.getRangeAt(0).startContainer,sel.getRangeAt(0).startOffset);preTxt=tightRender(preR.toString().replace(hdr,''));}catch(e){}
+    let preC=preTxt?preTxt.split(/\s+/).filter(Boolean).length:0;
+    let selC=tight.split(/\s+/).filter(Boolean).length;
+    let mode=(typeof selectedMath!=='undefined'?selectedMath:'akjv');if(mode==="mathp")mode='P';else if(mode==="maths")mode='S';else if(mode==="matht")mode='T';else mode='AKJV';
+    let corr=null;
+    if(mode!=='AKJV'&&window.HBVS?.getCorrectedLocation){
+      // For subset, also use word search for accuracy
+      let startIdx = findWordStart(raw, tight);
+      if(startIdx>0){ preC=startIdx; }
+      corr=window.HBVS.getCorrectedLocation(raw,tight,preC+1,preC+selC,mode);
+    } else {
+      corr={correctedStart:preC+1,correctedEnd:preC+selC,m:0,i:0,n:0,j:0};
+    }
+    if(!miFirst)miFirst=corr;
+    parts.push(clean(tight));
+    refs.push({vNum,hdr,corr});
+  });
+  if(!parts.length)return null;
+  let stitched=parts.join(' ').replace(/\s+/g,' ');
+  let first=refs[0],last=refs[refs.length-1];
+  let ref4 = `${ui}${ch}:${first.vNum}:${first.corr.correctedStart}-${last.corr.correctedEnd}`;
+  let verbose=localStorage.getItem('hbvs_engineMode')==='verbose';
+  let ref=verbose?`${ref4}[m=${miFirst.m||0},i=${miFirst.i||0},n=${miFirst.n||0},j=${miFirst.j||0}]`:ref4;
+  return {text:stitched,ref,ref4,rawCount:parts.length,isWS:false,verse:first.vNum};
 }
 
-function handleCherryPick(e){
-  const sel=window.getSelection(); if(!sel||sel.rangeCount===0||sel.isCollapsed) return;
-  if(sel.toString().trim().length<2) return;
-  const rc=document.getElementById('readerContent')||document.getElementById('reader-cards'); if(!rc) return;
-  if(!rc.contains(sel.anchorNode)) return;
-  let picks=[]; rc.querySelectorAll('.verse-block').forEach(block=>{ let p=getRefsForBlockRange(block, sel); if(p) picks.push(p); });
-  if(!picks.length) return;
-  if(!e.ctrlKey&&!e.metaKey) window.cherryBuffer=[];
-  picks.forEach(p=>{ if(!window.cherryBuffer.find(x=>x.bk===p.bk&&x.chap===p.chap&&x.verse===p.verse&&x.cleanText===p.cleanText)) window.cherryBuffer.push(p); });
-  let grouped={}; window.cherryBuffer.forEach(it=>{ let k=`${it.bk}${it.chap}:${it.verse}`; if(!grouped[k]) grouped[k]=[]; grouped[k].push(...it.words); });
-  let verseParts=[]; Object.keys(grouped).sort().forEach(k=>{ let w=[...new Set(grouped[k])].sort((a,b)=>a-b); let ranges=[], s=w[0]; for(let i=1;i<=w.length;i++){ if(i===w.length||w[i]!==w[i-1]+1){ ranges.push(s===w[i-1]?`${s}`:`${s}-${w[i-1]}`); if(i<w.length) s=w[i]; } } verseParts.push(`${k}:${ranges.join(',')}`); });
-  let compressed=verseParts[0]||"";
-  let cleanText=window.cherryBuffer.map(b=>b.cleanText).join(' ').replace(/\s+/g,' ').trim();
-  let ci=window.cherryBuffer[0]?.corrInfo;
-  let debug= ci? ` [m=${ci.m} i=${ci.i} n=${ci.n} j=${ci.j} pre=${window.cherryBuffer[0].preCount} sel=${window.cherryBuffer[0].selCount} math=${window.cherryBuffer[0].mathStart}-${window.cherryBuffer[0].mathEnd}->${ci.correctedStart}-${ci.correctedEnd}]` : "";
-  let out = window.cherryBuffer[0]?.mode==='AKJV'? `${cleanText}(${compressed})` : `${cleanText}(${compressed})${debug}`;
-  if(window.secureCopy) window.secureCopy(out).then(()=>{ if(window.showToast) showToast(`Copied ${compressed}`); }); else navigator.clipboard.writeText(out);
-  console.log("COPY", out, ci);
+async function handleCopy(e){
+  let sel=window.getSelection();let d=getDataForSelection(sel);if(!d)return;
+  let out=`${d.text}(${d.ref})`;
+  try{ if(e.clipboardData){ e.clipboardData.setData('text/plain',out); e.preventDefault(); } }catch(err){}
+  try{ if(navigator.clipboard&&window.isSecureContext){ await navigator.clipboard.writeText(out); } }catch(err){}
+  showTip(`${d.isWS?'WS':'Card/Table'} ${d.ref4}`);
+  console.log("Highlight_Copy SUBSET LOCKED ->",out);
 }
-if(!window._hbvsHighlightBound){
-  document.addEventListener('mouseup', handleCherryPick);
-  document.addEventListener('touchend', e=>{ setTimeout(()=>handleCherryPick(e),350); });
-  window._hbvsHighlightBound=true;
-  console.log("HIGHLIGHT_COPY v7.8.223 READY - uses HBVS.getCorrectedLocation rawPCE");
-}
+
+window.HIGHLIGHT_COPY={
+  getSelectionData:()=>getDataForSelection(window.getSelection()),
+  rebind:function(){
+    document.removeEventListener('copy',handleCopy);
+    document.addEventListener('copy',handleCopy);
+    console.log("HIGHLIGHT_COPY BOUND v281 32-41");
+  }
+};
+document.addEventListener('DOMContentLoaded',()=>window.HIGHLIGHT_COPY.rebind());
+setTimeout(()=>window.HIGHLIGHT_COPY.rebind(),800);

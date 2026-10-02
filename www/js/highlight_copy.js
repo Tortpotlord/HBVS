@@ -1,189 +1,191 @@
-// Highlight_Copy.js v7.8.184 FINAL - Long press + drag copy with 2m-i 2n-j FIXED tightWC
-(function(){
-  window.HighlightCopy = {
-    init: function() {
-      document.addEventListener('contextmenu', e => {
-        if(e.target.closest('.verse-text')) e.preventDefault();
-      });
+console.log("HIGHLIGHT_COPY v7.8.281 FINAL SUBSET LOCKED 32-41 WS=Card=Table");
 
-      function tightCount(s){
-        if(!s) return 0;
-        return s.replace(/<[^>]*>/g,' ').trim().split(/\s+/).filter(w=>/[A-Za-z']/.test(w)).length;
-      }
-      function getBookCode(){
-        if(typeof getCode === 'function') return getCode();
-        return "Gen";
-      }
-      function getDisplayChap(){
-        if(typeof ONE_CHAP_BKORDERS !== 'undefined' && typeof currentRef !== 'undefined'){
-          return ONE_CHAP_BKORDERS.includes(currentRef.bkorder)?0:currentRef.chap;
-        }
-        return (typeof currentRef!=='undefined'? currentRef.chap : 1);
-      }
-      function getVerseNum(){ return (typeof currentRef!=='undefined'? currentRef.verse : 1); }
+function tightRender(s){
+  if(!s)return"";let t=s.replace(/<span[^>]*data-m[^>]*>.*?<\/span>/gi,' ');
+  t=t.replace(/<sup[^>]*>.*?<\/sup>/gi,' ');t=t.replace(/<\/?i>/gi,' ');
+  t=t.replace(/<[^>]*>/g,' ').replace(/¶/g,' ').replace(/\s+/g,' ').trim();return t;
+}
+function clean(s){return (s||"").replace(/<\/?i>/gi,'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().replace(/\s+([,.;:!?])/g,'$1');}
 
-      function getWordRangeForVerse(verseEl){
-        const sel = window.getSelection();
-        if(!sel || sel.isCollapsed || sel.rangeCount===0) return null;
-        const range = sel.getRangeAt(0);
-        if(!verseEl.contains(range.commonAncestorContainer) && !verseEl.contains(range.startContainer) && !verseEl.contains(range.endContainer)) return null;
+function getRawFromDB(bkorder, chap, verse){
+  try{
+    let db = window.DB_INSTANCE||window.DB;
+    if(!db) return null;
+    let stmt = db.prepare("SELECT text FROM Verses WHERE BKORDER=? AND CHAPTER=? AND VERSE=?");
+    stmt.bind([bkorder, chap, verse]);
+    if(stmt.step()){ let r=stmt.getAsObject().text; stmt.free(); return r; }
+    stmt.free();
+  }catch(e){}
+  return null;
+}
+function words(s){ return (s||"").trim().split(/\s+/).filter(Boolean); }
 
-        let preRange = range.cloneRange();
-        try{
-          preRange.selectNodeContents(verseEl);
-          preRange.setEnd(range.startContainer, range.startOffset);
-        }catch{ return null; }
-
-        // FIX: use textContent to avoid <sup> numbers
-        let preText = preRange.cloneContents().textContent || preRange.toString();
-        let selText = sel.toString();
-        if(!selText.trim()) return null;
-
-        let preWC = tightCount(preText);
-        let selWC = tightCount(selText);
-        if(selWC===0) return null;
-
-        return {
-          mathStart: preWC+1,
-          mathEnd: preWC+selWC,
-          selText: selText,
-          preWC: preWC,
-          selWC: selWC
-        };
-      }
-
-      function buildRef(verseEl, info){
-        let raw = verseEl.dataset.raw;
-        let mode = verseEl.dataset.mode;
-        let mathPlain = verseEl.dataset.mathPlain || verseEl.textContent || verseEl.innerText;
-        let uiCode = getBookCode();
-        let displayChap = getDisplayChap();
-        let verseNum = getVerseNum();
-
-        // a) Tight render - ignore DB WordCount
-        if(!raw){
-          let tight = tightCount(verseEl.textContent);
-          return `${uiCode}${displayChap}:${verseNum}:${info.mathStart}-${info.mathEnd} [m=0 i=0 n=0 j=0 tight=${tight}]`;
-        }
-
-        if(mode==='akjv' || mode==='superscript'){
-          return `${uiCode}${displayChap}:${verseNum}:${info.mathStart}-${info.mathEnd} [m=0 i=0 n=0 j=0]`;
-        }
-
-        // b) Math modes: Start = Start + 2m - i  End = End + 2n - j
-        if(window.HBVS && window.HBVS.getCorrectedLocation){
-          let corr = window.HBVS.getCorrectedLocation(raw, mathPlain, info.mathStart, info.mathEnd, mode);
-          return `${uiCode}${displayChap}:${verseNum}:${corr.correctedStart}-${corr.correctedEnd} [m=${corr.m} i=${corr.i} n=${corr.n} j=${corr.j}]`;
-        }
-
-        return `${uiCode}${displayChap}:${verseNum}:${info.mathStart}-${info.mathEnd} [m=0 i=0 n=0 j=0]`;
-      }
-
-      function handleSelectionCopy(verseEl){
-        let info = getWordRangeForVerse(verseEl);
-        if(!info) return null;
-        let raw = verseEl.dataset.raw || verseEl.textContent;
-        let fullTight = tightCount(raw);
-        // If user selected almost whole verse, force 1-fullTight
-        if(info.selWC >= fullTight-1){
-          info.mathStart = 1;
-          info.mathEnd = fullTight;
-        }
-        let ref = buildRef(verseEl, info);
-        verseEl.dataset.ref = ref;
-        verseEl.style.background = 'rgba(255,215,0,0.15)';
-        setTimeout(()=> verseEl.style.background = '', 400);
-        console.log(`SELECTION ${verseEl.dataset.mode}: "${info.selText.substring(0,40)}" => ${ref} pre=${info.preWC} sel=${info.selWC} full=${fullTight}`);
-        return {ref: ref, text: info.selText};
-      }
-
-      // Desktop mouseup
-      document.addEventListener('mouseup', (e)=>{
-        const verse = e.target.closest('.verse-text');
-        if(!verse) return;
-        setTimeout(()=> handleSelectionCopy(verse), 10);
-      });
-
-      // Mobile touchend selection
-      document.addEventListener('touchend', (e)=>{
-        const verse = e.target.closest('.verse-text');
-        if(!verse) return;
-        setTimeout(()=> handleSelectionCopy(verse), 50);
-      });
-
-      let touchTimer = null;
-      function handleTouchStart(e){
-        const verse = e.target.closest('.verse-text');
-        if(!verse) return;
-        touchTimer = setTimeout(() => {
-          const sel = window.getSelection();
-          let hasSel = sel && !sel.isCollapsed && tightCount(sel.toString())>0;
-          if(hasSel){
-            let result = handleSelectionCopy(verse);
-            if(result){
-              navigator.clipboard.writeText(`${result.text}(${result.ref})`).then(()=>{
-                console.log(`COPIED SELECTION: ${result.ref}`);
-              });
-            }
-          } else {
-            // No selection = copy full verse tight - FIXED 1-31 not 1-10
-            let raw = verse.dataset.raw || verse.textContent;
-            let tight = tightCount(raw);
-            let uiCode = getBookCode();
-            let displayChap = getDisplayChap();
-            let verseNum = getVerseNum();
-            let ref = `${uiCode}${displayChap}:${verseNum}:1-${tight} [m=0 i=0 n=0 j=0]`;
-            // If math mode, get corrected
-            if(verse.dataset.mode!=='akjv' && verse.dataset.mode!=='superscript' && window.HBVS){
-              let mathPlain = verse.dataset.mathPlain || verse.textContent;
-              let corr = window.HBVS.getCorrectedLocation(raw, mathPlain, 1, tight, verse.dataset.mode);
-              ref = `${uiCode}${displayChap}:${verseNum}:${corr.correctedStart}-${corr.correctedEnd} [m=${corr.m} i=${corr.i} n=${corr.n} j=${corr.j}]`;
-            }
-            verse.dataset.ref = ref;
-            let txt = verse.textContent.trim().replace(/\s+/g,' ');
-            navigator.clipboard.writeText(`${txt}(${ref})`);
-            verse.style.background = 'var(--gold)';
-            setTimeout(()=> verse.style.background = '', 300);
-            console.log(`COPIED FULL: ${ref} tight=${tight}`);
-          }
-        }, 600);
-      }
-
-      document.addEventListener('touchstart', handleTouchStart, {passive: true});
-      document.addEventListener('touchend', ()=> { clearTimeout(touchTimer); });
-      document.addEventListener('touchmove', ()=> { clearTimeout(touchTimer); });
-
-      // Intercept copy event - inject corrected reference
-      document.addEventListener('copy', (e)=>{
-        const verse = e.target.closest?.('.verse-text') || window.getSelection()?.anchorNode?.parentElement?.closest?.('.verse-text');
-        if(!verse) return;
-        let selText = window.getSelection().toString();
-        if(!selText) return;
-        let ref = verse.dataset.ref;
-        if(!ref){
-          let info = getWordRangeForVerse(verse);
-          if(info) ref = buildRef(verse, info);
-        }
-        if(ref){
-          // Format as Slice(Ref) for StudyHub
-          e.clipboardData.setData('text/plain', `${selText.trim()}(${ref})`);
-          e.preventDefault();
-          console.log(`COPY EVENT: ${ref}`);
-        }
-      });
-    },
-    getCorrectedRef: function(verseEl, mathStart, mathEnd){
-      if(!verseEl || !window.HBVS) return null;
-      let raw = verseEl.dataset.raw;
-      let mathPlain = verseEl.dataset.mathPlain || verseEl.textContent;
-      let mode = verseEl.dataset.mode;
-      return window.HBVS.getCorrectedLocation(raw, mathPlain, mathStart, mathEnd, mode);
-    }
-  };
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ()=> window.HighlightCopy.init());
-  } else {
-    window.HighlightCopy.init();
+// Find where subset starts inside full PCE - returns 0-based index
+function findWordStart(fullText, subText){
+  let fullW = words(tightRender(fullText));
+  let subW = words(tightRender(subText));
+  if(!subW.length) return 0;
+  // try exact subsequence match (case-insensitive, punctuation stripped)
+  let norm = w=>w.toLowerCase().replace(/[^a-z0-9']/g,'');
+  let fullN = fullW.map(norm);
+  let subN = subW.map(norm);
+  for(let i=0;i<=fullN.length-subN.length;i++){
+    let ok=true;
+    for(let j=0;j<subN.length;j++){ if(fullN[i+j]!==subN[j]){ ok=false; break; } }
+    if(ok) return i;
   }
-})();
+  // fallback: find first word
+  let first = subN[0];
+  let idx = fullN.indexOf(first);
+  return idx>=0?idx:0;
+}
+
+function ensureToast(){
+  let t=document.getElementById('hbvs-copy-tip');
+  if(!t){
+    t=document.createElement('div');t.id='hbvs-copy-tip';
+    t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#800020;color:#fff;padding:10px 18px;border-radius:22px;font-size:13px;font-weight:700;z-index:999999;opacity:0;pointer-events:none;transition:opacity.25s';
+    document.body.appendChild(t);
+  }
+  return t;
+}
+function showTip(m){ let t=ensureToast();t.innerText=m;t.style.opacity='1'; setTimeout(()=>{t.style.opacity='0';},2400); }
+
+function getDataForSelection(sel){
+  if(!sel||sel.rangeCount===0||sel.isCollapsed)return null;
+  let rc=document.getElementById('readerContent');if(!rc||!rc.contains(sel.anchorNode))return null;
+  let ui = typeof getCode==='function'?getCode():'';
+  let ch = typeof currentRef!=='undefined'?currentRef.chap:1;
+  let bk = typeof currentRef!=='undefined'?currentRef.bkorder:1;
+
+  // === WITHOUT SEAM - SUBSET CORRECTION ===
+  let wsEl = sel.anchorNode.parentElement?.closest?.('.ws-continuum') || sel.focusNode?.parentElement?.closest?.('.ws-continuum');
+  if(wsEl && rc.contains(wsEl)){
+    try{
+      let range=sel.getRangeAt(0).cloneRange();
+      let br=document.createRange(); br.selectNodeContents(wsEl);
+      if(range.compareBoundaryPoints(Range.START_TO_START,br)<0) range.setStart(br.startContainer,br.startOffset);
+      if(range.compareBoundaryPoints(Range.END_TO_END,br)>0) range.setEnd(br.endContainer,br.endOffset);
+      let txt=range.toString().trim(); if(!txt) return null;
+      let tight=tightRender(txt); if(!tight) return null;
+
+      let sups=[...wsEl.querySelectorAll('.verse-sup')];
+      let firstV=null, firstSupEl=null;
+      sups.forEach(sup=>{
+        try{ if(range.intersectsNode(sup)){ let v=parseInt(sup.innerText); if(!isNaN(v)&&firstV===null){ firstV=v; firstSupEl=sup; } } }catch(e){}
+      });
+      if(firstV===null){
+        // find sup just before selection
+        let minDist=Infinity;
+        sups.forEach(sup=>{
+          try{
+            let r=document.createRange(); r.selectNodeContents(wsEl); r.setEnd(range.startContainer, range.startOffset);
+            if(r.toString().includes(sup.innerText)||true){
+              let dist = range.startOffset;
+              if(sup.compareDocumentPosition(range.startContainer) & Node.DOCUMENT_POSITION_PRECEDING) {}
+            }
+          }catch(e){}
+        });
+        // simplest: last sup whose position < selection
+        for(let i=sups.length-1;i>=0;i--){
+          if(sups[i].compareDocumentPosition(range.startContainer) & Node.DOCUMENT_POSITION_FOLLOWING || sups[i].compareDocumentPosition(range.startContainer)===0){
+            continue;
+          } else {
+            firstV=parseInt(sups[i].innerText); firstSupEl=sups[i]; break;
+          }
+        }
+        if(firstV===null && sups.length) { firstV=parseInt(sups[0].innerText)||1; firstSupEl=sups[0]; }
+      }
+
+      let rawPCE = getRawFromDB(bk, ch, firstV);
+      if(!rawPCE){
+        try{ let map=JSON.parse(wsEl.getAttribute('data-raw-map')||'{}'); if(map[firstV]) rawPCE=map[firstV]; }catch(e){}
+      }
+      if(!rawPCE) rawPCE=tight;
+
+      // LOCK: find subset start in rawPCE, not DOM count
+      let startIdx = findWordStart(rawPCE, tight);
+      let selCount = words(tight).length;
+
+      let mode=(typeof selectedMath!=='undefined'?selectedMath:'akjv'); if(mode==="mathp")mode='P';else if(mode==="maths")mode='S';else if(mode==="matht")mode='T';else mode='AKJV';
+      let corr={correctedStart:startIdx+1,correctedEnd:startIdx+selCount,m:0,i:0,n:0,j:0};
+      if(window.HBVS?.getCorrectedLocation){
+        corr=window.HBVS.getCorrectedLocation(rawPCE,tight,startIdx+1,startIdx+selCount,mode);
+      }
+
+      let ref4 = `${ui}${ch}:${firstV}:${corr.correctedStart}-${corr.correctedEnd}`;
+      let verbose=localStorage.getItem('hbvs_engineMode')==='verbose';
+      let ref = verbose?`${ref4}[m=${corr.m||0},i=${corr.i||0},n=${corr.n||0},j=${corr.j||0}]`:ref4;
+      return {text:clean(tight),ref,ref4,rawCount:1,isWS:true,verse:firstV};
+    }catch(e){ console.warn("WS subset fail",e); return null; }
+  }
+
+  // === CARD / TABLE ===
+  let blocks=[...rc.querySelectorAll('.verse-block,[data-verse]')].filter(b=>{
+    try{return sel.intersectsNode(b);}catch(e){return false;}
+  }).filter(b=>!b.classList.contains('ws-continuum'));
+
+  if(!blocks.length){
+    let blk=sel.anchorNode.parentElement?.closest?.('.verse-block')||sel.anchorNode.parentElement?.closest?.('[data-verse]');
+    if(blk) blocks=[blk]; else return null;
+  }
+  blocks=blocks.filter(b=>b.hasAttribute('data-verse') || b.classList.contains('verse-block'));
+
+  let parts=[],refs=[],miFirst=null;
+  blocks.forEach(block=>{
+    let vNum = parseInt(block.getAttribute('data-verse'));
+    if(isNaN(vNum)){ let innerV = block.querySelector('[data-verse]'); if(innerV) vNum = parseInt(innerV.getAttribute('data-verse')); }
+    if(isNaN(vNum)) vNum = (typeof currentRef!=='undefined'?currentRef.verse:1);
+    let raw=block.getAttribute('data-raw-pce')||block.getAttribute('data-raw')||block.innerText||"";
+    let bEl=block.querySelector('b');let hdr=bEl?bEl.innerText.trim():"";
+    let range=sel.getRangeAt(0).cloneRange();
+    let br=document.createRange();try{br.selectNodeContents(block);}catch(e){return;}
+    if(range.compareBoundaryPoints(Range.START_TO_START,br)<0)range.setStart(br.startContainer,br.startOffset);
+    if(range.compareBoundaryPoints(Range.END_TO_END,br)>0)range.setEnd(br.endContainer,br.endOffset);
+    let txt=range.toString().replace(hdr,'').trim();if(!txt)return;
+    let tight=tightRender(txt);if(!tight)return;
+    let preTxt="";try{let preR=document.createRange();preR.setStart(br.startContainer,br.startOffset);preR.setEnd(sel.getRangeAt(0).startContainer,sel.getRangeAt(0).startOffset);preTxt=tightRender(preR.toString().replace(hdr,''));}catch(e){}
+    let preC=preTxt?preTxt.split(/\s+/).filter(Boolean).length:0;
+    let selC=tight.split(/\s+/).filter(Boolean).length;
+    let mode=(typeof selectedMath!=='undefined'?selectedMath:'akjv');if(mode==="mathp")mode='P';else if(mode==="maths")mode='S';else if(mode==="matht")mode='T';else mode='AKJV';
+    let corr=null;
+    if(mode!=='AKJV'&&window.HBVS?.getCorrectedLocation){
+      // For subset, also use word search for accuracy
+      let startIdx = findWordStart(raw, tight);
+      if(startIdx>0){ preC=startIdx; }
+      corr=window.HBVS.getCorrectedLocation(raw,tight,preC+1,preC+selC,mode);
+    } else {
+      corr={correctedStart:preC+1,correctedEnd:preC+selC,m:0,i:0,n:0,j:0};
+    }
+    if(!miFirst)miFirst=corr;
+    parts.push(clean(tight));
+    refs.push({vNum,hdr,corr});
+  });
+  if(!parts.length)return null;
+  let stitched=parts.join(' ').replace(/\s+/g,' ');
+  let first=refs[0],last=refs[refs.length-1];
+  let ref4 = `${ui}${ch}:${first.vNum}:${first.corr.correctedStart}-${last.corr.correctedEnd}`;
+  let verbose=localStorage.getItem('hbvs_engineMode')==='verbose';
+  let ref=verbose?`${ref4}[m=${miFirst.m||0},i=${miFirst.i||0},n=${miFirst.n||0},j=${miFirst.j||0}]`:ref4;
+  return {text:stitched,ref,ref4,rawCount:parts.length,isWS:false,verse:first.vNum};
+}
+
+async function handleCopy(e){
+  let sel=window.getSelection();let d=getDataForSelection(sel);if(!d)return;
+  let out=`${d.text}(${d.ref})`;
+  try{ if(e.clipboardData){ e.clipboardData.setData('text/plain',out); e.preventDefault(); } }catch(err){}
+  try{ if(navigator.clipboard&&window.isSecureContext){ await navigator.clipboard.writeText(out); } }catch(err){}
+  showTip(`${d.isWS?'WS':'Card/Table'} ${d.ref4}`);
+  console.log("Highlight_Copy SUBSET LOCKED ->",out);
+}
+
+window.HIGHLIGHT_COPY={
+  getSelectionData:()=>getDataForSelection(window.getSelection()),
+  rebind:function(){
+    document.removeEventListener('copy',handleCopy);
+    document.addEventListener('copy',handleCopy);
+    console.log("HIGHLIGHT_COPY BOUND v281 32-41");
+  }
+};
+document.addEventListener('DOMContentLoaded',()=>window.HIGHLIGHT_COPY.rebind());
+setTimeout(()=>window.HIGHLIGHT_COPY.rebind(),800);

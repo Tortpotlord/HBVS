@@ -1,185 +1,256 @@
-/* HBVS PREFACE.CSS v7.8.140 - TITLE ISOLATION + EPI SPEC + S1-S4 PDF */
+/* HBVS PREFACE.CSS v7.8.274 - HIGH CONTRAST LARGE PRINT + WYSIWYG LOCK S1-S4 + EPI LEGAL */
 .card.preface {
-  background: #f8f4e8;
-  border: 1px solid #d4c8a8;
+  background: #ffffff;
+  border: 2px solid #000000;
   border-radius: 10px;
-  font-style: italic;
-  padding: 10px 14px;
-  line-height: 1.5;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  color: #3a3326;
+  font-style: normal;
+  padding: 14px 18px;
+  line-height: 1.8;
+  box-shadow: none;
+  color: #000000;
+  font-size: 19px;
 }
 .card.preface h4 {
-  margin: 0 0 4px 0;
-  font-size: 13px;
+  margin: 0 0 6px 0;
+  font-size: 16px;
   letter-spacing: 0.5px;
-  opacity: 0.8;
-  font-weight: 600;
+  opacity: 1;
+  font-weight: 900;
   text-transform: uppercase;
+  color:#000;
 }
 .card.preface.card-question {
   margin: 0 0 4px 0;
-  font-size: 11px;
-  opacity: 0.7;
+  font-size: 14px;
+  opacity: 1;
+  color:#000;
 }
 .card.preface.verse-header {
   margin: 0 0 6px 0;
-  font-size: 12px;
-  font-weight: bold;
-  color: #5a4a2e;
+  font-size: 15px;
+  font-weight: 900;
+  color: #000000;
 }
 .card.preface.verse-text {
   margin: 0;
-  font-size: 15px;
-  color: #2f2718;
+  font-size: 19px;
+  color: #000000;
+  line-height:1.9;
 }
 .card.preface.sym {
-  font-weight: 700;
+  font-weight: 900;
   font-style: normal;
+  color:#000;
 }
 .preface-article-header {
-  font-weight: bold;
-  color: #8B0000;
-  margin-top: 18px;
-  font-size: 1.1em;
+  font-weight: 900;
+  color: #000000;
+  margin-top: 22px;
+  font-size: 20px;
+  background:#e8e8e8;
+  border-left:6px solid #000;
+  padding:10px 14px;
 }
 
-/* === PREFACE READER BASE - PDF FAITHFUL === */
+/* === PREFACE READER BASE - HIGH CONTRAST === */
 .preface-reader {
-  max-width: 760px;
+  max-width: 850px;
   margin: 0 auto;
-  padding: 16px 18px;
-  background: var(--card, #fffdf7);
-  border: 1px solid var(--border, #d4c8a8);
-  border-radius: 10px;
-  line-height: 1.65;
-  color: var(--text, #2f2718);
+  padding: 24px 22px;
+  background: #ffffff !important;
+  border: 2px solid #000 !important;
+  border-left: 6px solid #000 !important;
+  border-radius: 8px;
+  line-height: 1.9;
+  color: #000000 !important;
+  font-size: 19px !important;
 }
 .preface-reader.s1-pdf,
 .preface-reader.s2-pdf,
 .preface-reader.s3-pdf,
 .preface-reader.s4-pdf,
 .preface-reader.epilogue-reader {
-  font-family: var(--font-serif, Georgia, serif);
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: normal !important;
 }
 
-/* === S1: DEDICATION PAGE === */
-.s1-h1 { text-align:center; font-weight:900; font-size:1.4em; letter-spacing:1px; margin:18px 0 8px 0; text-transform:uppercase; }
-.s1-h2 { text-align:center; font-weight:800; font-size:1.25em; margin:6px 0; }
-.s1-h3 { text-align:center; font-size:0.95em; opacity:0.85; margin:4px 0; }
-.s1-h4 { text-align:center; font-style:italic; font-size:0.9em; margin:4px 0 12px 0; }
+/* === SPEC a) HIDE FIRST COLUMN + TABLE HEADERS - ONLY TEXT VISIBLE === */
+.preface-reader table th,
+.preface-reader table thead,
+.preface-reader .header-row,
+.preface-reader .key-col,
+.preface-reader .ref-col,
+.preface-reader .verse-num,
+.preface-reader .verse-block > b,
+.preface-reader .verse-block > strong:first-child {
+  display: none !important;
+}
+.preface-reader table td:first-child {
+  display: none !important;
+}
+.preface-reader table {
+  border: none !important;
+}
+.preface-reader table td {
+  border: none !important;
+  padding: 0 !important;
+}
 
-/* === S2: TO THE MOST HIGH... - TITLE BLOCK ISOLATED === */
+/* === S1: PAGE 1 - Text centered WYSIWYG - LARGE === */
+.s1-pdf { text-align: center !important; background:#fff !important; }
+.s1-h1 { text-align:center; font-weight:900; font-size:32px !important; letter-spacing:1.5px; margin:22px 0 10px 0; text-transform:uppercase; color:#000 !important; }
+.s1-h2 { text-align:center; font-weight:800; font-size:24px !important; margin:8px 0; color:#000 !important; }
+.s1-h3 { text-align:center; font-size:18px !important; opacity:1 !important; margin:6px 0; text-transform:uppercase; color:#000 !important; font-weight:700; }
+.s1-h4 { text-align:center; font-style:normal !important; font-size:18px !important; margin:6px 0 14px 0; line-height:1.8; color:#000 !important; }
+.s1-pdf .verse-block { text-align:center; border:none !important; margin:0 !important; padding:4px 0 !important; }
+
+/* === S2: PAGE 3 - TITLE BLOCK ISOLATED - HIGH CONTRAST === */
 .s2-title-block {
   text-align: center;
-  border-bottom: 2px double #8B0000;
+  border-bottom: 3px solid #000 !important;
   padding-bottom: 14px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+  display: block;
+  clear: both;
+  background:#ffffcc;
+  padding:16px;
 }
-.s2-l1 { font-size:0.85em; letter-spacing:1.2px; text-transform:uppercase; opacity:0.8; margin:2px 0; }
-.s2-l2 { font-size:1.6em; font-weight:900; letter-spacing:2px; margin:6px 0; color:#8B0000; }
-.s2-l3 { font-size:0.9em; margin:2px 0; }
-.s2-l4 { font-size:0.85em; font-style:italic; margin:2px 0; }
-.s2-l5 { font-size:0.9em; font-weight:700; margin:8px 0 4px 0; }
-.s2-l6 { font-size:0.85em; margin:10px 0 2px 0; }
-.s2-l7 { font-size:0.85em; font-style:italic; margin:2px 0 0 0; }
+.s2-l1 { font-size:16px !important; letter-spacing:1.2px; text-transform:uppercase; opacity:1 !important; margin:4px 0; color:#000 !important; font-weight:700; }
+.s2-l2 { font-size:28px !important; font-weight:900; letter-spacing:2px; margin:8px 0; color:#000 !important; }
+.s2-l3 { font-size:18px !important; margin:4px 0; color:#000 !important; font-weight:700; }
+.s2-l4 { font-size:17px !important; font-style:normal !important; margin:4px 0; color:#000 !important; }
+.s2-l5 { font-size:18px !important; font-weight:900; margin:8px 0 4px 0; color:#000 !important; }
+.s2-l6 { font-size:17px !important; margin:10px 0 2px 0; color:#000 !important; }
+.s2-l7 { font-size:17px !important; font-style:normal !important; margin:4px 0 0 0; color:#000 !important; }
 .s2-para {
-  text-align: justify;
-  margin: 12px 0;
-  text-indent: 1.2em;
+  text-align: left !important;
+  margin: 0 0 16px 0 !important;
+  text-indent: 0 !important;
+  display: block;
+  font-size: 19px !important;
+  line-height: 1.9 !important;
+  color:#000 !important;
+  font-weight:400 !important;
 }
-.s2-para:first-of-type { text-indent:0; }
-.s2-para:first-of-type::first-letter {
-  font-size:1.6em; font-weight:800; float:left; line-height:1; margin:2px 6px 0 0; color:#8B0000;
+.s2-para.s2-first-para::first-letter {
+  font-size:36px !important; font-weight:900; float:left; line-height:0.9; margin:3px 8px 0 0; color:#000 !important;
+  font-family:Georgia, serif;
 }
 
-/* === S3: TRANSLATORS TO READER - PREVENT TITLE DRAG === */
+/* === S3: PAGES 5-15 - TRANSLATORS TO READER - TITLE DRAG FIX + LARGE === */
 .s3-title, .s3-header, .s3-chapter {
   text-align: center;
   font-weight: 900;
-  font-size: 1.15em;
-  color: #5a1a;
-  margin: 20px 0 12px 0;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #d4c8a8;
-  display: block; /* FIX: forces new line, stops drag into body */
-  clear: both;
+  font-size: 20px !important;
+  color: #fff !important;
+  background:#000 !important;
+  margin: 28px 0 16px 0 !important;
+  padding: 12px !important;
+  border-bottom: none !important;
+  display: block !important;
+  clear: both !important;
+  page-break-after: avoid;
 }
 .s3-para {
-  text-align: justify;
-  margin: 10px 0;
-  text-indent: 1.2em;
+  text-align: left !important;
+  margin: 0 0 16px 0 !important;
+  text-indent: 0 !important;
   display: block;
+  font-size: 19px !important;
+  line-height: 1.9 !important;
+  color:#000 !important;
 }
+.s3-para.verse-block { border:none !important; padding:6px 0 !important; border-bottom:1px solid #ddd !important; }
 
-/* === S4: NAMES ORDER === */
+/* === S4: PAGE 16 === */
 .s4-header-block {
   text-align: center;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #d4c8a8;
+  margin-bottom: 18px;
+  padding: 12px !important;
+  border-bottom: 3px solid #000 !important;
+  display: block;
+  clear: both;
+  background:#f0f0f0;
 }
-.s4-h0 { font-weight:900; font-size:1.2em; margin:4px 0; }
-.s4-h1 { font-size:0.9em; opacity:0.8; margin:2px 0; }
-.s4-h2 { font-size:0.9em; font-style:italic; margin:2px 0; }
-.s4-para { text-align:justify; margin:12px 0; text-indent:1.2em; }
-.s4-verse { text-align:left; margin:14px 0; padding-left:12px; border-left:3px solid #8B000033; }
+.s4-h0 { font-weight:900; font-size:22px !important; margin:6px 0; color:#000 !important; }
+.s4-h1 { font-size:18px !important; opacity:1 !important; margin:4px 0; color:#000 !important; }
+.s4-h2 { font-size:18px !important; font-style:normal !important; margin:4px 0; color:#000 !important; }
+.s4-para { text-align:left !important; margin:0 0 16px 0 !important; text-indent:0 !important; font-size:19px !important; line-height:1.9 !important; color:#000 !important; }
+.s4-verse { text-align:left !important; margin:0 0 14px 0 !important; padding:8px 0 8px 14px !important; border-left:5px solid #000 !important; font-size:19px !important; display:block; color:#000 !important; }
 
-/* === EPILOGUE SPEC - # ## ### === */
-.epilogue-reader .preface-header {
-  text-align:center;
-  font-weight:900;
-  font-size:1.35em;
-  color:#8B0000;
-  margin:22px 0 12px 0;
-  display:block;
-  clear:both;
+/* EPILOGUE - CHAPTER TITLE SAME AS PREFACE S3/S4 - KEEP ## AS MARKER */
+.epilogue-reader{ border-left:4px solid #8B0000!important; background:#fffdf7!important; }
+.epilogue-reader.preface-header{ color:#8B0000!important; background:transparent!important; border:none!important; border-bottom:2px double #8B0000!important; text-align:center!important; font-size:1.35em!important; font-weight:900!important; }
+.epilogue-reader.preface-chapter-header,
+.epilogue-reader.s3-chapter{
+  color:#8B0000!important; /* SAME AS PREFACE S3/S4 */
+  background:transparent!important;
+  border:none!important;
+  border-bottom:1px solid #d4c8a8!important;
+  text-align:center!important;
+  font-weight:900!important;
+  font-size:1.2em!important;
+  margin:22px 0 12px 0!important;
+  padding-bottom:6px!important;
 }
-.epilogue-reader .preface-chapter-header {
-  font-weight:900;
-  color:var(--accent, #8B0000);
-  border-bottom:2px solid var(--border);
-  padding:8px 0;
-  margin:22px 0 10px 0;
-  text-align:center;
-  display:block;
-  clear:both;
-}
-.epilogue-reader .preface-article-header {
-  font-weight:800;
-  color:var(--accent, #8B0000);
-  margin:16px 0 8px 0;
-  font-size:1.05em;
-  display:block;
-}
-.epilogue-reader .preface-para {
-  text-align:justify;
-  margin:10px 0;
-  line-height:1.6;
-  text-indent:1.2em;
-  display:block;
-}
-.epilogue-reader .preface-para:first-of-type { text-indent:0; }
+.epilogue-reader.preface-article-header{ color:#8B0000!important; background:transparent!important; border-left:3px solid #8B000033!important; }
+.epilogue-reader.preface-para{ border:none!important; background:transparent!important; }
 
-/* === PARA MARKER === */
+/* === PARA MARKER - ¶ hidden === */
 .para-end {
-  color:#8B0000;
-  font-weight:900;
-  margin:0 4px;
-  opacity:0.7;
+  display:none !important;
 }
 
-/* === VERSE ZERO === */
-.verse-zero-btn { border:2px solid #8B0000 !important; }
-.verse-zero { background:#fff8e7; border-left:3px solid #8B0000; }
+/* === VERSE ZERO - Section5 - LARGE NOW === */
+.verse-zero-btn { border:3px solid #000 !important; }
+.verse-zero { background:#fff; border-left:5px solid #000; }
+.verse-block[data-verse="0"] {
+  font-size:16px !important;
+  font-style:normal !important;
+  opacity:1 !important;
+  line-height:1.7 !important;
+  margin:8px 0 !important;
+  color:#000 !important;
+  background:#f9f9f9 !important;
+  padding:8px !important;
+}
+.verse-block[data-verse="0"] b { display:none !important; }
 
 /* === TABLE SYNC FIX === */
-.math-table { width:100%; border-collapse:collapse; margin:10px 0; }
-.math-table .header-row { background:#8B0000; color:#fff; font-weight:800; text-align:center; padding:8px; }
-.math-table th { background:#f8f4e8; border:1px solid #d4c8a8; padding:6px 10px; text-align:left; font-size:0.85em; }
-.math-table td { border:1px solid #e8dcc0; padding:8px 10px; vertical-align:top; }
-.math-table .key-col { white-space:nowrap; font-family:monospace; font-size:0.85em; }
+.math-table { width:100%; border-collapse:collapse; margin:12px 0; }
+.math-table .header-row { background:#000; color:#fff; font-weight:900; text-align:center; padding:10px; font-size:16px; }
+.math-table th { background:#eee; border:1px solid #000; padding:8px 10px; text-align:left; font-size:16px; color:#000; }
+.math-table td { border:1px solid #000; padding:10px 12px; vertical-align:top; font-size:19px; color:#000; }
+.math-table .key-col { white-space:nowrap; font-family:monospace; font-size:16px; }
 
-/* === PREVENT TITLE DRAG INTO BODY - CRITICAL FIX === */
+/* === PREVENT TITLE DRAG === */
 .preface-reader > div { page-break-inside:avoid; }
-.s2-title-block + .s2-para { margin-top:18px; }
+.s2-title-block + .s2-para { margin-top:20px !important; }
+.s3-title + .s3-para { margin-top:18px !important; }
+
+/* === HIDE RAW VERSE NUMBERS === */
+.preface-reader .verse-block::before { content:none !important; }
+
+/* === ACCESSIBILITY - REMOVE BLUR === */
+* { text-shadow:none !important; -webkit-font-smoothing:antialiased; }
+.hbvs-output { color:#000 !important; }
+/* FIX 7.8.272 - REMOVE BLACK BAR AT START OF EACH CHAPTER IN EPILOGUE */
+.preface-reader,
+.epilogue-reader,
+.preface-reader.s1-pdf,
+.preface-reader.s2-pdf,
+.preface-reader.s3-pdf,
+.preface-reader.s4-pdf,
+.s1-pdf, .s2-pdf, .s3-pdf, .s4-pdf,
+.epilogue-reader .preface-header,
+.epilogue-reader .preface-chapter-header,
+.epilogue-reader .preface-article-header,
+.s4-verse {
+  border-left: none !important;
+  border-right: none !important;
+  border-left-width: 0 !important;
+}
+.preface-reader {
+  border: 1px solid #ddd !important;
+  border-left: none !important;
+}

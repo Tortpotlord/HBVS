@@ -2,58 +2,128 @@
 <html lang="en" data-theme="light" data-font="serif">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Holy Bible Vector Space v7.8.184.11 SECURE-WASM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>Holy Bible Vector Space - the sign of the Son of man</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'">
-
 <script>
 window.Capacitor = window.Capacitor || {};
 window.Capacitor.Plugins = window.Capacitor.Plugins || {};
 if(!window.Capacitor.Plugins.App){
-  window.Capacitor.Plugins.App = {
-    triggerEvent: function(evt){ console.log("[CAP FAKE]", evt); },
-    addListener: function(){ return { remove: function(){} }; }
-  };
+  window.Capacitor.Plugins.App = { triggerEvent: function(evt){ console.log("[CAP FAKE]", evt); }, addListener: function(){ return { remove: function(){} }; } };
 }
 window.Capacitor.isNativePlatform = window.Capacitor.isNativePlatform || function(){ return false; };
 window.Capacitor.getPlatform = window.Capacitor.getPlatform || function(){ return 'web'; };
 window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS SECURE]",msg); };
-window.HBVS_SPLASH_READY = function(){
-  const s=document.getElementById('splash');
-  const a=document.getElementById('app');
-  if(s) s.style.display='none';
-  if(a) a.classList.remove('hidden');
-};
+window.HBVS_SPLASH_READY = function(){ const s=document.getElementById('splash'); const a=document.getElementById('app'); if(s) s.style.display='none'; if(a) a.classList.remove('hidden'); };
 window.HBVS_READONLY = true;
+window.setAddr = function(){};
+window._hbvsReady=false;
+window.HBVS_ENGINE = {
+  getMode: function(){
+    try{
+      return (localStorage.getItem('hbvs_engineMode') || localStorage.getItem('engineMode') || localStorage.getItem('defaultEngine') || 'clean').toLowerCase();
+    }catch{ return 'clean'; }
+  },
+  isVerbose: function(){ return this.getMode() === 'verbose'; },
+  cleanForCard: function(t){
+    if(this.isVerbose()) return t;
+    return (t||'').replace(/\[(?:m|i|n|j)=[^\]]*\]/gi,'').replace(/\s{2,}/g,' ').trim();
+  },
+  cleanForCopy: function(t){
+    if(this.isVerbose()) return t;
+    return (t||'').replace(/\[(?:m|i|n|j|pre|sel)=[^\]]*\]/gi,'').replace(/\s{2,}/g,' ').trim();
+  }
+};
+window.buildMathCard = function(label, htmlContent){
+  return `<div class="math-card" data-label="${label}"><div class="card-label">${label}</div><div class="card-text">${htmlContent}</div></div>`;
+};
+window.getCardPlainText = function(cardEl){
+  let label = cardEl.querySelector('.card-label')?.innerText || cardEl.getAttribute('data-label') || '';
+  let textEl = cardEl.querySelector('.card-text') || cardEl.querySelector('.verse-text');
+  let text = textEl? textEl.innerText : cardEl.innerText.replace(label,'').trim();
+  text = (text||'').replace(/<[^>]*>/g,'').trim();
+  return label? `${label}\n${text}` : text;
+};
+// v78239.2 - APK detector global
+window.HBVS_IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || location.protocol==='file:' || location.protocol==='capacitor:' || /Capacitor|wv/i.test(navigator.userAgent);
 </script>
-
-<link rel="stylesheet" href="css/global.css?v=788411">
-<link rel="stylesheet" href="css/style.css?v=7818411">
-<link rel="stylesheet" href="css/preface.css?v=7818411">
-<link rel="stylesheet" href="css/preface-reader.css?v=7818411">
-<link rel="stylesheet" href="css/superscript.css?v=7818411">
-<link rel="stylesheet" href="css/mathkjv.css?v=7818411">
+<link rel="stylesheet" href="css/global.css?v=78239">
+<link rel="stylesheet" href="css/style.css?v=78239">
+<link rel="stylesheet" href="css/preface.css?v=78274">
+<link rel="stylesheet" href="css/preface-reader.css?v=78275">
+<link rel="stylesheet" href="css/superscript.css?v=78239">
+<link rel="stylesheet" href="css/mathkjv.css?v=78239">
 <style>
 .change-verse-nav{display:flex;justify-content:center;align-items:center;gap:14px;margin:10px 0 6px 0;}
 .change-verse-nav button{padding:8px 16px;border:2px solid var(--border);background:var(--bg2);border-radius:8px;font-weight:900;font-size:18px;min-width:44px;cursor:pointer;}
 #btn-change-verse{font-weight:800;color:var(--accent);text-decoration:underline;margin:0;cursor:pointer;}
 .security-badge{display:inline-block;background:#0a7;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:800;margin-left:8px;}
+.reader-cards.card{border:1px solid var(--border);border-radius:8px;padding:10px;margin:8px 0;background:var(--bg2)}
+#home-cards{display:flex;flex-direction:column;gap:10px;max-width:780px;margin:0 auto;padding:0 8px;box-sizing:border-box;}
+#home-cards.card{width:100%;box-sizing:border-box;overflow-wrap:break-word;word-break:break-word;}
+#home-cards.verse-text{white-space:normal;line-height:1.6;}
+.copy-exact-bar{max-width:780px;margin:10px auto;padding:8px;border:2px solid var(--accent);border-radius:12px;background:var(--bg2);display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;}
+.copy-exact-bar button{padding:8px 12px;border:2px solid var(--border);border-radius:8px;background:var(--bg);font-weight:800;cursor:pointer;}
+.copy-exact-bar button.primary{ background:#111; color:#fff; }
+.print-bar{max-width:780px;margin:8px auto;padding:6px;border:1px solid #800020;border-radius:10px;background:#fff8f0;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;}
+.print-bar button{padding:8px 14px;border-radius:8px;border:none;font-weight:900;font-size:11px;cursor:pointer;}
+#print-area{display:none;}
+#verse-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:100000;display:flex;justify-content:center;align-items:flex-start;padding-top:80px;box-sizing:border-box;}
+#verse-modal.hidden{ display:none!important; }
+#verse-modal.modal-content{background:var(--card);border:3px solid var(--border);border-radius:12px;padding:18px;width:92%;max-width:420px;max-height:85vh;overflow:auto;z-index:100001;position:relative;}
+#topbar{ z-index:999; }
+.logo-title img, #splash img,.logo-img{ background:transparent!important; border:0!important; outline:0!important; box-shadow:none!important; }
+#hbvs-picker{position:fixed;bottom:78px;right:12px;z-index:99999;background:#111;color:#fff;padding:10px 14px;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.5);display:none;gap:10px;align-items:center;font-weight:800;}
+#hbvs-picker button{padding:7px 12px;border-radius:9px;border:0;font-weight:900;cursor:pointer;}
+#hbvs-reader{background:#8B0000;color:#fff;}
+#hbvs-copy{background:#444;color:#fff;}
+#hbvs-clear{background:#222;color:#fff;}
+.grid-num.picked,.card.picked{outline:3px solid #8B0000!important;background:rgba(139,0,0,.08)!important;}
+#siteAddr, #splash-site, #siteAddrBottom, #bible-list, #readerTitleBottom {display:none!important; visibility:hidden!important; height:0!important; width:0!important; overflow:hidden!important; margin:0!important; padding:0!important; font-size:0!important; line-height:0!important; opacity:0!important; pointer-events:none!important;}
+#btn-stats{padding:5px 10px;background:#800020;color:#fff;border:none;border-radius:8px;font-weight:900;font-size:11px;margin-left:8px;cursor:pointer;}
+#btn-stats:active{transform:scale(0.97)}
+#hbvs-print-timestamp{font-family:monospace;}
+.card-label{font-weight:900;color:#8B0000;font-size:11px;letter-spacing:0.8px;margin-bottom:6px;text-transform:uppercase;border-bottom:1px solid #eee;padding-bottom:3px;display:block;}
+.card-text{line-height:1.65;white-space:normal;display:block;}
+.math-card{border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg2);margin:8px 0;width:100%;box-sizing:border-box;}
+.katex-display{overflow-x:auto!important;overflow-y:hidden!important;max-width:100%!important;padding-bottom:12px!important;}
+.katex-display::-webkit-scrollbar{height:8px;}
+.katex-display::-webkit-scrollbar-thumb{background:#888;border-radius:4px;}
+.eq-scroll{overflow-x:auto;max-width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:4px 8px;background:#fafafa;}
+@media print{
+.no-print, #topbar, #bottom-bar,.copy-exact-bar,.change-verse-nav,#verse-modal,#sidemenu,#overlay,#siteAddr,#splash-site,#hbvs-picker,.print-bar,#search-dedicated-page{ display:none!important; }
+ #print-area{ display:block!important; margin:0!important; padding:0!important; }
+ #hbvs-print-timestamp{ display:block!important; position:fixed!important; bottom:0!important; left:0!important; right:0!important; text-align:center!important; font-size:9px!important; border-top:1px solid #800020!important; padding:3px!important; background:#fff!important; color:#000!important; }
+ body{ margin:0!important; padding:8px 8px 30px 8px!important; }
+ img{ background:transparent!important;border:0!important;outline:0!important;box-shadow:none!important; }
+}
+@media (max-width:600px){
+ #home-cards{padding:0 6px;}
+ #home-cards.card{font-size:15px;}
+.topbar-row2{display:flex;flex-wrap:wrap;gap:6px;}
+}
+#family-qr-box.web-only{ text-align:center; padding:20px; background:#fff; margin-top:20px; border-top:2px solid #eee; }
+html[data-app="true"] #family-qr-box{ display:none!important; }
 </style>
 </head>
 <body>
 <div id="splash">
-  <img src="assets/IGoToTheFather.png?v=7818411" alt="I Go To The Father"/>
+  <img src="assets/IGoToTheFather.png?v=78239" alt="I Go To The Father" style="background:transparent!important;border:none!important;box-shadow:none!important"/>
   <div style="font-size:18px;font-weight:bold;color:#8B5A2B;">HOLY BIBLE VECTOR SPACE <span class="security-badge">SECURE-WASM</span></div>
-  <p id="splash-text">Initializing HBVS v7.8.18411 - DB Read-Only + WASM + Epi3:3 Wrapper Fix</p>
+  <div style="font-size:11px;opacity:0.7;font-style:italic;margin-top:2px;color:#8B5A2B;">the sign of the Son of man</div>
+  <p id="splash-text">Initializing HBVS v7.8.239 Rule2e Clean</p>
+  <div id="splash-site"></div>
 </div>
 <div id="overlay"></div>
 <div id="sidemenu">
   <h4>Menu</h4>
-  <p><a href="index.html">Home</a></p>
-  <p><a href="bible.html">Bible</a></p>
-  <p><a href="studyhub.html">StudyHub</a></p>
-  <p><a href="settings.html">Settings</a></p>
+  <p><a href="./index.html?v=78239">Home</a></p>
+  <p><a href="./bible.html?v=78277">Bible</a></p>
+  <p><a href="./studyhub.html?v=78239">StudyHub</a></p>
+  <p><a href="./settings.html?v=78239">Settings</a></p>
 </div>
 <div id="verse-modal" class="modal hidden">
   <div class="modal-content">
@@ -68,49 +138,255 @@ window.HBVS_READONLY = true;
   <header id="topbar">
     <div class="topbar-row1">
       <button class="hamburger" id="btn-menu">☰</button>
-      <div class="logo-title"><img src="assets/IGoToTheFather.png?v=7818411" alt="Logo"/><div class="app-title">Holy Bible Vector Space</div></div>
+      <div class="logo-title" style="display:flex;align-items:center;gap:8px">
+        <img src="assets/IGoToTheFather.png?v=78239" alt="Logo" style="width:36px;height:36px;background:transparent!important;border:none!important;box-shadow:none!important"/>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;">
+          <div class="app-title" style="font-weight:900;color:#8B5A2B">Holy Bible Vector Space</div>
+          <div style="font-size:10px;opacity:0.65;font-style:italic;letter-spacing:0.3px;margin-top:1px;line-height:1;">the sign of the Son of man</div>
+        </div>
+      </div>
       <div class="topbar-icons header-icons">
-        <button id="btn-random" class="icon-btn" title="Random Verse">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="16 3 21 8"></polyline>
-            <line x1="4" y1="20" x2="21" y2="3"></line>
-            <polyline points="21 16 21 21 16 21"></polyline>
-            <line x1="15" y1="15" x2="21" y2="21"></line>
-            <line x1="4" y1="4" x2="9" y2="9"></line>
-          </svg>
-        </button>
-        <button id="btn-search" class="icon-btn" title="Search Phrase / Location">
-          <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/></svg>
-        </button>
+        <button id="btn-random" class="icon-btn" title="Random Verse">🔀</button>
+        <button id="btn-search" class="icon-btn" title="Search">🔍</button>
+        <button id="btn-stats" title="Statistics">📊 Stats</button>
       </div>
     </div>
     <div class="subtitle" id="sub1">Bible: AKJV 1611 PCE circa 1900 [READ-ONLY]</div>
-    <div class="subtitle" id="sub2">Reader: MathKJVP - v7.8.18411 Secure WASM + Inherent Plain + Epi3:3</div>
+    <div class="subtitle" id="sub2">Reader: MathKJVP - v7.8.239 Rule2e Clean</div>
+    <div id="siteAddr"></div>
     <div class="topbar-row2"><select id="bible-select"></select><select id="math-select"></select></div>
+    <div class="topbar-row3">
+      <select id="uiLang" title="UI Language">
+        <option value="en" selected>English (Default)</option>
+        <option value="fr">French</option>
+        <option value="es">Spanish</option>
+        <option value="nl">Dutch</option>
+        <option value="zh">Chinese</option>
+      </select>
+    </div>
   </header>
   <main>
     <section id="tab-home">
       <p class="daily-bread">Daily Bread - Protected</p>
-      <h2 class="current-ref" id="current-ref">Gen1:4</h2>
+      <div style="display:flex;justify-content:center;align-items:center;gap:8px">
+        <h2 class="current-ref" id="current-ref">Gen1:4</h2>
+        <button id="btn-stats-inline" onclick="HBVS_STATS.open()" style="padding:4px 8px;background:#fff;border:2px solid #800020;color:#800020;border-radius:6px;font-size:10px;font-weight:900">📊 STATS</button>
+      </div>
       <div class="change-verse-nav">
-        <button id="btn-prev-verse" title="Previous Verse">&lt;</button>
+        <button id="btn-prev-verse">&lt;</button>
         <p class="change-verse" id="btn-change-verse">Change Verse</p>
-        <button id="btn-next-verse" title="Next Verse">&gt;</button>
+        <button id="btn-next-verse">&gt;</button>
       </div>
       <div id="home-cards" class="cards-vertical"></div>
+      <div class="print-bar no-print">
+        <button onclick="HBVS_PRINT('HOME')" style="background:#222;color:#fff">🖨️ PRINT HOME</button>
+        <button onclick="HBVS_PRINT('READER')" style="background:#800020;color:#fff">🖨️ PRINT READER</button>
+      </div>
       <div id="reader-view" class="hidden"></div>
+      <div id="searchResults"></div>
+      <div id="search-filter-bar" style="display:none"><select id="bookFilterSearch"></select></div>
     </section>
   </main>
-  <nav id="bottombar">
-    <div class="active">🏠<br>Home</div>
-    <div onclick="location.href='bible.html'">📖<br>Bible</div>
-    <div onclick="location.href='studyhub.html'">🔍<br>StudyHub</div>
-    <div onclick="location.href='settings.html'">⚙️<br>Settings</div>
-  </nav>
+  <div id="family-qr-box" class="web-only">
+    <h2>Family Scan</h2>
+    <img id="qr-img" src="assets/qr.png?v=78239" width="300" alt="QR" onerror="this.style.display='none'">
+    <p id="ip"></p>
+  </div>
+</div>
+<div id="print-area" style="display:none"></div>
+<div id="hbvs-picker">
+  <span id="hbvs-count">Basket: 0/100</span>
+  <button id="hbvs-reader">Reader</button>
+  <button id="hbvs-copy">Copy</button>
+  <button id="hbvs-clear">X</button>
 </div>
 <script src="js/sql.js-1.8.0/dist/sql-wasm.js"></script>
-<script src="js/hbvs_engine.js?v=7818411"></script>
-<script src="js/app.js?v=7818411"></script>
-<script src="js/highlight_copy.js?v=7818411"></script>
+<script src="js/hbvs_engine.js?v=78239"></script>
+<script src="js/hbvs_worker.js?v=78239"></script>
+<script src="js/corollary_sync.js?v=2"></script>
+<script src="js/hbvs_reader.js?v=78239"></script>
+<script src="js/hbvs_basket.js?v=78254"></script>
+<script src="js/hbvs_stats.js?v=78239"></script>
+<script src="js/search_glass.js?v=78239.4"></script>
+<script src="js/bible_tab.js?v=7.8.281d"></script>
+<script src="js/bible_tab_bridge.js?v=184.18"></script>
+<script src="js/highlight_copy.js?v=78281"></script>
+<script src="js/hbvs_ergonomics.js?v=78239"></script>
+<script src="js/fullscreen.js?v=78238"></script>
+<script src="js/app.js?v=78239h"></script>
+<script src="js/swipe_nav.js?v=78285"></script>
+<script src="js/layout.js?v=78239.3"></script>
+<script src="js/epilogue.js?v=78239"></script>
+<script src="js/print_fix.js?v=2.1"></script>
+<script src="js/hbvs_audio_fix.js?v=7.8.283"></script>
+<script>
+setTimeout(()=>{ if(document.getElementById('app')?.classList.contains('hidden')){ window.HBVS_SPLASH_READY(); } },4000);
+(function killBottomText(){
+  function nuke(){
+    ['siteAddr','splash-site','siteAddrBottom','bible-list','readerTitleBottom'].forEach(id=>{
+      var el=document.getElementById(id);
+      if(el){ el.textContent=''; el.innerHTML=''; el.style.display='none'; }
+    });
+  }
+  window.setAddr = function(){ nuke(); };
+  window.HBVS_SET_ADDR = function(){ nuke(); };
+  nuke();
+  setInterval(nuke, 800);
+  window.addEventListener('load', nuke);
+  const obs = new MutationObserver(nuke);
+  obs.observe(document.documentElement, {childList:true, subtree:true, characterData:true});
+})();
+window.getAppHeaderText = function(){
+  const t='Holy Bible Vector Space';
+  const s='the sign of the Son of man';
+  const r=document.getElementById('current-ref')?.innerText || '';
+  const stamp=new Date().toLocaleString();
+  let txt=`${t}\n${s}\n${r}\nPrinted: ${stamp}\n\n`;
+  return window.HBVS_ENGINE? window.HBVS_ENGINE.cleanForCopy(txt) : txt;
+};
+window.getAppHeaderHtml = function(){
+  const t='Holy Bible Vector Space';
+  const s='the sign of the Son of man';
+  const r=document.getElementById('current-ref')?.innerText || '';
+  const stamp=new Date().toLocaleString();
+  return `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px 0 0 0;font-family:serif;line-height:1">
+      <img src="assets/IGoToTheFather.png?v=78239" style="width:68px;height:68px;object-fit:contain;background:transparent!important;border:0!important;outline:0!important;box-shadow:none!important;margin:0 0 2px 0;display:block">
+      <div style="font-weight:900;font-size:19px;line-height:1.0;margin:0;padding:0">${t}</div>
+      <div style="font-style:italic;font-size:12px;line-height:1.0;margin:0;padding:0;opacity:.85">${s}</div>
+      <div style="font-weight:800;font-size:12px;line-height:1.0;margin:2px 0 0 0;padding:0;color:#800020">${r}</div>
+      <div style="font-size:9px;opacity:.6;margin-top:2px">Printed: ${stamp}</div>
+    </div>
+    <hr style="border:none;border-top:3px solid #800020;margin:4px 14px 8px 14px">
+  `;
+};
+document.getElementById('btn-stats')?.addEventListener('click', ()=> window.HBVS_STATS?.open());
+(function(){
+  function applyHomeTheme(){
+    const th = localStorage.getItem('hbvs_theme') || 'light';
+    const font = localStorage.getItem('hbvs_font') || 'serif';
+    const fs = localStorage.getItem('hbvs_fontSize') || '16';
+    document.documentElement.setAttribute('data-theme', th);
+    document.documentElement.setAttribute('data-font', font);
+    document.documentElement.style.setProperty('--font-size', fs+'px');
+  }
+  applyHomeTheme();
+  window.addEventListener('storage', applyHomeTheme);
+  window.addEventListener('hbvs-theme-changed', e=>{ localStorage.setItem('hbvs_theme', e.detail); applyHomeTheme(); });
+  function cleanCardsDOM(){
+    if(window.HBVS_ENGINE.isVerbose()) return;
+    const cards = document.querySelectorAll('#home-cards.card, #reader-view.card,.reader-cards.card,.math-card');
+    cards.forEach(card=>{
+      card.querySelectorAll('.verse-text,.card-text, p, span').forEach(el=>{
+        if(el.innerHTML && /\[m=|\[i=|\[n=|\[j=/.test(el.innerHTML)){
+          el.textContent = window.HBVS_ENGINE.cleanForCard(el.textContent);
+        }
+      });
+      if(card.innerHTML && /\[m=|\[i=|\[n=|\[j=/.test(card.innerHTML)){
+        card.innerHTML = card.innerHTML.replace(/\[(?:m|i|n|j)=[^\]]*\]/gi,'');
+      }
+    });
+  }
+  const observer = new MutationObserver(()=>{ setTimeout(cleanCardsDOM, 50); });
+  const homeCards = document.getElementById('home-cards');
+  const readerView = document.getElementById('reader-view');
+  if(homeCards) observer.observe(homeCards, {childList:true, subtree:true});
+  if(readerView) observer.observe(readerView, {childList:true, subtree:true});
+  window.addEventListener('hbvs-engine-changed', ()=>{
+    if(window.HBVS_ENGINE.isVerbose()){ location.reload(); } else { cleanCardsDOM(); }
+  });
+  window.addEventListener('load', ()=> setTimeout(cleanCardsDOM, 800));
+  setTimeout(cleanCardsDOM, 1500);
+})();
+</script>
+<script>
+/* === FIX COPY EXACT SCREEN v78239b === */
+(function(){
+  function buildCleanCopyText(){
+    let ref = document.getElementById('current-ref')?.innerText || '';
+    let header = `Holy Bible Vector Space\nthe sign of the Son of man\n${ref}\n`;
+    let parts = [];
+    document.querySelectorAll('#home-cards .card, #home-cards .math-card, #home-cards .reader-cards.card').forEach(card=>{
+      let raw = card.innerText.trim();
+      if(!raw) return;
+      raw = raw.replace(/^MATHKJVT\s*\(/m, 'MATHKJVT\n(');
+      raw = raw.replace(/^MATHKJVT\(/m, 'MATHKJVT\n(');
+      raw = raw.replace(/MATHKJVT\(which\)/i, 'MATHKJVT\n(which)');
+      try{ if(!window.HBVS_ENGINE.isVerbose()){ raw = window.HBVS_ENGINE.cleanForCopy(raw); } }catch{}
+      raw = raw.replace(/^(MATHKJVP|MATHKJVS|MATHKJVT)(?=\S)/m, '$1\n');
+      parts.push(raw);
+    });
+    return header + '\n' + parts.join('\n\n');
+  }
+  window.getCopyExactText = buildCleanCopyText;
+  window.HBVS_COPY_EXACT_TEXT = buildCleanCopyText;
+  function patchCopyButtons(){
+    document.querySelectorAll('button').forEach(btn=>{
+      let t = (btn.innerText||'').toLowerCase();
+      if(t.includes('copy exact') || t.includes('copy screen') || t.includes('exact screen')){
+        btn.onclick = async function(e){
+          e.preventDefault();
+          let txt = buildCleanCopyText();
+          try{ await navigator.clipboard.writeText(txt); let old=btn.innerText; btn.innerText='Copied!'; setTimeout(()=> btn.innerText=old,1200); }catch{ let ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+        };
+      }
+      if(t.includes('share')){
+        btn.onclick = async function(e){
+          e.preventDefault();
+          let txt = buildCleanCopyText();
+          if(navigator.share){ try{ await navigator.share({title: document.title, text: txt}); }catch{} }else{ await navigator.clipboard.writeText(txt); }
+        };
+      }
+    });
+  }
+  window.addEventListener('load', ()=> setTimeout(patchCopyButtons, 800));
+  setTimeout(patchCopyButtons, 1500);
+  setInterval(patchCopyButtons, 3000);
+})();
+</script>
+<script>
+(function(){
+  function ready(){
+    if(!window.SEARCH_GLASS ||!window.HBVS_NAV){ setTimeout(ready,150); return; }
+    SEARCH_GLASS.closeToHome = window.HBVS_NAV.toHomePage;
+    SEARCH_GLASS.closeToReader = window.HBVS_NAV.toHBVSReader;
+    var bs=document.getElementById('btn-search');
+    if(bs) bs.onclick = function(e){ e.preventDefault(); SEARCH_GLASS.open(); };
+    console.log("[HBVS LAYOUT FIX v78239.2 READY]");
+  }
+  ready();
+})();
+</script>
+<script>
+// v78239.2 QR WEB-ONLY FIX - never hang APK
+(function(){
+  const isApp = window.HBVS_IS_APP;
+  const box = document.getElementById('family-qr-box');
+  const ip = document.getElementById('ip');
+  if(isApp){
+    document.documentElement.setAttribute('data-app','true');
+    if(box) box.style.display='none';
+    if(ip) ip.textContent='';
+    console.log('[HBVS] APK: QR box hidden, no fetch');
+    return;
+  }
+  // WEB ONLY:
+  if(ip){ ip.textContent = location.href; }
+  // safe fetch for /qr endpoint if exists
+  (async()=>{
+    try{
+      const ctrl = new AbortController();
+      const t = setTimeout(()=>ctrl.abort(), 2000);
+      const r = await fetch('/qr', {signal: ctrl.signal});
+      clearTimeout(t);
+      if(!r.ok) return;
+      const txt = await r.text();
+      if(ip && txt) ip.textContent = txt || location.href;
+    }catch(e){
+      console.log('[HBVS WEB] /qr not available, using location.href');
+    }
+  })();
+})();
+</script>
 </body>
 </html>

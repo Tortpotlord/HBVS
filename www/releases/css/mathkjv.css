@@ -1,0 +1,130 @@
+/* C: CSS Stylesheet for KJV PRIMARY / SECONDARY / TERTIARY + BIBLE TAB */
+
+/* BASE MATHKJV */
+.mathkjv {
+  font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
+  font-size: 1.1rem;
+  line-height: 1.9;
+  text-align: justify;
+}
+
+/* === HBVS ENGINE TOKENS === */
+.sym { 
+  font-weight: 600; /* = ↦ */
+}
+.paren { 
+  font-style: normal; 
+  font-weight: 600; /* WFF ( ) */
+}
+/* i) The symbols =, ↦, (, ) should be rendered in colour */
+.math-p .sym, .math-p .paren { color: var(--accent); }
+.math-s .sym, .math-s .paren { color: var(--accent); }
+.math-t .sym, .math-t .paren { color: var(--accent); }
+.math-akjv .sym, .math-akjv .paren { color: var(--accent); }
+.math-superscript .sym, .math-superscript .paren { color: var(--accent); }
+
+/* Specific symbols from engine */
+.eq { /* = */ }
+.arrow { /* ↦ */ }
+
+/* Italics must stay */
+.mathkjv i { font-style: italic; }
+
+/* === BIBLE TAB VIEW A: CARD VIEW === */
+.verse-block {
+  margin: 16px 0; 
+  padding: 16px; 
+  border-left: 4px solid var(--accent); 
+  background: var(--card); 
+  border-radius: 10px; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
+  border: 1px solid var(--border);
+}
+.verse-block b { 
+  color: var(--accent); 
+  font-size: 13px; 
+  display: block; 
+  margin-bottom: 8px; 
+  font-weight: 600;
+}
+.verse-block.highlight { 
+  border-left: 4px solid var(--accent); 
+  background: #faf8f5; 
+  box-shadow: 0 4px 12px rgba(139,90,43,0.15); 
+}
+
+/* === BIBLE TAB VIEW B: 66 BOOKS TABLE VIEW === */
+.math-table {
+  width: 100%; 
+  border-collapse: collapse; 
+  margin-top: 16px;
+  background: var(--card); 
+  border: 1px solid var(--border); 
+  border-radius: 8px; 
+  overflow: hidden;
+  font-family: "EB Garamond", serif;
+}
+.math-table th {
+  background: #faf8f5; 
+  color: var(--accent); 
+  font-weight: bold; 
+  padding: 10px 12px; 
+  border-bottom: 2px solid var(--border); 
+  text-align: left;
+  font-size: 12px; 
+  text-transform: uppercase;
+}
+.math-table td {
+  padding: 10px 12px; 
+  border-bottom: 1px solid var(--border); 
+  vertical-align: top;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.math-table tr:last-child td { border-bottom: none; }
+.math-table .key-col { 
+  width: 160px; 
+  font-weight: bold; 
+  color: var(--muted); 
+  white-space: nowrap; 
+}
+.math-table .header-row td { 
+  background: #faf8f5; 
+  font-weight: bold; 
+  color: var(--accent); 
+  text-align: center; 
+  font-size: 15px; 
+  padding: 14px; 
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* PRIMARY - Burgundy */
+.card.sym-primary { border-left: 4px solid var(--burgundy); }
+.sym-primary .sym,
+.sym-primary .paren { 
+  color: var(--burgundy);
+}
+
+/* SECONDARY - Tomato */
+.card.sym-secondary { border-left: 4px solid var(--tomato); }
+.sym-secondary .sym,
+.sym-secondary .paren { 
+  color: var(--tomato);
+}
+
+/* TERTIARY - Gold */
+.card.sym-tertiary { border-left: 4px solid var(--gold); }
+.sym-tertiary .sym,
+.sym-tertiary .paren { 
+  color: var(--gold);
+}
+
+/* SUBTITLE STYLE - shared */
+.card .card-question {
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.75;
+  margin: -4px 0 8px 0;
+  font-family: "EB Garamond", serif;
+}

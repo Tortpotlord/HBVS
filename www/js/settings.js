@@ -1,13 +1,12 @@
-console.log("HBVS SETTINGS.JS v7.8.149 SECURE-WASM COMPAT LOADED");
+console.log("HBVS SETTINGS.JS v7.8.239 CLEAN DEFAULT + SECURE-WASM");
 
-// === v7.8.149 SECURITY LAYERS - protect Bible Text - DB READ-ONLY ===
 window.HBVS_SECURE = window.HBVS_SECURE || {
   MAX_SIZE: 512*1024,
   MAX_LINES: 5000,
   validateFile: function(file){
     if(!file) throw "No file";
-    if(file.size > this.MAX_SIZE) throw "File too large >512KB (bomb protection)";
-    if(!file.name.toLowerCase().endsWith('.txt')) throw "Only.txt allowed";
+    if(file.size > this.MAX_SIZE) throw "File too large >512KB";
+    if(!file.name.toLowerCase().endsWith('.txt')) throw "Only.txt";
     if(file.type && file.type!=='text/plain' && file.type!=='') throw "Invalid MIME: "+file.type;
     return true;
   },
@@ -15,9 +14,7 @@ window.HBVS_SECURE = window.HBVS_SECURE || {
     let clean = text.replace(/<[^>]*>/g,'');
     clean = clean.replace(/javascript:/gi,'[blocked]');
     clean = clean.replace(/onerror\s*=|onload\s*=/gi,'[blocked]');
-    if(/DROP\s+TABLE|DELETE\s+FROM\s+Verses|INSERT\s+INTO\s+Verses/i.test(clean)){
-      throw "SQL injection blocked - Bible DB is read-only";
-    }
+    if(/DROP\s+TABLE|DELETE\s+FROM\s+Verses|INSERT\s+INTO\s+Verses/i.test(clean)) throw "SQL injection blocked";
     return clean.substring(0,500000);
   },
   validateStructure: function(arr){
@@ -33,11 +30,10 @@ window.HBVS_SECURE = window.HBVS_SECURE || {
 window.HBVS_READONLY = true;
 
 const THEMES = [
-  {id:'light', name:'Light'}, {id:'dark', name:'Dark'},
-  {id:'sepia', name:'Sepia'}, {id:'parchment', name:'Parchment'},
-  {id:'amber', name:'Amber'}, {id:'sand', name:'Sand'},
-  {id:'forest', name:'Forest'}, {id:'ocean', name:'Ocean'},
-  {id:'midnight', name:'Midnight'}, {id:'rose', name:'Rose'}
+  {id:'light', name:'Light'}, {id:'child-warm', name:'Child-Warm Recommended'},
+  {id:'rose', name:'Rose'}, {id:'amber', name:'Amber'}, {id:'sand', name:'Sand'},
+  {id:'parchment', name:'Parchment'}, {id:'sepia', name:'Sepia'},
+  {id:'dark', name:'Dark'}, {id:'forest', name:'Forest'}, {id:'ocean', name:'Ocean'}, {id:'midnight', name:'Midnight'}
 ];
 const FONTS = [
   {id:'serif', name:'Serif'}, {id:'sans', name:'Sans'}, {id:'mono', name:'Mono'},
@@ -46,11 +42,28 @@ const FONTS = [
   {id:'open-sans', name:'Open Sans'}, {id:'cormorant', name:'Cormorant Garamond'}
 ];
 
+// v7.8.239 FIX: Clean by default for Children
+let ENGINE_MODE = (localStorage.getItem('hbvs_engineMode') || localStorage.getItem('engineMode') || localStorage.getItem('defaultEngine') || 'clean').toLowerCase();
+if(!localStorage.getItem('hbvs_engineMode') &&!localStorage.getItem('engineMode') &&!localStorage.getItem('defaultEngine')){
+  ENGINE_MODE = 'clean';
+}
+
+function syncEngineMode(mode){
+  localStorage.setItem('hbvs_engineMode', mode);
+  localStorage.setItem('engineMode', mode);
+  localStorage.setItem('defaultEngine', mode);
+  // Broadcast to all tabs
+  window.dispatchEvent(new CustomEvent('hbvs-engine-changed',{detail:mode}));
+  try{ window.HBVS_ENGINE && (window.HBVS_ENGINE._mode = mode); }catch{}
+  console.log('[SETTINGS] Engine synced to', mode);
+}
+
 const SETTINGS = {
   theme: localStorage.getItem('hbvs_theme') || 'light',
   font: localStorage.getItem('hbvs_font') || 'serif',
   fontSize: localStorage.getItem('hbvs_fontSize') || '16',
-  epilogueOn: localStorage.getItem('hbvs_epilogueOn') === 'true'
+  epilogueOn: localStorage.getItem('hbvs_epilogueOn') === 'true',
+  engineMode: ENGINE_MODE
 };
 
 function applySettings(){
@@ -135,7 +148,7 @@ function renderPreview() {
       }
     });
     html+='</div>';
-    html+=`<div style="margin-top:12px;font-size:11px;color:var(--muted);">🔒 Secure: ${verses.length} verses, ${new Set(verses.map(v=>v.CHAPTER)).size} chapters | DB read-only | WASM CSP ok</div>`;
+    html+=`<div style="margin-top:12px;font-size:11px;color:var(--muted);">🔒 Secure: ${verses.length} verses | Clean Mode: ${ENGINE_MODE.toUpperCase()}</div>`;
     previewEl.innerHTML=html;
   }catch(e){
     previewEl.innerHTML='Error parsing Epilogue';
@@ -144,6 +157,9 @@ function renderPreview() {
 
 document.addEventListener('DOMContentLoaded', ()=>{
   applySettings();
+  // Init clean if empty - v7.8.239
+  syncEngineMode(ENGINE_MODE);
+
   const themeSelect = document.getElementById('theme-select');
   if(themeSelect){
     themeSelect.innerHTML = THEMES.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
@@ -162,6 +178,22 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const label=document.getElementById('font-size-label'); if(label) label.innerText = SETTINGS.fontSize;
     fontSize.oninput = (e)=>{ SETTINGS.fontSize=e.target.value; const lbl=document.getElementById('font-size-label'); if(lbl) lbl.innerText=e.target.value; localStorage.setItem('hbvs_fontSize',e.target.value); applySettings(); }
   }
+
+  // ENGINE TOGGLE - v7.8.239 NEW
+  const engToggle = document.getElementById('engine-toggle');
+  const engLabel = document.getElementById('engine-label');
+  if(engToggle){
+    engToggle.checked = (ENGINE_MODE === 'verbose');
+    if(engLabel){ engLabel.textContent = ENGINE_MODE.toUpperCase(); engLabel.style.color = ENGINE_MODE==='clean'? '#0a7' : '#800020'; }
+    engToggle.onchange = (e)=>{
+      ENGINE_MODE = e.target.checked? 'verbose' : 'clean';
+      SETTINGS.engineMode = ENGINE_MODE;
+      syncEngineMode(ENGINE_MODE);
+      if(engLabel){ engLabel.textContent = ENGINE_MODE.toUpperCase(); engLabel.style.color = ENGINE_MODE==='clean'? '#0a7' : '#800020'; }
+      window.SafeNotify('Engine: '+ENGINE_MODE.toUpperCase(), 'success');
+    };
+  }
+
   const epiToggle = document.getElementById('epilogue-toggle');
   if(epiToggle){
     epiToggle.checked = SETTINGS.epilogueOn;
@@ -212,7 +244,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       localStorage.setItem('hbvs_epilogue_hash', btoa(sanitized.substring(0,100)));
       localStorage.setItem('hbvs_epilogueOn', 'true');
       if(epiToggle) epiToggle.checked=true;
-      const status=document.getElementById('epilogue-status'); if(status) status.innerText=`✅ Secure saved ${json.length} verses - DB protected`;
+      const status=document.getElementById('epilogue-status'); if(status) status.innerText=`✅ Secure saved ${json.length} verses`;
       window.SafeNotify(`Secure saved ${json.length} verses`, 'success');
       renderPreview();
     }catch(err){
@@ -236,8 +268,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     localStorage.removeItem('hbvs_epilogue_text');
     localStorage.removeItem('hbvs_epilogue_hash');
     if(ta) ta.value='';
-    const preview=document.getElementById('epilogue-preview'); if(preview) preview.innerHTML='Cleared - Bible DB untouched';
-    const status=document.getElementById('epilogue-status'); if(status) status.innerText='Cleared - secure';
-    window.SafeNotify('Epilogue cleared - Bible protected', 'info');
+    const preview=document.getElementById('epilogue-preview'); if(preview) preview.innerHTML='Cleared';
+    const status=document.getElementById('epilogue-status'); if(status) status.innerText='Cleared';
+    window.SafeNotify('Epilogue cleared', 'info');
   });
 });

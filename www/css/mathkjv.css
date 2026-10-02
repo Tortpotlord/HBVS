@@ -1,4 +1,12 @@
 /* C: CSS Stylesheet for KJV PRIMARY / SECONDARY / TERTIARY + BIBLE TAB */
+/* v7.8.185.1 FIXED - colours P/S/T restored, worker compatible */
+
+:root {
+  --burgundy: #8B0000;
+  --tomato: #C04000;
+  --gold: #B8860B;
+  --accent: var(--burgundy);
+}
 
 /* BASE MATHKJV */
 .mathkjv {
@@ -10,18 +18,38 @@
 
 /* === HBVS ENGINE TOKENS === */
 .sym { 
-  font-weight: 600; /* = ↦ */
+  font-weight: 700;
 }
 .paren { 
   font-style: normal; 
-  font-weight: 600; /* WFF ( ) */
+  font-weight: 700;
 }
-/* i) The symbols =, ↦, (, ) should be rendered in colour */
-.math-p .sym, .math-p .paren { color: var(--accent); }
-.math-s .sym, .math-s .paren { color: var(--accent); }
-.math-t .sym, .math-t .paren { color: var(--accent); }
-.math-akjv .sym, .math-akjv .paren { color: var(--accent); }
-.math-superscript .sym, .math-superscript .paren { color: var(--accent); }
+.sym.para-end {
+  opacity: 0.35;
+  font-weight: 400;
+}
+
+/* i) The symbols =, ↦, (, ) should be rendered in colour - FIXED PER MODE */
+.mathp .sym, .mathp .paren,
+.math-p .sym, .math-p .paren { color: var(--burgundy) !important; }
+.maths .sym, .maths .paren,
+.math-s .sym, .math-s .paren { color: var(--tomato) !important; }
+.matht .sym, .matht .paren,
+.math-t .sym, .math-t .paren { color: var(--gold) !important; }
+.math-akjv .sym, .math-akjv .paren,
+.akjv .sym, .akjv .paren { color: var(--burgundy) !important; }
+.math-superscript .sym, .superscript .sym,
+.math-superscript .paren, .superscript .paren { color: var(--accent) !important; }
+
+/* Fallback for hbvs-output wrapper */
+.hbvs-output.mathp .sym,
+.hbvs-output.mathp .paren { color: var(--burgundy) !important; }
+.hbvs-output.maths .sym,
+.hbvs-output.maths .paren { color: var(--tomato) !important; }
+.hbvs-output.matht .sym,
+.hbvs-output.matht .paren { color: var(--gold) !important; }
+.hbvs-output.akjv .sym,
+.hbvs-output.akjv .paren { color: var(--burgundy) !important; }
 
 /* Specific symbols from engine */
 .eq { /* = */ }
@@ -99,26 +127,26 @@
   letter-spacing: 0.5px;
 }
 
-/* PRIMARY - Burgundy */
+/* PRIMARY - Burgundy - card border matches symbol colour */
+.verse-block.mathp,
+.hbvs-output.mathp { border-left-color: var(--burgundy); }
 .card.sym-primary { border-left: 4px solid var(--burgundy); }
 .sym-primary .sym,
-.sym-primary .paren { 
-  color: var(--burgundy);
-}
+.sym-primary .paren { color: var(--burgundy) !important; }
 
 /* SECONDARY - Tomato */
+.verse-block.maths,
+.hbvs-output.maths { border-left-color: var(--tomato); }
 .card.sym-secondary { border-left: 4px solid var(--tomato); }
 .sym-secondary .sym,
-.sym-secondary .paren { 
-  color: var(--tomato);
-}
+.sym-secondary .paren { color: var(--tomato) !important; }
 
 /* TERTIARY - Gold */
+.verse-block.matht,
+.hbvs-output.matht { border-left-color: var(--gold); }
 .card.sym-tertiary { border-left: 4px solid var(--gold); }
 .sym-tertiary .sym,
-.sym-tertiary .paren { 
-  color: var(--gold);
-}
+.sym-tertiary .paren { color: var(--gold) !important; }
 
 /* SUBTITLE STYLE - shared */
 .card .card-question {
@@ -128,3 +156,26 @@
   margin: -4px 0 8px 0;
   font-family: "EB Garamond", serif;
 }
+/* === READER VIVID EYE-CONTRAST v185.1 === */
+.hbvs-output.mathp { background: rgba(139,0,0,0.04); }
+.hbvs-output.maths { background: rgba(255,69,0,0.05); }
+.hbvs-output.matht { background: rgba(184,134,11,0.06); }
+
+.hbvs-output.mathp .sym { color: #8B0000 !important; text-shadow: 0 0 1px rgba(139,0,0,0.3); }
+.hbvs-output.maths .sym { color: #FF4500 !important; text-shadow: 0 0 1px rgba(255,69,0,0.3); }
+.hbvs-output.matht .sym { color: #B8860B !important; text-shadow: 0 0 1px rgba(184,134,11,0.4); }
+
+.verse-block:has(.mathp) { border-left: 6px solid #8B0000 !important; }
+.verse-block:has(.maths) { border-left: 6px solid #FF4500 !important; }
+.verse-block:has(.matht) { border-left: 6px solid #B8860B !important; }
+.eq-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: #fafafa;
+}
+.eq-scroll::-webkit-scrollbar { height: 8px; }
+.eq-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }

@@ -1,5 +1,5 @@
 window.SafeNotify = window.SafeNotify || function(msg){ console.log("[HBVS SECURE]",msg); };
-console.log("HBVS ENGINE v7.8.224 FIX Gen22:2 n=2/n=3 j=1"); // [v78224]
+console.log("HBVS ENGINE v7.8.239 FIX Rule2e + Clean Default"); // [v78239]
 
 const HBVS = (() => {
   let fwMap = new Map();
@@ -19,12 +19,20 @@ const HBVS = (() => {
   const getModeColor = (mode) => mode === 'P'? '#8B0000' : mode === 'S'? '#FF4500' : mode === 'T'? '#B8860B' : '#8B0000';
   const safeTrigger = (e) => { try{ window.Capacitor?.Plugins?.App?.triggerEvent?.(e); window.SafeNotify?.(e);}catch{} };
 
+  // v7.8.239 FIX: Clean Default + read all keys
+  const getEngineMode = () => {
+    try{
+      return (localStorage.getItem('hbvs_engineMode') || localStorage.getItem('engineMode') || localStorage.getItem('defaultEngine') || 'clean').toLowerCase();
+    }catch{ return 'clean'; }
+  };
+  const isClean = () => getEngineMode() === 'clean';
+
   const initWorker = () => {
     try{
-      worker = new Worker('js/hbvs_worker.js?v=78221');
+      worker = new Worker('js/hbvs_worker.js?v=78239');
       worker.onmessage = (e) => {
         const {type, id, res, out, fwSize, wrSize, err} = e.data;
-        if(type==='READY'){ workerReady=true; console.log(`HBVS Worker READY FW:${fwSize} WR:${wrSize}`); safeTrigger('hbvsEngineLoaded'); }
+        if(type==='READY'){ workerReady=true; console.log(`HBVS Worker READY FW:${fwSize} WR:${wrSize} Mode:${getEngineMode()}`); safeTrigger('hbvsEngineLoaded'); }
         if(type==='RENDERED' && pending.has(id)){ pending.get(id).resolve(res); pending.delete(id); }
         if(type==='BATCH_DONE' && pending.has(id)){ pending.get(id).resolve(out); pending.delete(id); }
         if(type==='ERROR' && pending.has(id)){ pending.get(id).reject(err); pending.delete(id); }
@@ -50,13 +58,9 @@ const HBVS = (() => {
         wrapArr.push([nk, r.value]);
       }
       stmtW.free();
-      if(worker){
-        worker.postMessage({type:'INIT', fw:fwArr, wrappers:wrapArr});
-      } else {
-        safeTrigger('hbvsEngineLoaded');
-      }
+      if(worker){ worker.postMessage({type:'INIT', fw:fwArr, wrappers:wrapArr}); } else { safeTrigger('hbvsEngineLoaded'); }
     } catch(e){ console.error(e); }
-    console.log(`HBVS v7.8.224 FIX. FW:${fwMap.size} WR:${wrapperMap.size} Worker:${!!worker}`);
+    console.log(`HBVS v7.8.239 Rule2e FIX. FW:${fwMap.size} WR:${wrapperMap.size} Worker:${!!worker} Mode:${getEngineMode()}`);
     if(!worker) safeTrigger('hbvsEngineLoaded');
   };
 
@@ -73,6 +77,7 @@ const HBVS = (() => {
     let result = input.replace(/<\/?i>/g, '');
     result = result.replace(/\(/g, INH_OPEN).replace(/\)/g, INH_CLOSE);
     let working = result;
+    working = working.replace(/\bof\s+might\b/gi, '(MIGHTNOUN)');
     const keys = [...wrapperMap.keys()].sort((a,b) => b.length - a.length);
     let changed = true, safety=0;
     while(changed && safety < 3){ changed=false; safety++;
@@ -97,8 +102,7 @@ const HBVS = (() => {
       working = working.replace(/\bof\b\s+([A-Za-z0-9'-]+)/gi, `($1)`);
       working = working.replace(/\bof\b/gi, `()`);
     } else if(mode==='P'||mode==='S'){
-      working = working.replace(/^of /i, 'Of ');
-      working = working.replace(/([.,:;!?])\s+of /gi, `$1 Of `);
+      // v7.8.239 Rule2e i) Preserve case Of at start - no forced lowercase
     }
     result = working;
     result = result.replace(/\(/g, WFF_OPEN).replace(/\)/g, WFF_CLOSE);
@@ -117,9 +121,13 @@ const HBVS = (() => {
     const tokens = []; text.replace(/(<[^>]+>)|([A-Za-z0-9'-]+)|([.,:;!?])|([^A-Za-z0-9'<.,:;!?-]+)/g, (m, tag, plain, punct, other) => {
       if(tag) tokens.push({w: tag, type:'TAG'}); else if(plain) tokens.push({w: plain, type:'FW?'}); else if(punct) tokens.push({w: punct, type:'PUNCT'}); else tokens.push({w: other, type: 'SPACE'}); return '';
     });
-    tokens.forEach(t => { if(t.type==='FW?') t.type = isFW(t.w)? 'FW' : 'WORD'; });
+    tokens.forEach(t => {
+      if(t.w==='MIGHTNOUN'){ t.type='WORD'; return; }
+      if(t.type==='FW?') t.type = isFW(t.w)? 'FW' : 'WORD';
+    });
     let fwChainCount = 0; const color = getModeColor(mode);
     for(let i=0; i<tokens.length; i++){ let t = tokens[i];
+      if(t.w==='MIGHTNOUN'){ t.out='might'; continue; }
       if(t.type!== 'FW'){ t.out = t.w; if(t.type==='PUNCT' || t.type==='WORD') fwChainCount=0; continue; }
       let j = i - 1; while(j >= 0 && (tokens[j].type === 'SPACE' || tokens[j].type === 'TAG')) j--;
       const prevIsFW = j >= 0 && tokens[j].type === 'FW'; const prevIsPunct = j >= 0 && tokens[j].type === 'PUNCT';
@@ -130,131 +138,118 @@ const HBVS = (() => {
       if(prevIsPunct){ if(mode === 'P') replace = false; if(mode === 'S' || mode === 'T') replace = true; }
       else if(isIsolated) replace = true; else { if(mode === 'P' && fwChainCount === 1) replace = true; if(mode === 'S' && fwChainCount === 2) replace = true; if(mode === 'T') replace = true; }
       if(nextIsPunct && (mode === 'P' || mode === 'S')) replace = false; if(isStart && (mode === 'P' || mode === 'S')) replace = false; if(isStart && mode === 'T') replace = true;
+      if(j>=0){ let pw = tokens[j].w.toLowerCase(); if(pw==='of' && t.w.toLowerCase()==='might'){ replace = false; } }
       if(['will','might','being','equal','need'].includes(t.w.toLowerCase())){
         if(j >= 0 && tokens[j].type === 'WORD'){
           let pw = tokens[j].w.toLowerCase();
-          if(/^(the|thy|his|my|our|your|a|own|good|human|mine|voluntary|imperative|further|no|not|suffer|public)$/i.test(tokens[j].w) || /'s$/i.test(tokens[j].w) || pw.endsWith("s'") || pw.includes("father")) replace = false;
+          if(/^(the|thy|his|my|our|your|a|own|their|good|human|mine|voluntary|imperative|further|no|not|suffer|public|this|that|these|those)$/i.test(tokens[j].w) || /'s$/i.test(tokens[j].w) || pw.endsWith("s'") || pw.includes("father")) {
+            replace = false;
+            if(pw==='this' && t.w.toLowerCase()==='will'){
+              let nk = k; while(nk < tokens.length && (tokens[nk].type === 'SPACE' || tokens[nk].type === 'TAG')) nk++;
+              if(nk < tokens.length){
+                let nextWord = tokens[nk].w.toLowerCase();
+                if(['we','you','they','i','he','she','it','ye'].includes(nextWord)){ replace = true; }
+                else if(['shall','should','will','would','may','might','must','be','is','are','was','were','been','being'].includes(nextWord)){ replace = false; }
+              }
+            }
+          }
         }
       }
+      if(t.w.toLowerCase()==='this'){ replace = false; }
       const symbol = fwMap.get(t.w.toLowerCase()); t.out = replace? `<span class="sym" style="color:${color}">${symbol}</span>` : t.w;
     }
-    return tokens.map(t => t.out).join('');
+    return tokens.map(t => t.out).join('').replace(/MIGHTNOUN/g,'might');
   }
 
-  // === FIXED COUNTING FOR Gen22:2 ===
-  const getCorrectedLocation = (rawFull, mathPlain, mathStart, mathEnd, mode) => {
-    if(!rawFull) return {correctedStart:mathStart, correctedEnd:mathEnd, m:0,i:0,n:0,j:0};
+const getCorrectedLocation = (rawFull, mathPlain, mathStart, mathEnd, mode, preCountIn, selCountIn) => {
+    if(!rawFull) return {correctedStart:mathStart, correctedEnd:mathEnd, m:0,i:0,n:0,j:0, pre:preCountIn||0, sel:selCountIn||0, mathStart, mathEnd};
     let cleanRaw = rawFull.replace(/<\/?i>/gi,' ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
     let words = cleanRaw.split(/\s+/).filter(w=>w.length>0);
     let akjvWC = words.length;
-    let ofDetails = [];
-    words.forEach((rawW, idx)=>{
-      let stripped = rawW.replace(/^[^\w]+|[^\w]+$/g,'').toLowerCase();
-      if(stripped === 'of'){
-        let isTerminal = /of[.,:;!?]+$/i.test(rawW) || idx===words.length-1 || /of[:;]$/.test(rawW);
-        let prevRaw = idx>0? words[idx-1] : "";
-        let is2d = idx===0;
-        let is2e =!is2d && /[.,:;!?]$/.test(prevRaw);
-        ofDetails.push({wordPos: idx+1, is2d, is2e, isIsolated: isTerminal});
+    let ofDetails=[];
+    words.forEach((rawW,idx)=>{
+      let s=rawW.replace(/^[^\w]+|[^\w]+$/g,'').toLowerCase();
+      if(s==='of'){
+        let prev=idx>0?words[idx-1]:"";
+        let is2d=idx===0;
+        let is2e=!is2d && /[.,:;!?]$/.test(prev);
+        let isIsolated=false;
+        if(idx===words.length-1) isIsolated=true;
+        ofDetails.push({wordPos:idx+1,is2d,is2e,isIsolated});
       }
     });
     const isT = String(mode).toUpperCase()==='T';
+    let ofNormalsPS = ofDetails.filter(d=>!d.is2d &&!d.is2e &&!d.isIsolated);
     let ofNormalsAll = ofDetails.filter(d=>!d.isIsolated);
     let ofIsolatedAll = ofDetails.filter(d=>d.isIsolated);
-    let ofNormalsPS = ofDetails.filter(d=>!d.isIsolated &&!d.is2d &&!d.is2e);
-    const countBefore = (arr, pos)=> arr.filter(d=>d.wordPos < pos).length;
-    const countUpTo = (arr, pos)=> arr.filter(d=>d.wordPos <= pos).length;
-    // For T, isolated of has math pos = PCE-1, so allow +1 offset
-    const countUpToT = (arr, pos)=> arr.filter(d=>d.wordPos <= pos+1).length;
-    const countBeforeT = (arr, pos)=> arr.filter(d=>d.wordPos < pos).length; // before stays <
-
-    let mArr, iArr, nArr, jArr;
-    if(isT){
-      mArr = [...ofNormalsAll,...ofIsolatedAll];
-      iArr = ofIsolatedAll;
-      nArr = [...ofNormalsAll,...ofIsolatedAll];
-      jArr = ofIsolatedAll;
-    } else {
-      mArr = ofNormalsPS;
-      iArr = [];
-      nArr = ofNormalsPS;
-      jArr = [];
-    }
-
-    let cS = mathStart, cE = mathEnd;
-    for(let k=0;k<20;k++){
-      let mTot, iTot, nTot, jTot;
-      if(isT){
-        mTot = countBefore(mArr, cS);
-        // isolated before start counted if its PCE < cS (since math pos = PCE-1, need < cS)
-        iTot = countBefore(iArr, cS);
-        nTot = countUpTo(ofNormalsAll, cE) + countUpToT(ofIsolatedAll, cE);
-        jTot = countUpToT(jArr, cE);
-      } else {
-        mTot = countBefore(mArr, cS);
-        iTot = 0;
-        nTot = countUpTo(nArr, cE);
-        jTot = 0;
-      }
-      let nS = mathStart + (2*mTot - iTot);
-      let nE = mathEnd + (2*nTot - jTot);
-      if(nS===cS && nE===cE) break;
-      cS=nS; cE=nE;
-      if(cS>akjvWC) cS=akjvWC;
-      if(cE>akjvWC) cE=akjvWC;
-      if(cS<1) cS=1;
-      if(cE<1) cE=1;
-    }
-    let final_m, final_i, final_n, final_j;
-    if(isT){
-      final_m = countBefore(mArr, cS);
-      final_i = countBefore(iArr, cS);
-      final_n = countUpTo(ofNormalsAll, cE) + countUpToT(ofIsolatedAll, cE);
-      // cap n to actual total of's
-      if(final_n > ofDetails.length) final_n = ofDetails.length;
-      final_j = countUpToT(jArr, cE);
-      if(final_j > ofIsolatedAll.length) final_j = ofIsolatedAll.length;
-    } else {
-      final_m = countBefore(mArr, cS);
-      final_i = 0;
-      final_n = countUpTo(nArr, cE);
-      final_j = 0;
-    }
-    return {correctedStart:cS, correctedEnd:cE, m:final_m, i:final_i, n:final_n, j:final_j};
+    let mArr = isT? [...ofNormalsAll,...ofIsolatedAll] : ofNormalsPS;
+    let nArr = isT? [...ofNormalsAll,...ofIsolatedAll] : ofNormalsPS;
+    const countBefore = (arr,pos)=>arr.filter(d=>d.wordPos<pos).length;
+    const countUpTo = (arr,pos)=>arr.filter(d=>d.wordPos<=pos).length;
+    let pre = (typeof preCountIn==='number')?preCountIn:(mathStart-1);
+    let sel = (typeof selCountIn==='number')?selCountIn:(mathEnd-mathStart+1);
+let cS = mathStart, cE = mathEnd;
+for(let k=0;k<30;k++){
+  let mNow = countBefore(mArr, cS);
+  let nNow = countUpTo(nArr, cE);
+  let nNext = countUpTo(nArr, cE+1);
+  if(nNext > nNow) nNow = nNext;
+  let nS = mathStart + 2*mNow;
+  let nE = mathEnd + 2*nNow;
+  if(isT){
+    let iB = ofIsolatedAll.filter(d=>d.wordPos < cS).length;
+    let jU = ofIsolatedAll.filter(d=>d.wordPos <= cE+1).length;
+    nS = mathStart + (2*mNow - iB);
+    nE = mathEnd + (2*nNow - jU);
+  }
+  if(nS===cS && nE===cE) break;
+  cS=nS; cE=nE;
+  if(cS>akjvWC) cS=akjvWC;
+  if(cE>akjvWC) cE=akjvWC;
+}
+    return {
+      correctedStart:cS,
+      correctedEnd:cE,
+      m:countBefore(mArr,cS),
+      i:isT?ofIsolatedAll.filter(d=>d.wordPos<cS).length:0,
+      n:countUpTo(nArr,cE),
+      j:isT?ofIsolatedAll.filter(d=>d.wordPos<=cE).length:0,
+      pre,sel,
+      mathStart,mathEnd
+    };
   };
   const getMathFromAKJV = (rawFull, akjvStart, akjvEnd, mode) => {
     if(!rawFull) return {mathStart:akjvStart, mathEnd:akjvEnd, m:0,i:0,n:0,j:0};
     let cleanRaw = rawFull.replace(/<\/?i>/gi,' ').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
     let words = cleanRaw.split(/\s+/).filter(w=>w.length);
-    let ofNormals = []; let ofIsolated = [];
+    let ofDetails = [];
     words.forEach((w,i)=>{
-      let rawW = w;
-      let stripped = rawW.replace(/^[^\w]+|[^\w]+$/g,'').toLowerCase();
-      if(stripped==='of'){
-        let isTerm = /of[.,:;!?]+$/i.test(rawW) || i===words.length-1;
-        if(isTerm) ofIsolated.push(i+1); else ofNormals.push(i+1);
+      let s = w.replace(/^[^\w]+|[^\w]+$/g,'').toLowerCase();
+      if(s==='of'){
+        let prev = i>0? words[i-1] : "";
+        let is2d = i===0;
+        let is2e =!is2d && /[.,:;!?]$/.test(prev);
+        let isIso = false;
+        if(i===words.length-1) isIso=true;
+        else if(/of[.,:;!?]+$/i.test(w)) isIso=true;
+        if(w.toLowerCase()==='of' && i < words.length-1) isIso=false;
+        ofDetails.push({wordPos:i+1, is2d, is2e, isIso});
       }
     });
+    let ofNormalsPS = ofDetails.filter(d=>!d.is2d &&!d.is2e &&!d.isIso);
+    const countBefore = (pos)=> ofNormalsPS.filter(p=>p.wordPos < pos).length;
+    const countUpTo = (pos)=> ofNormalsPS.filter(p=>p.wordPos <= pos).length;
     const isT = String(mode).toUpperCase()==='T';
-    const countNormalBefore = (pos)=> ofNormals.filter(p=>p < pos).length;
-    const countIsolatedBefore = (pos)=> ofIsolated.filter(p=>p < pos).length;
-    const countNormalUpTo = (pos)=> ofNormals.filter(p=>p <= pos).length;
-    const countIsolatedUpTo = (pos)=> ofIsolated.filter(p=>p <= pos).length;
     let cS=akjvStart, cE=akjvEnd;
     for(let k=0;k<20;k++){
-      let mTotBefore = isT? countNormalBefore(cS)+countIsolatedBefore(cS) : countNormalBefore(cS);
-      let iTotBefore = isT? countIsolatedBefore(cS) : 0;
-      let nTotUpTo = isT? countNormalUpTo(cE)+countIsolatedUpTo(cE) : countNormalUpTo(cE);
-      let jTotUpTo = isT? countIsolatedUpTo(cE) : 0;
-      let nS = akjvStart - (2*mTotBefore - iTotBefore);
-      let nE = akjvEnd - (2*nTotUpTo - jTotUpTo);
-      cS=nS; cE=nE; if(cS<1) cS=1; if(cE<1) cE=1;
+      let m = countBefore(cS);
+      let n = countUpTo(cE);
+      let nS = isT? akjvStart - (2*m) : akjvStart - m;
+      let nE = isT? akjvEnd - (2*n) : akjvEnd - n;
+      if(nS===cS && nE===cE) break;
+      cS=nS; cE=nE;
     }
-    let final_m = isT? countNormalBefore(akjvStart)+countIsolatedBefore(akjvStart) : countNormalBefore(akjvStart);
-    let final_i = isT? countIsolatedBefore(akjvStart) : 0;
-    let final_n = isT? countNormalUpTo(akjvEnd)+countIsolatedUpTo(akjvEnd) : countNormalUpTo(akjvEnd);
-    let final_j = isT? countIsolatedUpTo(akjvEnd) : 0;
-    return {mathStart:cS, mathEnd:cE, m:final_m, i:final_i, n:final_n, j:final_j};
+    return {mathStart:cS, mathEnd:cE, m:countBefore(akjvStart), i:0, n:countUpTo(akjvEnd), j:0};
   };
 
   const renderVerse = (verseObj, mode) => {
@@ -305,6 +300,6 @@ const HBVS = (() => {
     });
   };
 
-  return { loadHBVSData, renderVerse, renderVerseAsync, renderChapterAsync, getCorrectedLocation, getMathFromAKJV, isRule2d_2e, get isWorkerReady(){return workerReady;} };
+  return { loadHBVSData, renderVerse, renderVerseAsync, renderChapterAsync, getCorrectedLocation, getMathFromAKJV, isRule2d_2e, getEngineMode, isClean, get isWorkerReady(){return workerReady;} };
 })();
 window.HBVS = HBVS;
