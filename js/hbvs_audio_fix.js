@@ -1,22 +1,11 @@
-// HBVS AUDIO FIX v2.3 LIGHT - Consistent Math Signs + End Fix
-console.log("AUDIO FIX v2.3 SIGN-CONSISTENT + END-FIX");
+// HBVS AUDIO FIX v2.5 - STRIP <i> + TIGHT WRAPPERS + PAIR SYNC
+console.log("AUDIO FIX v2.5 TIGHT+NO-ITALIC-TAGS");
 (function(){
   let synth = window.speechSynthesis;
-  let voices=[], isPlaying=false, chunks=[], curChunk=0, wordSpans=[], rawWords=[], mapMath=[];
+  let voices=[], isPlaying=false, chunks=[], curChunk=0, wordSpans=[], rawWords=[], currentWrappers=[];
 
-  // ii) 1-1 SIGN DICTIONARY - must be consistent across all Math translations
-  const SIGN_WORDS = {
-    '↦': ['will','shall','shalt','wilt'],
-    '=': ['is','are','was','were','be','been','am','art','isn','are','was'],
-    '(': ['of','of'], // open paren = of
-    ')': ['of'],
-    '()': ['of']
-  };
-  const WORD_TO_SIGN = {
-    'will':'↦','shall':'↦','shalt':'↦','wilt':'↦',
-    'is':'=','are':'=','was':'=','were':'=','be':'=','been':'=','am':'=','art':'=',
-    'of':'()' // of -> ( ) wrapper
-  };
+  const FUNC_EQUALS = new Set(["am","are","art","be","been","canst","doest","doeth","doth","equal","had","has","hast","hath","have","is","was","wast","were","hadst"]);
+  const FUNC_ARROW = new Set(["became","become","becometh","being","can","could","couldest","dare","did","didst","do","durst","may","mayest","might","mightest","must","need","needest","needeth","needs","ought","oughtest","shall","shalt","should","shouldest","tend","tendeth","unto","will","wilt","would","wouldest","yield","yielded","yieldeth","yielding"]);
 
   function loadVoices(){
     voices = synth.getVoices();
@@ -40,167 +29,147 @@ console.log("AUDIO FIX v2.3 SIGN-CONSISTENT + END-FIX");
       try{ let m=JSON.parse(blk.getAttribute('data-raw-map')||'{}'); raw=Object.values(m).join(' ');}catch(e){}
     }
     if(!raw){ let raws=[...rc.querySelectorAll('[data-raw-pce]')].map(b=>b.getAttribute('data-raw-pce')); if(raws.length) raw=raws.join(' '); }
-    return (raw||rc.innerText).replace(/¶/g,' ').trim();
+    raw = (raw||rc.innerText).replace(/¶/g,' ').trim();
+    // FIX i) Strip ALL HTML tags including <i> - voice must never read tags
+    raw = raw.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+    return raw;
   }
+  function getDisplayEl(){ return document.getElementById('readerContent'); }
 
-  function getDisplayEl(){
-    return document.getElementById('readerContent');
-  }
-
-  // Build Math display but keep exact AKJV word count for voice
   function wordify(){
     let el=getDisplayEl(); if(!el) return;
     delete el.dataset.wordified;
-
     let rawPCE=getRawPCE();
-    rawWords=rawPCE.split(/\s+/).filter(Boolean);
+    rawWords=rawPCE.replace(/<[^>]*>/g,'').split(/\s+/).filter(Boolean);
     if(!rawWords.length) return;
 
-    // Preserve current Math render HTML to extract sign positions
-    let mathRoot = el.querySelector('.hbvs-output')||el;
-    let mathHTML = mathRoot.innerHTML;
-
-    // Create highlight spans FROM AKJV words, but show Math signs inside
-    // Strategy: iterate rawWords, ask HBVS for math token if available, else infer
     let mode=(typeof selectedMath!=='undefined'?selectedMath:'akjv');
     let isMath = mode!=='akjv' && mode!=='AKJV1611' && mode!=='pce';
+    currentWrappers = [];
+    let wrapperStack = [];
+    let pairCounter = 0;
 
-    let htmlParts=[];
-    mapMath=[];
-    let displayIdx=0;
+    if(isMath && el.querySelector('.hbvs-output')){
+      let out=el.querySelector('.hbvs-output');
+      // Preserve existing colored HTML structure if it has data-pair already - don't rebuild loose
+      if(out.querySelector('[data-pair]')){
+        wordSpans=[...out.querySelectorAll('[data-w]')];
+        // Rebuild currentWrappers from DOM to keep pair sync
+        let pairs = {};
+        wordSpans.forEach(s=>{
+          let pid=s.getAttribute('data-pair');
+          let wIdx=parseInt(s.getAttribute('data-w'));
+          if(pid &&!pairs[pid]){
+            pairs[pid]={pairId:pid, nest:parseInt(s.getAttribute('data-nest')||'1'), audioIndex:wIdx};
+            currentWrappers.push(pairs[pid]);
+          }
+        });
+      } else {
+        // First time - inject tight wrappers, preserve colors from innerText parsing
+        let dispText = out.innerText;
+        let built="";
+        let ri=0;
+        let nestLevel=0;
+        let tokens = dispText.split(/(\s+|[()=↦])/).filter(t=>t!=='');
 
-    rawWords.forEach((rw, ri)=>{
-      let clean=rw.toLowerCase().replace(/[^a-z0-9']/g,'');
-      let mathToken=rw; // default
-
-      if(isMath){
-        // Try real engine if exists - ensures consistency
-        try{
-          if(window.HBVS?.toMathToken){ mathToken=window.HBVS.toMathToken(rw, mode, ri, rawWords); }
-          else {
-            // fallback inference consistent
-            if(WORD_TO_SIGN[clean]){
-              let sign=WORD_TO_SIGN[clean];
-              if(sign==='()'){
-                // special: next word gets (word) -> we keep raw word but mark as paren-wrapped
-                // look ahead if next raw is capitalized proper noun (Moriah)
-                mathToken=`(${rawWords[ri+1]||rw})`;
-              } else {
-                mathToken=sign; // ↦ or =
-              }
+        tokens.forEach(tok=>{
+          if(tok.trim()===''){ built+=tok; return; }
+          if(tok==='('){
+            nestLevel++;
+            pairCounter++;
+            let pairId=`W${pairCounter}`;
+            // Find next 'of' not yet used
+            let ofIdx=-1;
+            for(let k=ri;k<rawWords.length;k++){
+              if(rawWords[k].toLowerCase().replace(/[^a-z]/g,'')==='of' &&!currentWrappers.some(cw=>cw.audioIndex===k)){ ofIdx=k; break; }
+            }
+            if(ofIdx===-1) ofIdx=ri;
+            let wObj={pairId, nest:Math.min(nestLevel,8), audioIndex:ofIdx};
+            currentWrappers.push(wObj);
+            let col = (mode==='MathKJVS'?'#FF6347': mode==='MathKJVT'?'#DAA520':'#800020');
+            // TIGHT: no space after ( - fix ii)
+            built+=`<span data-w="${ofIdx}" data-pair="${pairId}" data-nest="${wObj.nest}" data-type="open" data-sign="(" class="math-sign-paren" style="color:${col}">(</span>`;
+            wrapperStack.push(pairId);
+          } else if(tok===')'){
+            let pairId=wrapperStack.pop()||`W${pairCounter}`;
+            let wObj=currentWrappers.find(w=>w.pairId===pairId);
+            let aIdx=wObj?wObj.audioIndex:ri;
+            let col = (mode==='MathKJVS'?'#FF6347': mode==='MathKJVT'?'#DAA520':'#800020');
+            built+=`<span data-w="${aIdx}" data-pair="${pairId}" data-nest="${wObj?wObj.nest:1}" data-type="close" data-sign=")" class="math-sign-paren" style="color:${col}">)</span>`;
+            nestLevel=Math.max(0,nestLevel-1);
+          } else if(tok==='='||tok==='↦'){
+            let fIdx=-1;
+            for(let k=ri;k<rawWords.length;k++){
+              let clean=rawWords[k].toLowerCase().replace(/[^a-z]/g,'');
+              if(FUNC_EQUALS.has(clean)||FUNC_ARROW.has(clean)){ fIdx=k; break; }
+            }
+            if(fIdx===-1) fIdx=ri;
+            let col = tok==='='?'#800020':'#FF6347';
+            built+=`<span data-w="${fIdx}" data-type="${tok==='='?'equals':'arrow'}" data-sign="${tok}" class="math-sign sym-${tok==='='?'equals':'arrow'}" style="color:${col}">${tok}</span>`;
+            ri=fIdx+1;
+          } else {
+            if(tok.length>0){
+              built+=`<span data-w="${ri}" data-raw="${rawWords[ri]||tok}">${tok}</span>`;
+              if(tok.trim()) ri++;
             }
           }
-        }catch(e){ mathToken=rw; }
+        });
+        out.innerHTML=built;
+        wordSpans=[...out.querySelectorAll('[data-w]')];
       }
-
-      // Special handling for "of Moriah" -> "(Moriah)" in Math
-      if(isMath && clean==='of' && rawWords[ri+1]){
-        let nxt=rawWords[ri+1];
-        if(/^[A-Z]/.test(nxt) || nxt.toLowerCase()==='moriah'){
-          mathToken=`(${nxt})`;
-          // This one span represents 2 AKJV words: of + Moriah
-          htmlParts.push(`<span data-w="${ri}" data-raw="${rw} ${nxt}" data-sign="()" title="AKJV: ${rw} ${nxt}">${mathToken} </span>`);
-          mapMath.push({akjvIdx:ri, mathEl:null, mathIdx:displayIdx, covers:2});
-          mapMath.push({akjvIdx:ri+1, mathEl:null, mathIdx:displayIdx, covers:2});
-          rawWords[ri+1]=rawWords[ri+1]; // keep
-          displayIdx++;
-          // skip next iteration? we will handle by marking
-          return;
-        }
-      }
-
-      htmlParts.push(`<span data-w="${ri}" data-raw="${rw}" data-sign="${mathToken}" title="AKJV: ${rw} -> ${mathToken}">${mathToken} </span>`);
-      mapMath.push({akjvIdx:ri, mathEl:null, mathIdx:displayIdx, covers:1});
-      displayIdx++;
-    });
-
-    // Handle duplicate due to (Moriah) logic - rebuild clean
-    // Re-filter to one span per display token
-    let finalHTML="";
-    let skipNext=false;
-    for(let i=0;i<rawWords.length;i++){
-      if(skipNext){ skipNext=false; continue; }
-      let clean=rawWords[i].toLowerCase().replace(/[^a-z0-9']/g,'');
-      if(isMath && clean==='of' && rawWords[i+1] && /^[A-Z]/.test(rawWords[i+1])){
-        let token=`(${rawWords[i+1]})`;
-        finalHTML+=`<span data-w="${i}" data-raw="of ${rawWords[i+1]}" data-sign="()" class="math-sign-paren">${token} </span>`;
-        skipNext=true;
-      } else {
-        let tok = isMath && WORD_TO_SIGN[clean]? WORD_TO_SIGN[clean] : rawWords[i];
-        if(tok==='()') tok=`(${rawWords[i]})`;
-        let cls = (tok==='↦'||tok==='='||tok.includes('('))?'math-sign':'';
-        finalHTML+=`<span data-w="${i}" data-raw="${rawWords[i]}" data-sign="${tok}" class="${cls}">${tok} </span>`;
-      }
-    }
-
-    // If Math view already has rendered HBVS output, keep it but overlay data-w attributes for highlighting
-    if(isMath && el.querySelector('.hbvs-output')){
-      // Don't replace whole reader - just inject spans inside hbvs-output for highlight consistency
-      let out=el.querySelector('.hbvs-output');
-      // Tokenize its innerText and map to rawWords
-      let dispWords = out.innerText.split(/\s+/).filter(Boolean);
-      let built="";
-      let ri=0;
-      dispWords.forEach(dw=>{
-        if(ri>=rawWords.length) return;
-        let cls = (/[↦=()]/.test(dw))?'math-sign':'';
-        built+=`<span data-w="${ri}" data-raw="${rawWords[ri]}" data-sign="${dw}" class="${cls}">${dw} </span>`;
-        // if this display word covers "of Moriah" i.e. "(Moriah)" -> consumes 2 raw
-        if(dw.includes('(') && rawWords[ri].toLowerCase()==='of') ri+=2; else ri++;
-      });
-      // Fill remainder
-      while(ri<rawWords.length){ built+=`<span data-w="${ri}" data-raw="${rawWords[ri]}">${rawWords[ri]} </span>`; ri++; }
-      out.innerHTML=built;
-      wordSpans=[...out.querySelectorAll('[data-w]')];
     } else {
+      let finalHTML="";
+      rawWords.forEach((rw,i)=>{ finalHTML+=`<span data-w="${i}" data-raw="${rw}">${rw} </span>`; });
       el.innerHTML=finalHTML;
       wordSpans=[...el.querySelectorAll('[data-w]')];
     }
-
-    // Bind mapMath els
-    wordSpans.forEach(s=>{
-      let idx=parseInt(s.getAttribute('data-w'));
-      if(!isNaN(idx)){
-        let m=mapMath.find(mm=>mm.akjvIdx===idx);
-        if(m) m.mathEl=s;
-      }
-    });
     el.dataset.wordified="1";
+    window.HBVS_SYNC = { wrappers: currentWrappers, rawWords };
   }
 
   function highlight(idx){
-    wordSpans.forEach(s=>{ s.style.background=''; s.style.color=''; s.classList.remove('audio-hi'); });
-    if(idx<0||idx>=wordSpans.length) return;
-    let target=wordSpans[idx];
-    // If this idx was part of a combined "(Moriah)" span, find the combined span
-    if(!target){
-      let combined=document.querySelector(`[data-w="${idx}"]`)||document.querySelector(`[data-w="${idx-1}"]`);
-      target=combined;
+    wordSpans.forEach(s=>{ s.style.background=''; s.style.boxShadow=''; s.classList.remove('audio-hi','hl-sync'); });
+    if(idx<0) return;
+
+    let wrappersForIdx = currentWrappers.filter(w=>w.audioIndex===idx);
+    if(wrappersForIdx.length>0){
+      wrappersForIdx.sort((a,b)=>a.nest-b.nest);
+      wrappersForIdx.forEach(w=>{
+        document.querySelectorAll(`[data-pair="${w.pairId}"]`).forEach(el=>{
+          el.classList.add('audio-hi','hl-sync');
+          let c=el.style.color||'#DAA520';
+          el.style.background=c+'22';
+          el.style.boxShadow=`inset 0 -3px 0 ${c}`;
+          el.style.borderRadius='4px';
+        });
+      });
+      return;
     }
-    if(target){
-      target.style.background='#FFEB3B'; target.style.color='#000'; target.classList.add('audio-hi');
-      try{
-        target.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
-        let rc=document.getElementById('readerContent');
-        if(rc){
-          let r=target.getBoundingClientRect(), rcR=rc.getBoundingClientRect();
-          if(r.bottom>rcR.bottom-90 || r.top<rcR.top+90){
-            rc.scrollBy({top:r.top-rcR.top- rcR.height/2, behavior:'smooth'});
-          }
-        }
-      }catch(e){}
-    }
+
+    let targets=document.querySelectorAll(`[data-w="${idx}"]`);
+    targets.forEach(target=>{
+      let sign=target.getAttribute('data-sign');
+      if(sign==='='||sign==='↦'||target.getAttribute('data-type')==='equals'||target.getAttribute('data-type')==='arrow'){
+        target.classList.add('audio-hi','hl-sync');
+        let c=target.style.color||'#800020';
+        target.style.background=c+'22';
+        target.style.boxShadow=`inset 0 -3px 0 ${c}`;
+      } else {
+        target.classList.add('audio-hi');
+        target.style.background='#FFEB3B';
+        target.style.color='#000';
+      }
+      try{ target.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'}); }catch(e){}
+    });
   }
 
-  function getChunks(text){
-    // Fix Pre1 4m09s stop - keep 150 char safe chunks
-    return text.match(/.{1,150}(\s|$)/g) || [text];
-  }
+  function getChunks(text){ return text.match(/.{1,150}(\s|$)/g) || [text]; }
 
   function speakNext(){
     if(curChunk>=chunks.length){
       isPlaying=false;
       let b=document.getElementById('r-audio'); if(b) b.textContent="Audio_Playback";
+      wordSpans.forEach(s=>{ s.style.background=''; s.style.boxShadow=''; s.classList.remove('audio-hi','hl-sync'); });
       if(document.getElementById('chkAutoPlay')?.checked){
         document.getElementById('r-next')?.click();
         setTimeout(()=>window.HBVS_AUDIO.play(),1000);
@@ -212,9 +181,7 @@ console.log("AUDIO FIX v2.3 SIGN-CONSISTENT + END-FIX");
     let utter=new SpeechSynthesisUtterance(chunks[curChunk]);
     if(voices[vIdx]) utter.voice=voices[vIdx];
     utter.rate=0.95;
-
     let wordsBefore=chunks.slice(0,curChunk).join(' ').split(/\s+/).filter(Boolean).length;
-
     utter.onboundary=(e)=>{
       if(e.name==='word' && document.getElementById('chkHighlight')?.checked!==false){
         let localWord = chunks[curChunk].substring(0, e.charIndex).split(/\s+/).filter(Boolean).length;
@@ -231,7 +198,8 @@ console.log("AUDIO FIX v2.3 SIGN-CONSISTENT + END-FIX");
       synth.cancel();
       wordify();
       let akjvText=rawWords.join(' ')||getRawPCE();
-      chunks=getChunks(akjvText); // ii) voice always AKJV PCE
+      akjvText=akjvText.replace(/<[^>]*>/g,''); // double-strip for speech
+      chunks=getChunks(akjvText);
       curChunk=0; isPlaying=true;
       let b=document.getElementById('r-audio'); if(b) b.textContent="Stop";
       speakNext();
@@ -239,7 +207,7 @@ console.log("AUDIO FIX v2.3 SIGN-CONSISTENT + END-FIX");
     stop:function(){
       synth.cancel(); isPlaying=false;
       let b=document.getElementById('r-audio'); if(b) b.textContent="Audio_Playback";
-      wordSpans.forEach(s=>{ s.style.background=''; s.style.color=''; s.classList.remove('audio-hi'); });
+      wordSpans.forEach(s=>{ s.style.background=''; s.style.boxShadow=''; s.classList.remove('audio-hi','hl-sync'); });
     },
     toggle:function(){ isPlaying?this.stop():this.play(); }
   };
@@ -258,7 +226,7 @@ console.log("AUDIO FIX v2.3 SIGN-CONSISTENT + END-FIX");
     }
     if(!document.getElementById('hbvs-audio-style')){
       let st=document.createElement('style'); st.id='hbvs-audio-style';
-      st.textContent=`.audio-hi{background:#ffeb3b!important;color:#000!important;border-radius:4px;padding:0 3px;box-shadow:0 0 0 2px #ffc107}.math-sign{font-weight:700;color:#800020}.math-sign-paren{font-weight:700;color:#004d40}`;
+      st.textContent=`.audio-hi.hl-sync{border-radius:4px;padding:0 2px;transition:all.15s}.audio-hi:not(.hl-sync){background:#ffeb3b!important;color:#000!important;border-radius:4px;padding:0 3px;box-shadow:0 0 0 2px #ffc107}.math-sign{font-weight:700}.math-sign-paren{font-weight:700;display:inline-block;margin:0;padding:0}`;
       document.head.appendChild(st);
     }
   }
